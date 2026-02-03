@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { theme } from '../constants/theme';
 import { useApp } from '../contexts/AppContext';
 import { comboSuggestions } from '../services/mockData';
@@ -70,24 +70,17 @@ export default function RecommendationsScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Recommendation Cards - Minimum 6 */}
-        {recommendations.slice(0, Math.max(6, recommendations.length)).map((dish, index) => {
-          const cardScale = useSharedValue(1);
-          
-          const cardAnimatedStyle = useAnimatedStyle(() => ({
-            transform: [{ scale: cardScale.value }],
-          }));
-
-          return (
+        {recommendations.slice(0, Math.max(6, recommendations.length)).map((dish, index) => (
           <Animated.View
             key={dish.id}
             entering={FadeInDown.delay(index * 100).duration(400)}
-            style={cardAnimatedStyle}
           >
             <Pressable
-              style={styles.dishCard}
+              style={({ pressed }) => [
+                styles.dishCard,
+                pressed && styles.dishCardPressed,
+              ]}
               onPress={() => handleDishPress(dish.id)}
-              onPressIn={() => { cardScale.value = withSpring(0.98); }}
-              onPressOut={() => { cardScale.value = withSpring(1); }}
             >
               {/* Dish Image */}
               <View style={styles.imageContainer}>
@@ -163,8 +156,7 @@ export default function RecommendationsScreen() {
               </View>
             </Pressable>
           </Animated.View>
-          );
-        })}
+        ))}
 
         {/* Smart Combo Builder */}
         {recommendations.length > 0 && (
@@ -285,9 +277,13 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(124, 58, 237, 0.1)',
+    borderColor: 'rgba(251, 191, 36, 0.15)',
     ...theme.shadows.cardElevated,
     marginBottom: 16,
+  },
+  dishCardPressed: {
+    opacity: 0.95,
+    transform: [{ scale: 0.98 }],
   },
   imageContainer: {
     position: 'relative',

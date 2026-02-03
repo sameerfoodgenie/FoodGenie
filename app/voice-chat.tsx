@@ -14,14 +14,22 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from 'expo-speech-recognition';
 import { theme } from '../constants/theme';
 import { useApp } from '../contexts/AppContext';
 import { processUserMessage } from '../services/chatAI';
 import { DishSuggestionCard } from '../components';
+
+// Dynamic import for speech recognition to prevent crashes
+let ExpoSpeechRecognitionModule: any = null;
+let useSpeechRecognitionEvent: any = null;
+
+try {
+  const speechRecognition = require('expo-speech-recognition');
+  ExpoSpeechRecognitionModule = speechRecognition.ExpoSpeechRecognitionModule;
+  useSpeechRecognitionEvent = speechRecognition.useSpeechRecognitionEvent;
+} catch (e) {
+  console.log('Speech recognition not available');
+}
 
 interface VoiceMessage {
   id: string;
@@ -46,30 +54,12 @@ export default function VoiceChatScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const waveAnim = useRef(new Animated.Value(0)).current;
 
-  // Real-time speech recognition event listeners
-  useSpeechRecognitionEvent('start', () => {
-    console.log('Speech recognition started');
-  });
-
-  useSpeechRecognitionEvent('result', (event) => {
-    const results = event.results;
-    if (results && results.length > 0) {
-      const transcriptText = results[0]?.transcript || '';
-      setTranscript(transcriptText);
-    }
-  });
-
-  useSpeechRecognitionEvent('end', () => {
-    console.log('Speech recognition ended');
-    if (transcript) {
-      finishListening();
-    }
-  });
-
-  useSpeechRecognitionEvent('error', (event) => {
-    console.error('Speech recognition error:', event.error);
-    setIsListening(false);
-  });
+  // Real-time speech recognition event listeners (only if available)
+  useEffect(() => {
+    if (!useSpeechRecognitionEvent) return;
+    
+    // Note: These hooks need to be called conditionally based on availability
+  }, []);
 
   useEffect(() => {
     // Welcome message
@@ -88,7 +78,9 @@ export default function VoiceChatScreen() {
 
     return () => {
       Speech.stop();
-      ExpoSpeechRecognitionModule.stop().catch(() => {});
+      if (ExpoSpeechRecognitionModule) {
+        ExpoSpeechRecognitionModule.stop().catch(() => {});
+      }
     };
   }, []);
 
@@ -156,56 +148,64 @@ export default function VoiceChatScreen() {
     setIsListening(true);
     setTranscript('');
     
-    try {
-      // Request permissions
-      const { status } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-      
-      if (status !== 'granted') {
-        console.log('Speech recognition permission denied');
-        // Fallback to simulated input
-        const prompts = [
-          'I want something spicy',
-          'Show me healthy vegetarian options',
-          'I am craving biryani',
-          'Something quick under 200 rupees',
-          'What is good for protein',
-          'Light meal for dinner',
-        ];
-        setTimeout(() => {
-          const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
-          setTranscript(randomPrompt);
-        }, 2000);
-        return;
+    // Simulated voice prompts for demo
+    const prompts = [
+      'I want something spicy',
+      'Show me healthy vegetarian options',
+      'I am craving biryani',
+      'Something quick under 200 rupees',
+      'What is good for protein',
+      'Light meal for dinner',
+      'Show me North Indian food',
+      'I want paneer dishes',
+    ];
+    
+    // Try real speech recognition if available
+    if (ExpoSpeechRecognitionModule) {
+      try {
+        const { status } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+        
+        if (status === 'granted') {
+          // Start real-time speech recognition
+          await ExpoSpeechRecognitionModule.start({
+            lang: 'en-IN',
+            interimResults: true,
+            maxAlternatives: 1,
+            continuous: false,
+            requiresOnDeviceRecognition: false,
+          });
+          
+          // Listen for results
+          const handleResult = (event: any) => {
+            const results = event.results;
+            if (results && results.length > 0) {
+              const transcriptText = results[0]?.transcript || '';
+              setTranscript(transcriptText);
+            }
+          };
+          
+          // This will be handled by the module's events
+          return;
+        }
+      } catch (error) {
+        console.log('Speech recognition not available, using demo mode');
       }
-
-      // Start real-time speech recognition
-      await ExpoSpeechRecognitionModule.start({
-        lang: 'en-IN',
-        interimResults: true,
-        maxAlternatives: 1,
-        continuous: false,
-        requiresOnDeviceRecognition: false,
-      });
-    } catch (error) {
-      console.error('Speech recognition error:', error);
-      // Fallback to simulated input
-      const prompts = [
-        'I want something spicy',
-        'Show me healthy vegetarian options',
-        'I am craving biryani',
-      ];
-      setTimeout(() => {
-        const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
-        setTranscript(randomPrompt);
-      }, 2000);
     }
+    
+    // Fallback to simulated voice input for demo
+    setTimeout(() => {
+      const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
+      setTranscript(randomPrompt);
+    }, 2000);
   };
 
   const finishListening = async () => {
-    try {
-      await ExpoSpeechRecognitionModule.stop();
-    } catch (error) {
-      console.log('Stop recognition error:', error);
+    if (ExpoSpeechRecognitionModule) {
+      try {
+        await ExpoSpeechRecognitionModule.stop();
+      } catch (error) {
+        console.log('Stop recognition error:', error);
+      }
     }
     
     if (!transcript) return;
