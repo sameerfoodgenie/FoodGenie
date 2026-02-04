@@ -1,13 +1,23 @@
+import { useState, useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { View, StyleSheet } from 'react-native';
 import { AppProvider } from '../contexts/AppContext';
 import { AlertProvider } from '@/template';
+import SplashScreen from '../components/SplashScreen';
 
 export default function RootLayout() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  const handleSplashFinish = () => {
+    setShowSplash(false);
+  };
+
   return (
     <AlertProvider>
       <AppProvider>
         <StatusBar style="light" />
+        {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
         <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen 
