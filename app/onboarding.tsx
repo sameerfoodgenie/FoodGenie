@@ -30,7 +30,7 @@ import Animated, {
   FadeInDown,
   SlideInRight,
 } from 'react-native-reanimated';
-import { CustomSlider } from '../components';
+import { CustomSlider, AnimatedDietIcon } from '../components';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../constants/theme';
 import { config } from '../constants/config';
@@ -382,9 +382,11 @@ export default function OnboardingScreen() {
                     ]}
                     onPress={() => handleDietSelect(option.id as 'veg' | 'egg' | 'nonveg')}
                   >
-                    <View style={[styles.dietIconBg, { backgroundColor: `${option.color}20` }]}>
-                      <Text style={styles.dietEmoji}>{option.emoji}</Text>
-                    </View>
+                    <AnimatedDietIcon
+                      type={option.id as 'veg' | 'egg' | 'nonveg'}
+                      isSelected={diet === option.id}
+                      size={56}
+                    />
                     <Text style={styles.dietLabel}>{option.label}</Text>
                     {diet === option.id && (
                       <Animated.View entering={FadeIn.duration(200)} style={[styles.checkmark, { backgroundColor: option.color }]}>
@@ -970,16 +972,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.background,
     ...theme.shadows.card,
   },
-  dietIconBg: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dietEmoji: {
-    fontSize: 28,
-  },
+
   dietLabel: {
     fontSize: 17,
     fontWeight: '600',
