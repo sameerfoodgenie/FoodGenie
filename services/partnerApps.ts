@@ -1,7 +1,9 @@
 import { Linking, Platform } from 'react-native';
 import { getSupabaseClient } from '@/template';
 
-const supabase = getSupabaseClient();
+function getClient() {
+  return getSupabaseClient();
+}
 
 export interface PartnerApp {
   id: string;
@@ -94,7 +96,6 @@ export function getSortedPartners(preferredId: string | null): PartnerApp[] {
     const rest = partnerApps.filter(a => a.id !== preferredId);
     return preferred ? [preferred, ...rest] : partnerApps;
   }
-  // Default: Swiggy, Zomato on top, then ONDC, then rest
   const priority = ['swiggy', 'zomato', 'ondc'];
   return [...partnerApps].sort((a, b) => {
     const aIdx = priority.indexOf(a.id);
@@ -115,11 +116,9 @@ export async function openPartnerApp(app: PartnerApp): Promise<boolean> {
         return true;
       }
     }
-    // Fallback to web
     await Linking.openURL(app.webUrl);
     return true;
   } catch {
-    // Final fallback
     try {
       await Linking.openURL(app.webUrl);
       return true;
@@ -135,6 +134,7 @@ export async function savePartnerPreference(
   userId: string,
   partnerId: string | null
 ): Promise<{ error: string | null }> {
+  const supabase = getClient();
   const { error } = await supabase
     .from('user_preferences')
     .upsert(
@@ -152,7 +152,7 @@ export async function recordPartnerRedirect(
   userId: string,
   partnerId: string
 ): Promise<{ error: string | null }> {
-  // First load current count
+  const supabase = getClient();
   const { data } = await supabase
     .from('user_preferences')
     .select('partner_redirect_count')

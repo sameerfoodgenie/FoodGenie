@@ -1,6 +1,8 @@
 import { getSupabaseClient } from '@/template';
 
-const supabase = getSupabaseClient();
+function getClient() {
+  return getSupabaseClient();
+}
 
 export interface UserPreferences {
   diet: 'veg' | 'egg' | 'nonveg' | null;
@@ -28,6 +30,7 @@ export interface UserBehavior {
 // ---- Preferences ----
 
 export async function loadPreferences(userId: string): Promise<UserPreferences | null> {
+  const supabase = getClient();
   const { data, error } = await supabase
     .from('user_preferences')
     .select('*')
@@ -50,6 +53,7 @@ export async function loadPreferences(userId: string): Promise<UserPreferences |
 }
 
 export async function savePreferences(userId: string, prefs: Partial<UserPreferences>): Promise<{ error: string | null }> {
+  const supabase = getClient();
   const { error: upsertError } = await supabase
     .from('user_preferences')
     .upsert(
@@ -70,6 +74,7 @@ export async function incrementSessionCount(userId: string): Promise<number> {
 // ---- Behavior ----
 
 export async function loadBehavior(userId: string): Promise<UserBehavior | null> {
+  const supabase = getClient();
   const { data, error } = await supabase
     .from('user_behavior')
     .select('*')
@@ -89,6 +94,7 @@ export async function loadBehavior(userId: string): Promise<UserBehavior | null>
 }
 
 export async function saveBehavior(userId: string, behavior: Partial<UserBehavior>): Promise<{ error: string | null }> {
+  const supabase = getClient();
   const { error: upsertError } = await supabase
     .from('user_behavior')
     .upsert(
@@ -114,10 +120,8 @@ export async function trackSpiceChoice(userId: string, spiceLevel: number): Prom
   const current = await loadBehavior(userId);
   const choices = [...(current?.actual_spice_choices || []), spiceLevel].slice(-10);
   
-  // Detect contradiction: if recent choices trend differs from preference
   const recentAvg = choices.slice(-5).reduce((a, b) => a + b, 0) / Math.min(choices.length, 5);
   
-  // Load user preference to compare
   const prefs = await loadPreferences(userId);
   const prefSpice = prefs?.spice_level || 2;
   const contradiction = Math.abs(recentAvg - prefSpice) > 1;

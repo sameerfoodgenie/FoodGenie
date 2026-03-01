@@ -1,7 +1,6 @@
 import { AuthRouter } from '@/template';
 import { Redirect } from 'expo-router';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { useAuth } from '@/template';
 
 function LoadingScreen() {
   return (
