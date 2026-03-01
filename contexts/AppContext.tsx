@@ -1,17 +1,29 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@/template';
 import { mockDishes, mockRestaurants, Dish, Restaurant, ChatMessage, initialChatMessages } from '../services/mockData';
+import { ConfidenceResult } from '../services/aiEngine';
+import {
+  loadPreferences,
+  savePreferences,
+  loadBehavior,
+  saveBehavior,
+  incrementSessionCount,
+  trackIgnoredBestMatch,
+  resetIgnoredCount,
+  trackSpiceChoice,
+  UserPreferences as DBPreferences,
+  UserBehavior,
+} from '../services/preferencesService';
 
 interface UserPreferences {
   diet: 'veg' | 'egg' | 'nonveg' | null;
-  budget: number;
+  budgetMin: number;
+  budgetMax: number;
   spiceLevel: number;
-  allergies: string[];
+  mode: 'quick' | 'guided';
   onboardingComplete: boolean;
-  // Optional health data
-  height?: number; // in cm
-  weight?: number; // in kg
-  dateOfBirth?: string;
+  sessionCount: number;
 }
 
 interface CartItem {
@@ -24,6 +36,15 @@ interface AppContextType {
   // User preferences
   preferences: UserPreferences;
   updatePreferences: (prefs: Partial<UserPreferences>) => void;
+  syncPreferencesToDB: () => Promise<void>;
+  
+  // Behavior
+  behavior: UserBehavior | null;
+  recordIgnoredBestMatch: () => Promise<number>;
+  resetIgnored: () => Promise<void>;
+  recordSpiceChoice: (level: number) => Promise<{ contradictions: number }>;
+  updateMode: (mode: 'quick' | 'guided') => Promise<void>;
+  incrementSession: () => Promise<number>;
   
   // Cart
   cart: CartItem[];
@@ -33,21 +54,20 @@ interface AppContextType {
   clearCart: () => void;
   cartTotal: number;
   
-  // Recommendations
-  recommendations: Dish[];
-  setRecommendations: (dishes: Dish[]) => void;
+  // AI Results
+  aiResults: ConfidenceResult[];
+  setAiResults: (results: ConfidenceResult[]) => void;
+  currentQuery: string;
+  setCurrentQuery: (query: string) => void;
   
   // Chat
   chatMessages: ChatMessage[];
   addChatMessage: (message: ChatMessage) => void;
   
-  // Decision flow
-  decisionMode: 'dishes' | 'restaurants' | null;
-  setDecisionMode: (mode: 'dishes' | 'restaurants' | null) => void;
-  
   // App state
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
+  prefsLoaded: boolean;
   
   // Data
   allDishes: Dish[];
@@ -56,48 +76,130 @@ interface AppContextType {
 
 const defaultPreferences: UserPreferences = {
   diet: null,
-  budget: 300,
+  budgetMin: 100,
+  budgetMax: 500,
   spiceLevel: 2,
-  allergies: [],
+  mode: 'guided',
   onboardingComplete: false,
+  sessionCount: 0,
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
+  const [behavior, setBehavior] = useState<UserBehavior | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [recommendations, setRecommendations] = useState<Dish[]>([]);
+  const [aiResults, setAiResults] = useState<ConfidenceResult[]>([]);
+  const [currentQuery, setCurrentQuery] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChatMessages);
-  const [decisionMode, setDecisionMode] = useState<'dishes' | 'restaurants' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
 
-  // Load preferences from storage
+  // Load from Supabase when user changes
   useEffect(() => {
-    AsyncStorage.getItem('foodgenie_preferences').then(data => {
-      if (data) {
-        setPreferences(JSON.parse(data));
-      }
-    });
+    if (user?.id) {
+      loadFromDB(user.id);
+    } else {
+      setPreferences(defaultPreferences);
+      setBehavior(null);
+      setPrefsLoaded(false);
+    }
+  }, [user?.id]);
+
+  // Load cart from local storage
+  useEffect(() => {
     AsyncStorage.getItem('foodgenie_cart').then(data => {
-      if (data) {
-        setCart(JSON.parse(data));
-      }
+      if (data) setCart(JSON.parse(data));
     });
   }, []);
-
-  // Persist preferences
-  useEffect(() => {
-    AsyncStorage.setItem('foodgenie_preferences', JSON.stringify(preferences));
-  }, [preferences]);
 
   // Persist cart
   useEffect(() => {
     AsyncStorage.setItem('foodgenie_cart', JSON.stringify(cart));
   }, [cart]);
 
+  const loadFromDB = async (userId: string) => {
+    try {
+      const [dbPrefs, dbBehavior] = await Promise.all([
+        loadPreferences(userId),
+        loadBehavior(userId),
+      ]);
+
+      if (dbPrefs) {
+        setPreferences({
+          diet: dbPrefs.diet,
+          budgetMin: dbPrefs.budget_min,
+          budgetMax: dbPrefs.budget_max,
+          spiceLevel: dbPrefs.spice_level,
+          mode: dbPrefs.mode,
+          onboardingComplete: dbPrefs.onboarding_complete,
+          sessionCount: dbPrefs.session_count,
+        });
+      }
+      if (dbBehavior) {
+        setBehavior(dbBehavior);
+      }
+    } catch (e) {
+      console.log('Error loading preferences:', e);
+    } finally {
+      setPrefsLoaded(true);
+    }
+  };
+
   const updatePreferences = (prefs: Partial<UserPreferences>) => {
     setPreferences(prev => ({ ...prev, ...prefs }));
+  };
+
+  const syncPreferencesToDB = async () => {
+    if (!user?.id) return;
+    await savePreferences(user.id, {
+      diet: preferences.diet,
+      budget_min: preferences.budgetMin,
+      budget_max: preferences.budgetMax,
+      spice_level: preferences.spiceLevel,
+      mode: preferences.mode,
+      onboarding_complete: preferences.onboardingComplete,
+      session_count: preferences.sessionCount,
+    });
+  };
+
+  const recordIgnoredBestMatch = async (): Promise<number> => {
+    if (!user?.id) return 0;
+    const count = await trackIgnoredBestMatch(user.id);
+    const updated = await loadBehavior(user.id);
+    if (updated) setBehavior(updated);
+    return count;
+  };
+
+  const resetIgnored = async () => {
+    if (!user?.id) return;
+    await resetIgnoredCount(user.id);
+    const updated = await loadBehavior(user.id);
+    if (updated) setBehavior(updated);
+  };
+
+  const recordSpiceChoice = async (level: number): Promise<{ contradictions: number }> => {
+    if (!user?.id) return { contradictions: 0 };
+    const result = await trackSpiceChoice(user.id, level);
+    const updated = await loadBehavior(user.id);
+    if (updated) setBehavior(updated);
+    return { contradictions: result.contradictions };
+  };
+
+  const updateMode = async (mode: 'quick' | 'guided') => {
+    updatePreferences({ mode });
+    if (!user?.id) return;
+    await savePreferences(user.id, { mode });
+    await saveBehavior(user.id, { preferred_mode: mode });
+  };
+
+  const incrementSession = async (): Promise<number> => {
+    if (!user?.id) return 0;
+    const count = await incrementSessionCount(user.id);
+    setPreferences(prev => ({ ...prev, sessionCount: count }));
+    return count;
   };
 
   const addToCart = (dish: Dish, addons: string[] = []) => {
@@ -119,23 +221,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const updateQuantity = (dishId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(dishId);
-      return;
-    }
-    setCart(prev =>
-      prev.map(item =>
-        item.dish.id === dishId ? { ...item, quantity } : item
-      )
-    );
+    if (quantity <= 0) { removeFromCart(dishId); return; }
+    setCart(prev => prev.map(item => item.dish.id === dishId ? { ...item, quantity } : item));
   };
 
   const clearCart = () => setCart([]);
 
-  const cartTotal = cart.reduce(
-    (sum, item) => sum + item.dish.price * item.quantity,
-    0
-  );
+  const cartTotal = cart.reduce((sum, item) => sum + item.dish.price * item.quantity, 0);
 
   const addChatMessage = (message: ChatMessage) => {
     setChatMessages(prev => [...prev, message]);
@@ -146,20 +238,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
       value={{
         preferences,
         updatePreferences,
+        syncPreferencesToDB,
+        behavior,
+        recordIgnoredBestMatch,
+        resetIgnored,
+        recordSpiceChoice,
+        updateMode,
+        incrementSession,
         cart,
         addToCart,
         removeFromCart,
         updateQuantity,
         clearCart,
         cartTotal,
-        recommendations,
-        setRecommendations,
+        aiResults,
+        setAiResults,
+        currentQuery,
+        setCurrentQuery,
         chatMessages,
         addChatMessage,
-        decisionMode,
-        setDecisionMode,
         isLoading,
         setIsLoading,
+        prefsLoaded,
         allDishes: mockDishes,
         allRestaurants: mockRestaurants,
       }}
