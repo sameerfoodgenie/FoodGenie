@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -21,11 +21,15 @@ export default function AIThinkingScreen() {
   const router = useRouter();
   const { preferences, currentQuery, setAiResults, incrementSession } = useApp();
   const [messageIndex, setMessageIndex] = useState(0);
-  const [messages, setMessages] = useState([
+  const hasNavigated = useRef(false);
+
+  const messagesRef = useRef([
     'Checking chef-approved kitchens...',
     'Filtering by your budget range...',
     'Ranking by confidence...',
   ]);
+
+  const [displayMessage, setDisplayMessage] = useState(messagesRef.current[0]);
 
   const scale = useSharedValue(1);
   const rotate = useSharedValue(0);
@@ -34,10 +38,13 @@ export default function AIThinkingScreen() {
   const dotScale3 = useSharedValue(1);
 
   useEffect(() => {
+    if (hasNavigated.current) return;
+
     // Generate dynamic messages based on query
     if (currentQuery) {
       const dynamicMessages = getAnalysisText(currentQuery);
-      setMessages(dynamicMessages);
+      messagesRef.current = dynamicMessages;
+      setDisplayMessage(dynamicMessages[0]);
     }
 
     scale.value = withRepeat(
@@ -60,12 +67,18 @@ export default function AIThinkingScreen() {
     };
     animateDots();
     const dotInterval = setInterval(animateDots, 1200);
+
     const messageInterval = setInterval(() => {
-      setMessageIndex(prev => (prev + 1) % messages.length);
+      setMessageIndex(prev => {
+        const next = (prev + 1) % messagesRef.current.length;
+        setDisplayMessage(messagesRef.current[next]);
+        return next;
+      });
     }, 2500);
 
     // Process AI request
     const processTimer = setTimeout(() => {
+      if (hasNavigated.current) return;
       try {
         const results = processAIRequest({
           query: currentQuery || '',
@@ -80,15 +93,21 @@ export default function AIThinkingScreen() {
         console.log('AI processing error:', e);
       }
 
-      // Non-blocking session increment — do NOT await
+      // Non-blocking session increment
       incrementSession().catch(() => {});
 
-      router.replace('/results');
+      if (!hasNavigated.current) {
+        hasNavigated.current = true;
+        router.replace('/results');
+      }
     }, 2500);
 
     // Failsafe: navigate to results after 6s no matter what
     const failsafe = setTimeout(() => {
-      router.replace('/results');
+      if (!hasNavigated.current) {
+        hasNavigated.current = true;
+        router.replace('/results');
+      }
     }, 6000);
 
     return () => {
@@ -127,7 +146,7 @@ export default function AIThinkingScreen() {
           exiting={FadeOut.duration(300)}
           style={styles.message}
         >
-          {messages[messageIndex % messages.length]}
+          {displayMessage}
         </Animated.Text>
 
         <Text style={styles.trustNote}>

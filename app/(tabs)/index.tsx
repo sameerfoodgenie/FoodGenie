@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Dimensions,
   TextInput,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -37,12 +38,11 @@ const MASCOT_SIZE = INNER_SIZE * 0.58;
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { preferences, updatePreferences, updateMode, prefsLoaded, setCurrentQuery, incrementSession } = useApp();
+  const { preferences, updatePreferences, updateMode, prefsLoaded, setCurrentQuery } = useApp();
   const [showExplore, setShowExplore] = useState(false);
   const [showModePrompt, setShowModePrompt] = useState(false);
   const [showGuidedPrompt, setShowGuidedPrompt] = useState(false);
   const [guidedQuery, setGuidedQuery] = useState('');
-  const [showSpiceAlert, setShowSpiceAlert] = useState(false);
   const hasRedirected = useRef(false);
 
   // Animations
@@ -115,7 +115,7 @@ export default function HomeScreen() {
     opacity: innerGlow.value * 0.25,
   }));
 
-  const handleAskGenie = () => {
+  const handleAskGenie = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     pressScale.value = withSequence(withSpring(0.93, { damping: 12 }), withSpring(1, { damping: 10 }));
 
@@ -125,32 +125,39 @@ export default function HomeScreen() {
     }
 
     if (preferences.mode === 'quick') {
-      // Quick mode: go straight to AI processing
       setCurrentQuery('');
       router.push('/ai-thinking');
     } else {
-      // Guided mode: show guided prompt
       setShowGuidedPrompt(true);
     }
-  };
+  }, [preferences.onboardingComplete, preferences.mode]);
 
-  const handleGuidedSubmit = () => {
+  const handleGuidedSubmit = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setShowGuidedPrompt(false);
     setCurrentQuery(guidedQuery);
     setGuidedQuery('');
     router.push('/ai-thinking');
-  };
+  }, [guidedQuery]);
 
-  const handleVoiceInput = () => {
+  const handleVoiceInput = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setShowGuidedPrompt(false);
     router.push('/voice-chat');
-  };
+  }, []);
 
-  const handleModeSelect = async (mode: 'quick' | 'guided') => {
+  const handleModeSelect = useCallback(async (mode: 'quick' | 'guided') => {
     await updateMode(mode);
-  };
+  }, []);
+
+  // Show loading while prefs are loading
+  if (!prefsLoaded) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

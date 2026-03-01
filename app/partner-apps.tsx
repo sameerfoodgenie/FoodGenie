@@ -62,7 +62,7 @@ export default function PartnerAppsScreen() {
   const handleToggleDefault = useCallback(async (app: PartnerApp) => {
     Haptics.selectionAsync();
     const newDefault = preferredId === app.id ? null : app.id;
-    updatePreferences({ preferredPartnerApp: newDefault || undefined });
+    updatePreferences({ preferredPartnerApp: newDefault });
     if (user?.id) {
       await savePartnerPreference(user.id, newDefault);
     }
