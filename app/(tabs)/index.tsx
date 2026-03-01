@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,36 +27,6 @@ const SMART_CHIPS = [
   { label: 'Spicy', emoji: '🌶️' },
   { label: 'Under ₹250', emoji: '💰' },
   { label: 'Sweet cravings', emoji: '🍰' },
-];
-
-const TOP_PICKS = [
-  {
-    id: 'tp1',
-    name: 'Butter Chicken',
-    restaurant: 'Punjabi Dhaba',
-    reason: 'Matches your taste profile perfectly',
-    total: 310,
-    emoji: '🍗',
-    verified: true,
-  },
-  {
-    id: 'tp2',
-    name: 'Paneer Tikka Thali',
-    restaurant: 'Green Leaf Kitchen',
-    reason: 'High protein, within your budget',
-    total: 250,
-    emoji: '🥬',
-    verified: false,
-  },
-  {
-    id: 'tp3',
-    name: 'Hyderabadi Biryani',
-    restaurant: 'Biryani House',
-    reason: 'Top rated, chef-verified kitchen',
-    total: 360,
-    emoji: '🍚',
-    verified: true,
-  },
 ];
 
 function getGreeting() {
@@ -283,8 +252,49 @@ export default function HomeScreen() {
             </View>
           </Animated.View>
 
+          {/* ─── EXPLORE YOUR WAY ─── */}
+          <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.exploreSection}>
+            <Text style={styles.exploreSectionTitle}>Explore your way</Text>
+            <View style={styles.exploreCards}>
+              <Pressable
+                style={({ pressed }) => [styles.exploreCard, pressed && styles.exploreCardPressed]}
+                onPress={() => router.push('/explore')}
+              >
+                <View style={styles.exploreCardLeft}>
+                  <View style={styles.exploreCardIconWrap}>
+                    <MaterialIcons name="restaurant-menu" size={24} color={theme.primary} />
+                  </View>
+                  <View style={styles.exploreCardText}>
+                    <Text style={styles.exploreCardTitle}>Explore Dishes</Text>
+                    <Text style={styles.exploreCardSub}>Browse cuisines & categories</Text>
+                  </View>
+                </View>
+                <View style={styles.exploreArrowWrap}>
+                  <MaterialIcons name="chevron-right" size={24} color={theme.textMuted} />
+                </View>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.exploreCard, pressed && styles.exploreCardPressed]}
+                onPress={() => router.push('/explore')}
+              >
+                <View style={styles.exploreCardLeft}>
+                  <View style={styles.exploreCardIconWrap}>
+                    <MaterialIcons name="storefront" size={24} color={theme.primary} />
+                  </View>
+                  <View style={styles.exploreCardText}>
+                    <Text style={styles.exploreCardTitle}>Explore Restaurants</Text>
+                    <Text style={styles.exploreCardSub}>Top rated & reliable kitchens</Text>
+                  </View>
+                </View>
+                <View style={styles.exploreArrowWrap}>
+                  <MaterialIcons name="chevron-right" size={24} color={theme.textMuted} />
+                </View>
+              </Pressable>
+            </View>
+          </Animated.View>
+
           {/* ─── WHY FOODGENIE ─── */}
-          <Animated.View entering={FadeIn.delay(400).duration(400)} style={styles.whySection}>
+          <Animated.View entering={FadeIn.delay(550).duration(400)} style={styles.whySection}>
             <Text style={styles.whySectionTitle}>Why FoodGenie</Text>
             <View style={styles.whyBadges}>
               {[
@@ -294,7 +304,7 @@ export default function HomeScreen() {
               ].map((badge, i) => (
                 <Animated.View
                   key={badge.text}
-                  entering={FadeInRight.delay(450 + i * 80).duration(350)}
+                  entering={FadeInRight.delay(600 + i * 80).duration(350)}
                 >
                   <View style={styles.whyPill}>
                     <MaterialIcons name={badge.icon} size={14} color={theme.textMuted} />
@@ -302,85 +312,6 @@ export default function HomeScreen() {
                   </View>
                 </Animated.View>
               ))}
-            </View>
-          </Animated.View>
-
-          {/* ─── TOP PICKS FOR YOU ─── */}
-          <Animated.View entering={FadeInUp.delay(500).duration(400)} style={styles.topPicksSection}>
-            <Text style={styles.topPicksTitle}>Top picks for you</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.topPicksScroll}
-            >
-              {TOP_PICKS.map((pick, i) => (
-                <Animated.View
-                  key={pick.id}
-                  entering={FadeInRight.delay(550 + i * 100).duration(400)}
-                >
-                  <Pressable
-                    style={({ pressed }) => [styles.pickCard, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
-                    onPress={() => handleAskGenie(pick.name)}
-                  >
-                    {pick.verified ? (
-                      <View style={styles.pickVerifiedBadge}>
-                        <MaterialIcons name="verified" size={11} color={theme.success} />
-                        <Text style={styles.pickVerifiedText}>Verified</Text>
-                      </View>
-                    ) : null}
-                    <View style={styles.pickEmojiContainer}>
-                      <Text style={styles.pickEmoji}>{pick.emoji}</Text>
-                    </View>
-                    <Text style={styles.pickName} numberOfLines={1}>{pick.name}</Text>
-                    <Text style={styles.pickRestaurant} numberOfLines={1}>{pick.restaurant}</Text>
-                    <Text style={styles.pickReason} numberOfLines={2}>{pick.reason}</Text>
-                    <View style={styles.pickFooter}>
-                      <Text style={styles.pickTotal}>Est. ₹{pick.total}</Text>
-                      <View style={styles.pickOrderBtn}>
-                        <MaterialIcons name="storefront" size={11} color={theme.primary} />
-                        <Text style={styles.pickOrderText}>Order</Text>
-                      </View>
-                    </View>
-                  </Pressable>
-                </Animated.View>
-              ))}
-            </ScrollView>
-          </Animated.View>
-
-          {/* ─── EXPLORE YOUR WAY ─── */}
-          <Animated.View entering={FadeInUp.delay(650).duration(400)} style={styles.exploreSection}>
-            <Text style={styles.exploreSectionTitle}>Explore your way</Text>
-            <View style={styles.exploreCards}>
-              <Pressable
-                style={({ pressed }) => [styles.exploreCard, pressed && styles.exploreCardPressed]}
-                onPress={() => router.push('/explore')}
-              >
-                <View style={styles.exploreCardLeft}>
-                  <View style={styles.exploreCardIconWrap}>
-                    <MaterialIcons name="restaurant-menu" size={22} color={theme.primary} />
-                  </View>
-                  <View style={styles.exploreCardText}>
-                    <Text style={styles.exploreCardTitle}>Explore Dishes</Text>
-                    <Text style={styles.exploreCardSub}>Browse categories & cuisines</Text>
-                  </View>
-                </View>
-                <MaterialIcons name="chevron-right" size={22} color={theme.textMuted} />
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [styles.exploreCard, pressed && styles.exploreCardPressed]}
-                onPress={() => router.push('/explore')}
-              >
-                <View style={styles.exploreCardLeft}>
-                  <View style={styles.exploreCardIconWrap}>
-                    <MaterialIcons name="storefront" size={22} color={theme.primary} />
-                  </View>
-                  <View style={styles.exploreCardText}>
-                    <Text style={styles.exploreCardTitle}>Explore Restaurants</Text>
-                    <Text style={styles.exploreCardSub}>Top rated & reliable kitchens</Text>
-                  </View>
-                </View>
-                <MaterialIcons name="chevron-right" size={22} color={theme.textMuted} />
-              </Pressable>
             </View>
           </Animated.View>
         </ScrollView>
@@ -532,7 +463,7 @@ const styles = StyleSheet.create({
   chipLabelSelected: { color: theme.primary, fontWeight: '600' },
 
   // ── Why FoodGenie ──
-  whySection: { marginBottom: 32, paddingHorizontal: 20 },
+  whySection: { marginBottom: 40, paddingHorizontal: 20, marginTop: 8 },
   whySectionTitle: {
     fontSize: 14,
     fontWeight: '600',
@@ -555,75 +486,8 @@ const styles = StyleSheet.create({
   },
   whyPillText: { fontSize: 12, fontWeight: '500', color: theme.textMuted },
 
-  // ── Top Picks ──
-  topPicksSection: { marginBottom: 28 },
-  topPicksTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: theme.textPrimary,
-    marginBottom: 16,
-    paddingHorizontal: 20,
-  },
-  topPicksScroll: { paddingHorizontal: 20, gap: 12 },
-  pickCard: {
-    width: 200,
-    backgroundColor: theme.backgroundSecondary,
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.1)',
-    ...theme.shadows.card,
-  },
-  pickEmojiContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: 'rgba(251,191,36,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  pickEmoji: { fontSize: 22 },
-  pickName: { fontSize: 16, fontWeight: '700', color: theme.textPrimary, marginBottom: 2 },
-  pickRestaurant: { fontSize: 12, color: theme.textMuted, marginBottom: 8 },
-  pickReason: { fontSize: 12, color: theme.textSecondary, lineHeight: 17, marginBottom: 14, minHeight: 34 },
-  pickFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(63,63,70,0.3)',
-    paddingTop: 12,
-  },
-  pickTotal: { fontSize: 17, fontWeight: '700', color: theme.textPrimary },
-  pickVerifiedBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: 'rgba(34,197,94,0.1)',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: theme.borderRadius.full,
-    zIndex: 1,
-  },
-  pickVerifiedText: { fontSize: 9, fontWeight: '700', color: theme.success, letterSpacing: 0.3 },
-  pickOrderBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: theme.borderRadius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.35)',
-  },
-  pickOrderText: { fontSize: 10, fontWeight: '600', color: theme.primary },
-
   // ── Explore Your Way ──
-  exploreSection: { paddingHorizontal: 20, marginTop: 12, marginBottom: 16 },
+  exploreSection: { paddingHorizontal: 20, marginBottom: 8 },
   exploreSectionTitle: {
     fontSize: 18,
     fontWeight: '700',
@@ -635,14 +499,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(20,20,20,0.9)',
-    borderRadius: 18,
-    padding: 18,
+    backgroundColor: 'rgba(18,18,18,0.95)',
+    borderRadius: 20,
+    padding: 20,
     borderWidth: 1.5,
     borderColor: 'rgba(251,191,36,0.18)',
+    ...theme.shadows.card,
   },
   exploreCardPressed: {
-    backgroundColor: 'rgba(30,30,30,1)',
+    backgroundColor: 'rgba(28,28,28,1)',
     borderColor: 'rgba(251,191,36,0.4)',
     transform: [{ scale: 0.98 }],
   },
@@ -653,16 +518,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   exploreCardIconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
+    width: 50,
+    height: 50,
+    borderRadius: 16,
     backgroundColor: 'rgba(251,191,36,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.15)',
+    borderColor: 'rgba(251,191,36,0.18)',
+  },
+  exploreArrowWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: 'rgba(63,63,70,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   exploreCardText: { flex: 1 },
-  exploreCardTitle: { fontSize: 16, fontWeight: '700', color: theme.textPrimary },
-  exploreCardSub: { fontSize: 13, color: theme.textSecondary, marginTop: 3 },
+  exploreCardTitle: { fontSize: 17, fontWeight: '700', color: theme.textPrimary },
+  exploreCardSub: { fontSize: 13, color: theme.textSecondary, marginTop: 4 },
 });
