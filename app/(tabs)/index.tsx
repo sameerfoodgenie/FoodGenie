@@ -363,7 +363,7 @@ export default function HomeScreen() {
               <Animated.View entering={FadeInDown.duration(250)} style={styles.exploreOptions}>
                 <Pressable
                   style={({ pressed }) => [styles.exploreOption, pressed && styles.exploreOptionPressed]}
-                  onPress={() => { setShowExplore(false); router.push('/recommendations'); }}
+                  onPress={() => { setShowExplore(false); router.push('/explore'); }}
                 >
                   <LinearGradient
                     colors={['rgba(251,191,36,0.12)', 'rgba(251,191,36,0.04)']}
@@ -373,13 +373,13 @@ export default function HomeScreen() {
                   </LinearGradient>
                   <View style={styles.exploreOptionContent}>
                     <Text style={styles.exploreOptionText}>Explore Dishes</Text>
-                    <Text style={styles.exploreOptionSub}>Browse all available dishes</Text>
+                    <Text style={styles.exploreOptionSub}>Browse categories and top picks</Text>
                   </View>
                   <MaterialIcons name="chevron-right" size={18} color={theme.textMuted} />
                 </Pressable>
                 <Pressable
                   style={({ pressed }) => [styles.exploreOption, pressed && styles.exploreOptionPressed]}
-                  onPress={() => { setShowExplore(false); router.push('/daily-meals'); }}
+                  onPress={() => { setShowExplore(false); router.push('/explore'); }}
                 >
                   <LinearGradient
                     colors={['rgba(251,191,36,0.12)', 'rgba(251,191,36,0.04)']}
@@ -389,7 +389,7 @@ export default function HomeScreen() {
                   </LinearGradient>
                   <View style={styles.exploreOptionContent}>
                     <Text style={styles.exploreOptionText}>Explore Restaurants</Text>
-                    <Text style={styles.exploreOptionSub}>Daily meals and menus</Text>
+                    <Text style={styles.exploreOptionSub}>Top rated and reliable kitchens</Text>
                   </View>
                   <MaterialIcons name="chevron-right" size={18} color={theme.textMuted} />
                 </Pressable>

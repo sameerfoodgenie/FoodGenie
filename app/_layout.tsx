@@ -27,6 +27,7 @@ export default function RootLayout() {
                 <Stack.Screen name="voice-chat" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
                 <Stack.Screen name="daily-meals" options={{ headerShown: false, animation: 'slide_from_right' }} />
                 <Stack.Screen name="partner-apps" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                <Stack.Screen name="explore" options={{ headerShown: false, animation: 'slide_from_right' }} />
               </Stack>
             </View>
           </AppProvider>
