@@ -64,31 +64,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="cart"
         options={{
-          title: 'Cart',
-          tabBarIcon: ({ color, size }) => (
-            <View>
-              <MaterialIcons name="shopping-cart" size={size} color={color} />
-              {cart.length > 0 && (
-                <View
-                  style={{
-                    position: 'absolute',
-                    top: -4,
-                    right: -8,
-                    backgroundColor: theme.primary,
-                    borderRadius: 10,
-                    width: 18,
-                    height: 18,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Text style={{ color: '#FFF', fontSize: 10, fontWeight: '700' }}>
-                    {cart.length}
-                  </Text>
-                </View>
-              )}
-            </View>
-          ),
+          href: null,
         }}
       />
       <Tabs.Screen
