@@ -1,4 +1,5 @@
 import { Linking, Platform } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { getSupabaseClient } from '@/template';
 
 function getClient() {
@@ -14,6 +15,8 @@ export interface PartnerApp {
   deepLink: string;
   webUrl: string;
   appScheme: string;
+  searchDeepLink: (query: string) => string;
+  searchWebUrl: (query: string) => string;
   available: boolean;
 }
 
@@ -27,6 +30,8 @@ export const partnerApps: PartnerApp[] = [
     deepLink: 'swiggy://',
     webUrl: 'https://www.swiggy.com',
     appScheme: 'swiggy',
+    searchDeepLink: (q: string) => `swiggy://search?query=${encodeURIComponent(q)}`,
+    searchWebUrl: (q: string) => `https://www.swiggy.com/search?query=${encodeURIComponent(q)}`,
     available: true,
   },
   {
@@ -38,6 +43,8 @@ export const partnerApps: PartnerApp[] = [
     deepLink: 'zomato://',
     webUrl: 'https://www.zomato.com',
     appScheme: 'zomato',
+    searchDeepLink: (q: string) => `zomato://search?q=${encodeURIComponent(q)}`,
+    searchWebUrl: (q: string) => `https://www.zomato.com/search?q=${encodeURIComponent(q)}`,
     available: true,
   },
   {
@@ -49,6 +56,8 @@ export const partnerApps: PartnerApp[] = [
     deepLink: 'magicpin://',
     webUrl: 'https://ondc.org',
     appScheme: 'magicpin',
+    searchDeepLink: (q: string) => `magicpin://search?query=${encodeURIComponent(q)}`,
+    searchWebUrl: (q: string) => `https://magicpin.in/search/?q=${encodeURIComponent(q)}`,
     available: true,
   },
   {
@@ -60,6 +69,8 @@ export const partnerApps: PartnerApp[] = [
     deepLink: 'zepto://',
     webUrl: 'https://www.zeptonow.com',
     appScheme: 'zepto',
+    searchDeepLink: (q: string) => `zepto://search?query=${encodeURIComponent(q)}`,
+    searchWebUrl: (q: string) => `https://www.zeptonow.com/search?query=${encodeURIComponent(q)}`,
     available: true,
   },
   {
@@ -71,6 +82,8 @@ export const partnerApps: PartnerApp[] = [
     deepLink: 'blinkit://',
     webUrl: 'https://blinkit.com',
     appScheme: 'blinkit',
+    searchDeepLink: (q: string) => `blinkit://search?q=${encodeURIComponent(q)}`,
+    searchWebUrl: (q: string) => `https://blinkit.com/s/?q=${encodeURIComponent(q)}`,
     available: true,
   },
   {
@@ -82,6 +95,8 @@ export const partnerApps: PartnerApp[] = [
     deepLink: 'bigbasket://',
     webUrl: 'https://www.bigbasket.com',
     appScheme: 'bigbasket',
+    searchDeepLink: (q: string) => `bigbasket://search?q=${encodeURIComponent(q)}`,
+    searchWebUrl: (q: string) => `https://www.bigbasket.com/ps/?q=${encodeURIComponent(q)}`,
     available: true,
   },
 ];
@@ -126,6 +141,53 @@ export async function openPartnerApp(app: PartnerApp): Promise<boolean> {
       return false;
     }
   }
+}
+
+/**
+ * Open partner app with a search query for a specific restaurant + dish.
+ * Tries: deep link search → web search fallback.
+ */
+export async function openPartnerWithSearch(
+  app: PartnerApp,
+  restaurantName: string,
+  dishName?: string,
+): Promise<boolean> {
+  const query = dishName ? `${restaurantName} ${dishName}` : restaurantName;
+
+  try {
+    if (Platform.OS !== 'web') {
+      const searchLink = app.searchDeepLink(query);
+      const canOpen = await Linking.canOpenURL(app.deepLink);
+      if (canOpen) {
+        await Linking.openURL(searchLink);
+        return true;
+      }
+    }
+    await Linking.openURL(app.searchWebUrl(query));
+    return true;
+  } catch {
+    try {
+      await Linking.openURL(app.searchWebUrl(query));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+/**
+ * Copy dish and restaurant info to clipboard for easy pasting.
+ */
+export async function copyDishInfo(
+  restaurantName: string,
+  dishName: string,
+  price?: number,
+): Promise<void> {
+  const parts = [`${dishName} from ${restaurantName}`];
+  if (price) {
+    parts.push(`Approx. price: Rs.${price}`);
+  }
+  await Clipboard.setStringAsync(parts.join('\n'));
 }
 
 // ---- Supabase partner preference operations ----

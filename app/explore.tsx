@@ -16,6 +16,10 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { theme } from '../constants/theme';
 import { mockDishes, mockRestaurants, Dish, Restaurant } from '../services/mockData';
+import { useApp } from '../contexts/AppContext';
+import { getPartnerById, openPartnerWithSearch, recordPartnerRedirect } from '../services/partnerApps';
+import { useAuth, useAlert } from '@/template';
+import OrderPartnerSheet from '../components/OrderPartnerSheet';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const TILE_GAP = 12;
@@ -160,7 +164,35 @@ function getDishesForCategory(category: DishCategory): Dish[] {
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const { preferences, updatePreferences } = useApp();
+  const { user } = useAuth();
+  const { showAlert } = useAlert();
   const [selectedCategory, setSelectedCategory] = useState<DishCategory | null>(null);
+  const [showOrderSheet, setShowOrderSheet] = useState(false);
+  const [orderContext, setOrderContext] = useState<{ dish: string; restaurant: string; price: number } | null>(null);
+
+  const preferredPartnerId = preferences.preferredPartnerApp || null;
+  const preferredPartner = preferredPartnerId ? getPartnerById(preferredPartnerId) : null;
+
+  const handleOrderDish = useCallback(
+    async (dishName: string, restaurantName: string, price: number) => {
+      Haptics.selectionAsync();
+      if (preferredPartner) {
+        if (user?.id) {
+          recordPartnerRedirect(user.id, preferredPartner.id).catch(() => {});
+        }
+        updatePreferences({ lastPartnerUsed: preferredPartner.id });
+        const success = await openPartnerWithSearch(preferredPartner, restaurantName, dishName);
+        if (!success) {
+          showAlert('Could not open app', 'Please install the app or try the web version.');
+        }
+      } else {
+        setOrderContext({ dish: dishName, restaurant: restaurantName, price });
+        setShowOrderSheet(true);
+      }
+    },
+    [preferredPartner, user?.id, updatePreferences, showAlert],
+  );
 
   const handleCategoryPress = useCallback(
     (category: DishCategory) => {
@@ -270,6 +302,13 @@ export default function ExploreScreen() {
                     {item.originalPrice > item.price ? (
                       <Text style={styles.dishRowOriginal}>₹{item.originalPrice}</Text>
                     ) : null}
+                    <Pressable
+                      style={({ pressed }) => [styles.dishOrderBtn, pressed && { opacity: 0.8 }]}
+                      onPress={() => handleOrderDish(item.name, item.restaurant, item.price)}
+                    >
+                      <MaterialIcons name="open-in-new" size={12} color={theme.primary} />
+                      <Text style={styles.dishOrderText}>Order</Text>
+                    </Pressable>
                   </View>
                 </Pressable>
               </Animated.View>
@@ -406,6 +445,15 @@ export default function ExploreScreen() {
 
         <View style={{ height: 48 }} />
       </ScrollView>
+
+      <OrderPartnerSheet
+        visible={showOrderSheet}
+        onClose={() => setShowOrderSheet(false)}
+        restaurantName={orderContext?.restaurant || ''}
+        dishName={orderContext?.dish || ''}
+        dishPrice={orderContext?.price}
+        preferredPartnerId={preferredPartnerId}
+      />
     </SafeAreaView>
   );
 }
@@ -610,6 +658,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: theme.textMuted,
     textDecorationLine: 'line-through',
+  },
+  dishOrderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(251,191,36,0.3)',
+    backgroundColor: 'rgba(251,191,36,0.06)',
+  },
+  dishOrderText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: theme.primary,
   },
 
   // Empty state
