@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   Pressable,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -53,13 +54,13 @@ export default function RecommendationsScreen() {
           <MaterialIcons name="arrow-back" size={24} color={theme.textPrimary} />
         </Pressable>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>🧞‍♂️ FoodGenie Picks</Text>
+          <Text style={styles.headerTitle}>FoodGenie Picks</Text>
           <Text style={styles.headerSubtitle}>All dishes for you</Text>
         </View>
         <View style={{ width: 44 }} />
       </View>
 
-      <Animated.ScrollView
+      <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: insets.bottom + 100 },
@@ -79,11 +80,11 @@ export default function RecommendationsScreen() {
               onPress={() => handleDishPress(dish.id)}
             >
               <View style={styles.imageContainer}>
+                <Image source={dish.image} style={styles.dishImage} contentFit="cover" />
                 <LinearGradient
                   colors={['transparent', 'rgba(0,0,0,0.7)']}
                   style={styles.imageOverlay}
                 />
-                <Image source={dish.image} style={styles.dishImage} contentFit="cover" />
                 {dish.tags[0] ? (
                   <LinearGradient colors={theme.gradients.vibrant} style={styles.tagBadge} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
                     <Text style={styles.tagText}>{dish.tags[0]}</Text>
@@ -166,7 +167,7 @@ export default function RecommendationsScreen() {
             All prices are transparent — no hidden markup or surge pricing
           </Text>
         </View>
-      </Animated.ScrollView>
+      </ScrollView>
 
       <View style={[styles.stickyCTA, { paddingBottom: insets.bottom + 16 }]}>
         <Pressable
@@ -191,8 +192,8 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 16, gap: 16 },
   dishCard: { backgroundColor: theme.background, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.15)', ...theme.shadows.cardElevated, marginBottom: 16 },
   dishCardPressed: { opacity: 0.95, transform: [{ scale: 0.98 }] },
-  imageContainer: { position: 'relative', overflow: 'hidden' },
-  dishImage: { width: '100%', height: 220 },
+  imageContainer: { position: 'relative', height: 220 },
+  dishImage: { width: '100%', height: '100%' },
   imageOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 100, zIndex: 1 },
   tagBadge: { position: 'absolute', top: 16, left: 16, paddingHorizontal: 16, paddingVertical: 8, borderRadius: theme.borderRadius.full, zIndex: 2, ...theme.shadows.card },
   tagText: { fontSize: 12, fontWeight: '600', color: theme.textOnPrimary },

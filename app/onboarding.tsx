@@ -33,7 +33,14 @@ import { theme } from '../constants/theme';
 import { config } from '../constants/config';
 import { useApp } from '../contexts/AppContext';
 
-const { width } = Dimensions.get('window');
+function getSafeWidth() {
+  try {
+    const w = Dimensions.get('window').width;
+    return w > 0 ? w : 375;
+  } catch {
+    return 375;
+  }
+}
 
 type OnboardingStep = 'welcome' | 'diet' | 'budget' | 'spice';
 
@@ -56,6 +63,17 @@ export default function OnboardingScreen() {
   const [spiceLevel, setSpiceLevel] = useState(preferences.spiceLevel);
   const [displayedMessage, setDisplayedMessage] = useState('');
   const [isTyping, setIsTyping] = useState(true);
+  const [screenWidth, setScreenWidth] = useState(getSafeWidth);
+
+  useEffect(() => {
+    const update = () => {
+      const w = Dimensions.get('window').width;
+      if (w > 0) setScreenWidth(w);
+    };
+    update();
+    const sub = Dimensions.addEventListener('change', update);
+    return () => sub?.remove();
+  }, []);
 
   // Animations
   const genieScale = useSharedValue(0.8);
@@ -279,7 +297,7 @@ export default function OnboardingScreen() {
               {config.spiceLevels.map((option, index) => (
                 <Animated.View key={option.id} entering={FadeInDown.delay(300 + index * 100).duration(400)}>
                   <Pressable
-                    style={[styles.spiceCard, spiceLevel === option.level && styles.spiceCardActive]}
+                    style={[styles.spiceCard, { width: (screenWidth - 52) / 2 }, spiceLevel === option.level && styles.spiceCardActive]}
                     onPress={() => { Haptics.selectionAsync(); setSpiceLevel(option.level); }}
                   >
                     <Text style={styles.spiceEmoji}>{option.emoji}</Text>
@@ -319,8 +337,8 @@ export default function OnboardingScreen() {
           <Animated.View style={[styles.genieGlow, glowAnimatedStyle]}>
             <LinearGradient colors={['rgba(251, 191, 36, 0.3)', 'rgba(251, 191, 36, 0)', 'transparent']} style={styles.genieGlowGradient} />
           </Animated.View>
-          <Animated.Text style={[styles.sparkle, styles.sparkle1, sparkleAnimatedStyle]}>✨</Animated.Text>
-          <Animated.Text style={[styles.sparkle, styles.sparkle2, sparkleAnimatedStyle]}>⭐</Animated.Text>
+          <Animated.Text style={[styles.sparkle, { top: 20, left: screenWidth * 0.15 }, sparkleAnimatedStyle]}>✨</Animated.Text>
+          <Animated.Text style={[styles.sparkle, { top: 50, right: screenWidth * 0.12 }, sparkleAnimatedStyle]}>⭐</Animated.Text>
           <Animated.View style={[styles.genieContainer, genieAnimatedStyle]}>
             <LinearGradient colors={theme.gradients.goldShine} style={styles.genieRing}>
               <View style={styles.genieInner}>
@@ -328,7 +346,7 @@ export default function OnboardingScreen() {
               </View>
             </LinearGradient>
           </Animated.View>
-          <Animated.View style={[styles.speechBubble, bubbleAnimatedStyle]}>
+          <Animated.View style={[styles.speechBubble, { maxWidth: screenWidth - 60 }, bubbleAnimatedStyle]}>
             <View style={styles.speechBubbleArrow} />
             <Text style={styles.speechText}>
               {displayedMessage}
@@ -374,14 +392,12 @@ const styles = StyleSheet.create({
   genieGlow: { position: 'absolute', width: 200, height: 200, top: 0 },
   genieGlowGradient: { width: '100%', height: '100%', borderRadius: 100 },
   sparkle: { position: 'absolute', fontSize: 20 },
-  sparkle1: { top: 20, left: width * 0.15 },
-  sparkle2: { top: 50, right: width * 0.12 },
   genieContainer: { marginBottom: 16 },
   genieRing: { width: 120, height: 120, borderRadius: 60, padding: 4, alignItems: 'center', justifyContent: 'center', ...theme.shadows.genie },
   genieInner: { width: 112, height: 112, borderRadius: 56, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.2)' },
   genieMascot: { width: 72, height: 72 },
-  speechBubble: { backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 16, paddingHorizontal: 20, maxWidth: width - 60, borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.15)', position: 'relative' },
-  speechBubbleArrow: { position: 'absolute', top: -10, left: '50%', marginLeft: -10, width: 0, height: 0, borderLeftWidth: 10, borderRightWidth: 10, borderBottomWidth: 10, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: theme.backgroundSecondary },
+  speechBubble: { backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 16, paddingHorizontal: 20, borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.15)', position: 'relative' },
+  speechBubbleArrow: { position: 'absolute', top: -10, alignSelf: 'center', width: 0, height: 0, borderLeftWidth: 10, borderRightWidth: 10, borderBottomWidth: 10, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: theme.backgroundSecondary },
   speechText: { fontSize: 15, color: theme.textPrimary, lineHeight: 22, textAlign: 'center' },
   typingCursor: { color: theme.primary, fontWeight: '700' },
 
@@ -420,7 +436,7 @@ const styles = StyleSheet.create({
 
   // Spice
   spiceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  spiceCard: { width: (width - 52) / 2, backgroundColor: theme.backgroundSecondary, borderRadius: theme.borderRadius.lg, padding: 20, alignItems: 'center', position: 'relative', overflow: 'hidden' },
+  spiceCard: { backgroundColor: theme.backgroundSecondary, borderRadius: theme.borderRadius.lg, padding: 20, alignItems: 'center', position: 'relative', overflow: 'hidden' },
   spiceCardActive: { backgroundColor: 'rgba(251, 191, 36, 0.1)' },
   spiceEmoji: { fontSize: 32, marginBottom: 8 },
   spiceLabel: { fontSize: 15, fontWeight: '600', color: theme.textPrimary },

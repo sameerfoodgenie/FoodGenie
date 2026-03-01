@@ -30,10 +30,14 @@ import { theme } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
 import ModePromptModal from '../../components/ModePromptModal';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const RING_SIZE = Math.min(SCREEN_WIDTH * 0.72, 310);
-const INNER_SIZE = RING_SIZE - 16;
-const MASCOT_SIZE = INNER_SIZE * 0.58;
+function getScreenWidth() {
+  try {
+    const w = Dimensions.get('window').width;
+    return w > 0 ? w : 375;
+  } catch {
+    return 375;
+  }
+}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -44,6 +48,21 @@ export default function HomeScreen() {
   const [guidedQuery, setGuidedQuery] = useState('');
   const hasRedirected = useRef(false);
   const isNavigating = useRef(false);
+  const [screenWidth, setScreenWidth] = useState(getScreenWidth);
+
+  useEffect(() => {
+    const update = () => {
+      const w = Dimensions.get('window').width;
+      if (w > 0) setScreenWidth(w);
+    };
+    update();
+    const sub = Dimensions.addEventListener('change', update);
+    return () => sub?.remove();
+  }, []);
+
+  const RING_SIZE = Math.max(120, Math.min(screenWidth * 0.72, 310));
+  const INNER_SIZE = Math.max(100, RING_SIZE - 16);
+  const MASCOT_SIZE = Math.max(60, INNER_SIZE * 0.58);
 
   // Animations
   const floatY = useSharedValue(0);
@@ -208,11 +227,11 @@ export default function HomeScreen() {
 
           {/* Hero */}
           <View style={styles.heroContainer}>
-            <Animated.View style={[styles.pulseRing, animatedPulse]} />
-            <Animated.View style={[styles.glowContainer, animatedGlow]}>
+            <Animated.View style={[styles.pulseRing, animatedPulse, { width: RING_SIZE + 50, height: RING_SIZE + 50, borderRadius: (RING_SIZE + 50) / 2 }]} />
+            <Animated.View style={[styles.glowContainer, animatedGlow, { width: RING_SIZE + 120, height: RING_SIZE + 120 }]}>
               <LinearGradient
                 colors={['rgba(251, 191, 36, 0)', 'rgba(251, 191, 36, 0.45)', 'rgba(245, 158, 11, 0.35)', 'rgba(251, 191, 36, 0)']}
-                style={styles.glow}
+                style={{ width: RING_SIZE + 120, height: RING_SIZE + 120, borderRadius: (RING_SIZE + 120) / 2 }}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               />
@@ -232,12 +251,17 @@ export default function HomeScreen() {
             {/* Ring button */}
             <Animated.View style={animatedFloat}>
               <Pressable onPress={handleAskGenie} style={({ pressed }) => [styles.genieButtonWrapper, pressed && { opacity: 0.9 }]}>
-                <View style={styles.outerRing}>
-                  <LinearGradient colors={theme.gradients.goldShine} style={styles.genieButton} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                    <View style={styles.innerCircle}>
-                      <Animated.View style={[styles.innerGlowEffect, animatedInnerGlow]} />
-                      <Image source={require('../../assets/images/genie-mascot.png')} style={styles.genieMascot} contentFit="contain" />
-                      <View style={styles.micBadge}>
+                <View style={[styles.outerRing, { borderRadius: RING_SIZE / 2 }]}>
+                  <LinearGradient
+                    colors={theme.gradients.goldShine}
+                    style={[styles.genieButton, { width: RING_SIZE, height: RING_SIZE, borderRadius: RING_SIZE / 2 }]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <View style={[styles.innerCircle, { width: INNER_SIZE, height: INNER_SIZE, borderRadius: INNER_SIZE / 2 }]}>
+                      <Animated.View style={[styles.innerGlowEffect, animatedInnerGlow, { borderRadius: INNER_SIZE / 2 }]} />
+                      <Image source={require('../../assets/images/genie-mascot.png')} style={{ width: MASCOT_SIZE, height: MASCOT_SIZE }} contentFit="contain" />
+                      <View style={[styles.micBadge, { bottom: INNER_SIZE * 0.1, right: INNER_SIZE * 0.1 }]}>
                         <LinearGradient colors={theme.gradients.gold} style={styles.micBadgeGradient}>
                           <MaterialIcons name="mic" size={18} color={theme.textOnPrimary} />
                         </LinearGradient>
@@ -372,21 +396,19 @@ const styles = StyleSheet.create({
   profileButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: theme.backgroundTertiary, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.25)' },
 
   heroContainer: { alignItems: 'center', justifyContent: 'center', position: 'relative', paddingVertical: 20 },
-  pulseRing: { position: 'absolute', width: RING_SIZE + 50, height: RING_SIZE + 50, borderRadius: (RING_SIZE + 50) / 2, borderWidth: 1.5, borderColor: 'rgba(251, 191, 36, 0.25)' },
-  glowContainer: { position: 'absolute', width: RING_SIZE + 120, height: RING_SIZE + 120, alignItems: 'center', justifyContent: 'center' },
-  glow: { width: RING_SIZE + 120, height: RING_SIZE + 120, borderRadius: (RING_SIZE + 120) / 2 },
+  pulseRing: { position: 'absolute', borderWidth: 1.5, borderColor: 'rgba(251, 191, 36, 0.25)' },
+  glowContainer: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   sparkle: { position: 'absolute', zIndex: 5 },
   sparkle1: { top: 0, right: 20 },
   sparkle2: { bottom: 70, left: 10 },
   sparkle3: { top: 60, left: 5 },
   sparkleEmoji: { fontSize: 28 },
   genieButtonWrapper: { alignItems: 'center' },
-  outerRing: { borderRadius: RING_SIZE / 2, padding: 4, ...theme.shadows.genie },
-  genieButton: { width: RING_SIZE, height: RING_SIZE, borderRadius: RING_SIZE / 2, alignItems: 'center', justifyContent: 'center', padding: 6 },
-  innerCircle: { width: INNER_SIZE, height: INNER_SIZE, borderRadius: INNER_SIZE / 2, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.2)' },
-  innerGlowEffect: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(251, 191, 36, 0.15)', borderRadius: INNER_SIZE / 2 },
-  genieMascot: { width: MASCOT_SIZE, height: MASCOT_SIZE },
-  micBadge: { position: 'absolute', bottom: INNER_SIZE * 0.1, right: INNER_SIZE * 0.1, borderRadius: 22, overflow: 'hidden', ...theme.shadows.card },
+  outerRing: { padding: 4, ...theme.shadows.genie },
+  genieButton: { alignItems: 'center', justifyContent: 'center', padding: 6 },
+  innerCircle: { backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.2)' },
+  innerGlowEffect: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(251, 191, 36, 0.15)' },
+  micBadge: { position: 'absolute', borderRadius: 22, overflow: 'hidden', ...theme.shadows.card },
   micBadgeGradient: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
 
   labelContainer: { alignItems: 'center', marginTop: 20 },

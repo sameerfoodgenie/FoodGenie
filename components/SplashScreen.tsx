@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
@@ -15,21 +15,53 @@ import Animated, {
 } from 'react-native-reanimated';
 import { theme } from '../constants/theme';
 
-const { width, height } = Dimensions.get('window');
-
 interface SplashScreenProps {
   onFinish: () => void;
 }
 
+function getSafeWidth() {
+  try {
+    const w = Dimensions.get('window').width;
+    return w > 0 ? w : 375;
+  } catch {
+    return 375;
+  }
+}
+
+function getSafeHeight() {
+  try {
+    const h = Dimensions.get('window').height;
+    return h > 0 ? h : 812;
+  } catch {
+    return 812;
+  }
+}
+
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
+  const [dims, setDims] = useState({ width: getSafeWidth(), height: getSafeHeight() });
+
+  useEffect(() => {
+    const update = () => {
+      const w = Dimensions.get('window').width;
+      const h = Dimensions.get('window').height;
+      if (w > 0 && h > 0) setDims({ width: w, height: h });
+    };
+    update();
+    const sub = Dimensions.addEventListener('change', update);
+    return () => sub?.remove();
+  }, []);
+
+  const screenWidth = dims.width;
+  const screenHeight = dims.height;
+
   // Animation values
   const logoScale = useSharedValue(0.3);
   const logoOpacity = useSharedValue(0);
   const logoRotate = useSharedValue(-10);
   const ringScale = useSharedValue(0.5);
   const ringOpacity = useSharedValue(0);
-  const shimmer1 = useSharedValue(-width);
-  const shimmer2 = useSharedValue(-width);
+  const shimmer1 = useSharedValue(-screenWidth);
+  const shimmer2 = useSharedValue(-screenWidth);
   const sparkle1Opacity = useSharedValue(0);
   const sparkle2Opacity = useSharedValue(0);
   const sparkle3Opacity = useSharedValue(0);
@@ -63,14 +95,14 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     // Shimmer effects
     shimmer1.value = withDelay(400,
       withRepeat(
-        withTiming(width * 2, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+        withTiming(screenWidth * 2, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
         -1,
         false
       )
     );
     shimmer2.value = withDelay(700,
       withRepeat(
-        withTiming(width * 2, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+        withTiming(screenWidth * 2, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
         -1,
         false
       )
@@ -78,44 +110,16 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
 
     // Sparkles
     sparkle1Opacity.value = withDelay(600,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration: 400 }),
-          withTiming(0.3, { duration: 400 })
-        ),
-        -1,
-        true
-      )
+      withRepeat(withSequence(withTiming(1, { duration: 400 }), withTiming(0.3, { duration: 400 })), -1, true)
     );
     sparkle2Opacity.value = withDelay(750,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration: 350 }),
-          withTiming(0.2, { duration: 350 })
-        ),
-        -1,
-        true
-      )
+      withRepeat(withSequence(withTiming(1, { duration: 350 }), withTiming(0.2, { duration: 350 })), -1, true)
     );
     sparkle3Opacity.value = withDelay(500,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration: 450 }),
-          withTiming(0.4, { duration: 450 })
-        ),
-        -1,
-        true
-      )
+      withRepeat(withSequence(withTiming(1, { duration: 450 }), withTiming(0.4, { duration: 450 })), -1, true)
     );
     sparkle4Opacity.value = withDelay(850,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration: 380 }),
-          withTiming(0.2, { duration: 380 })
-        ),
-        -1,
-        true
-      )
+      withRepeat(withSequence(withTiming(1, { duration: 380 }), withTiming(0.2, { duration: 380 })), -1, true)
     );
 
     // Text animations
@@ -203,7 +207,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
             colors={['transparent', 'rgba(251, 191, 36, 0.15)', 'transparent']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={styles.shimmer}
+            style={{ width: screenWidth * 0.5, height: screenHeight }}
           />
         </Animated.View>
         <Animated.View style={[styles.shimmerContainer, shimmer2Style]}>
@@ -211,7 +215,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
             colors={['transparent', 'rgba(253, 224, 71, 0.1)', 'transparent']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={styles.shimmer2}
+            style={{ width: screenWidth * 0.3, height: screenHeight }}
           />
         </Animated.View>
 
@@ -290,14 +294,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-  },
-  shimmer: {
-    width: width * 0.5,
-    height: height,
-  },
-  shimmer2: {
-    width: width * 0.3,
-    height: height,
   },
   sparkle: {
     position: 'absolute',
