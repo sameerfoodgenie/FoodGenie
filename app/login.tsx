@@ -47,13 +47,17 @@ export default function LoginScreen() {
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const { error } = await sendOTP(email.trim());
-    if (error) {
-      showAlert('Error', error);
-      return;
+    try {
+      const { error } = await sendOTP(email.trim());
+      if (error) {
+        showAlert('Error', error);
+        return;
+      }
+      showAlert('Code Sent', 'Check your email for the verification code');
+      setStage('otp');
+    } catch (e: any) {
+      showAlert('Error', e?.message || 'Failed to send code. Please try again.');
     }
-    showAlert('Code Sent', 'Check your email for the verification code');
-    setStage('otp');
   };
 
   const handleVerifyOTP = async () => {
@@ -76,10 +80,14 @@ export default function LoginScreen() {
       }
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const { error } = await verifyOTPAndLogin(email.trim(), otp.trim(), isNewUser ? { password } : undefined);
-    if (error) {
-      showAlert('Error', error);
-      return;
+    try {
+      const { error } = await verifyOTPAndLogin(email.trim(), otp.trim(), isNewUser ? { password } : undefined);
+      if (error) {
+        showAlert('Verification Failed', error);
+        return;
+      }
+    } catch (e: any) {
+      showAlert('Verification Failed', e?.message || 'Something went wrong. Please try again.');
     }
     // AuthRouter handles navigation automatically
   };
@@ -90,11 +98,19 @@ export default function LoginScreen() {
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const { error } = await signInWithPassword(email.trim(), password);
-    if (error) {
-      showAlert('Error', error);
-      return;
+    try {
+      const { error } = await signInWithPassword(email.trim(), password);
+      if (error) {
+        // On mobile, session may already be set despite error string
+        // Wait briefly and check if user state updated
+        await new Promise(resolve => setTimeout(resolve, 500));
+        showAlert('Sign In Failed', error);
+        return;
+      }
+    } catch (e: any) {
+      showAlert('Sign In Failed', e?.message || 'Something went wrong. Please try again.');
     }
+    // AuthRouter handles navigation automatically
   };
 
   const handleGoogleLogin = async () => {
