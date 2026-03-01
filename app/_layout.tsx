@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -21,89 +21,54 @@ export default function RootLayout() {
           <AppProvider>
             <StatusBar style="light" />
             <View style={styles.root}>
-              {/* Always render Stack so auth + navigation initialize immediately */}
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="index" options={{ headerShown: false }} />
-                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen
                   name="login"
-                  options={{
-                    presentation: 'fullScreenModal',
-                    animation: 'fade',
-                  }}
+                  options={{ presentation: 'fullScreenModal', animation: 'fade' }}
                 />
                 <Stack.Screen
                   name="onboarding"
-                  options={{
-                    presentation: 'fullScreenModal',
-                    animation: 'fade',
-                  }}
+                  options={{ presentation: 'fullScreenModal', animation: 'fade' }}
                 />
                 <Stack.Screen
                   name="ai-thinking"
-                  options={{
-                    presentation: 'fullScreenModal',
-                    animation: 'fade',
-                  }}
+                  options={{ presentation: 'fullScreenModal', animation: 'fade' }}
                 />
                 <Stack.Screen
                   name="results"
-                  options={{
-                    presentation: 'card',
-                    animation: 'slide_from_right',
-                  }}
+                  options={{ presentation: 'card', animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                   name="decision-lens"
-                  options={{
-                    presentation: 'card',
-                    animation: 'slide_from_bottom',
-                  }}
+                  options={{ presentation: 'card', animation: 'slide_from_bottom' }}
                 />
                 <Stack.Screen
                   name="recommendations"
-                  options={{
-                    presentation: 'card',
-                    animation: 'slide_from_right',
-                  }}
+                  options={{ presentation: 'card', animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                   name="dish/[id]"
-                  options={{
-                    presentation: 'card',
-                    animation: 'slide_from_right',
-                  }}
+                  options={{ presentation: 'card', animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                   name="trust-profile"
-                  options={{
-                    presentation: 'modal',
-                    animation: 'slide_from_bottom',
-                  }}
+                  options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
                 />
                 <Stack.Screen
                   name="voice-chat"
-                  options={{
-                    presentation: 'fullScreenModal',
-                    animation: 'slide_from_bottom',
-                  }}
+                  options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
                 />
                 <Stack.Screen
                   name="daily-meals"
-                  options={{
-                    presentation: 'card',
-                    animation: 'slide_from_right',
-                  }}
+                  options={{ presentation: 'card', animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                   name="partner-apps"
-                  options={{
-                    presentation: 'card',
-                    animation: 'slide_from_right',
-                  }}
+                  options={{ presentation: 'card', animation: 'slide_from_right' }}
                 />
               </Stack>
-              {/* Splash overlays on top — Stack is still mounted underneath */}
               {showSplash ? <SplashScreen onFinish={handleSplashFinish} /> : null}
             </View>
           </AppProvider>
@@ -114,7 +79,5 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
+  root: { flex: 1 },
 });

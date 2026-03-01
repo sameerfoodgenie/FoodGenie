@@ -92,28 +92,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Load from Supabase when user changes
   useEffect(() => {
-    if (user?.id) {
-      // Prevent duplicate loads for the same user
-      if (lastUserId.current === user.id && prefsLoaded) return;
-      if (isLoadingRef.current) return;
-      lastUserId.current = user.id;
-      loadFromDB(user.id);
-    } else {
+    if (!user?.id) {
+      // User logged out or not logged in
       lastUserId.current = null;
       setPreferences(defaultPreferences);
       setBehavior(null);
       setPrefsLoaded(false);
+      return;
     }
+
+    // Prevent duplicate loads for the same user
+    if (lastUserId.current === user.id && prefsLoaded) return;
+    if (isLoadingRef.current) return;
+
+    lastUserId.current = user.id;
+    loadFromDB(user.id);
   }, [user?.id]);
 
   const loadFromDB = async (userId: string) => {
     if (isLoadingRef.current) return;
     isLoadingRef.current = true;
     try {
-      const [dbPrefs, dbBehavior] = await Promise.all([
-        loadPreferences(userId).catch(() => null),
-        loadBehavior(userId).catch(() => null),
+      const results = await Promise.allSettled([
+        loadPreferences(userId),
+        loadBehavior(userId),
       ]);
+
+      const dbPrefs = results[0].status === 'fulfilled' ? results[0].value : null;
+      const dbBehavior = results[1].status === 'fulfilled' ? results[1].value : null;
 
       if (dbPrefs) {
         setPreferences({
@@ -197,7 +203,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     updatePreferences({ mode });
     if (!user?.id) return;
     try {
-      await Promise.all([
+      await Promise.allSettled([
         savePreferences(user.id, { mode }),
         saveBehavior(user.id, { preferred_mode: mode }),
       ]);

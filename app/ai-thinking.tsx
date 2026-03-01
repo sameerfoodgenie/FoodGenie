@@ -17,18 +17,18 @@ import { theme } from '../constants/theme';
 import { useApp } from '../contexts/AppContext';
 import { processAIRequest, getAnalysisText } from '../services/aiEngine';
 
+const MESSAGES = [
+  'Checking chef-approved kitchens...',
+  'Filtering by your budget range...',
+  'Ranking by confidence scores...',
+];
+
 export default function AIThinkingScreen() {
   const router = useRouter();
   const { preferences, currentQuery, setAiResults, incrementSession } = useApp();
   const [messageIndex, setMessageIndex] = useState(0);
   const hasNavigated = useRef(false);
-  const [displayMessage, setDisplayMessage] = useState('Checking chef-approved kitchens...');
-
-  const messagesRef = useRef([
-    'Checking chef-approved kitchens...',
-    'Filtering by your budget range...',
-    'Ranking by confidence...',
-  ]);
+  const messagesRef = useRef<string[]>(MESSAGES);
 
   const scale = useSharedValue(1);
   const rotate = useSharedValue(0);
@@ -45,10 +45,9 @@ export default function AIThinkingScreen() {
         const dynamicMessages = getAnalysisText(currentQuery);
         if (dynamicMessages && dynamicMessages.length > 0) {
           messagesRef.current = dynamicMessages;
-          setDisplayMessage(dynamicMessages[0]);
         }
       } catch (e) {
-        console.log('Error generating analysis text:', e);
+        // Use default messages
       }
     }
 
@@ -68,8 +67,12 @@ export default function AIThinkingScreen() {
 
     const animateDots = () => {
       dotScale1.value = withSequence(withTiming(1.5, { duration: 300 }), withTiming(1, { duration: 300 }));
-      setTimeout(() => { dotScale2.value = withSequence(withTiming(1.5, { duration: 300 }), withTiming(1, { duration: 300 })); }, 200);
-      setTimeout(() => { dotScale3.value = withSequence(withTiming(1.5, { duration: 300 }), withTiming(1, { duration: 300 })); }, 400);
+      setTimeout(() => {
+        dotScale2.value = withSequence(withTiming(1.5, { duration: 300 }), withTiming(1, { duration: 300 }));
+      }, 200);
+      setTimeout(() => {
+        dotScale3.value = withSequence(withTiming(1.5, { duration: 300 }), withTiming(1, { duration: 300 }));
+      }, 400);
     };
     animateDots();
     const dotInterval = setInterval(animateDots, 1200);
@@ -78,9 +81,7 @@ export default function AIThinkingScreen() {
     const messageInterval = setInterval(() => {
       setMessageIndex(prev => {
         const msgs = messagesRef.current;
-        const next = (prev + 1) % msgs.length;
-        setDisplayMessage(msgs[next]);
-        return next;
+        return (prev + 1) % msgs.length;
       });
     }, 2500);
 
@@ -107,7 +108,11 @@ export default function AIThinkingScreen() {
 
       if (!hasNavigated.current) {
         hasNavigated.current = true;
-        router.replace('/results');
+        try {
+          router.replace('/results');
+        } catch (e) {
+          console.log('Navigation error:', e);
+        }
       }
     }, 2500);
 
@@ -115,7 +120,11 @@ export default function AIThinkingScreen() {
     const failsafe = setTimeout(() => {
       if (!hasNavigated.current) {
         hasNavigated.current = true;
-        router.replace('/results');
+        try {
+          router.replace('/results');
+        } catch (e) {
+          console.log('Failsafe navigation error:', e);
+        }
       }
     }, 6000);
 
@@ -126,6 +135,8 @@ export default function AIThinkingScreen() {
       clearTimeout(failsafe);
     };
   }, []);
+
+  const displayMessage = messagesRef.current[messageIndex % messagesRef.current.length] || MESSAGES[0];
 
   const mascotStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }, { rotate: `${rotate.value}deg` }],
@@ -139,7 +150,11 @@ export default function AIThinkingScreen() {
       <View style={styles.content}>
         <Animated.View style={mascotStyle}>
           <View style={styles.mascotContainer}>
-            <Image source={require('../assets/images/genie-mascot.png')} style={styles.mascot} contentFit="contain" />
+            <Image
+              source={require('../assets/images/genie-mascot.png')}
+              style={styles.mascot}
+              contentFit="contain"
+            />
           </View>
         </Animated.View>
 
@@ -149,14 +164,7 @@ export default function AIThinkingScreen() {
           <Animated.View style={[styles.dot, dot3Style]} />
         </View>
 
-        <Animated.Text
-          key={`msg-${messageIndex}`}
-          entering={FadeIn.duration(300)}
-          exiting={FadeOut.duration(300)}
-          style={styles.message}
-        >
-          {displayMessage}
-        </Animated.Text>
+        <Text style={styles.message}>{displayMessage}</Text>
 
         <Text style={styles.trustNote}>
           Finding chef-verified, fairly priced Top 3 matches
@@ -169,7 +177,15 @@ export default function AIThinkingScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   content: { alignItems: 'center', paddingHorizontal: 40 },
-  mascotContainer: { width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 40 },
+  mascotContainer: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 40,
+  },
   mascot: { width: 120, height: 120 },
   dotsContainer: { flexDirection: 'row', gap: 12, marginBottom: 32 },
   dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.8)' },
