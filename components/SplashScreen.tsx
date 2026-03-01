@@ -91,16 +91,24 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     textTranslateY.value = withDelay(500, withTiming(0, { duration: 500, easing: Easing.out(Easing.ease) }));
     taglineOpacity.value = withDelay(800, withTiming(1, { duration: 500 }));
 
+    // Start fade-out after animation completes
     const timeout = setTimeout(() => {
       fadeOut.value = withTiming(0, { duration: 500 }, (finished) => {
-        if (finished) { runOnJS(onFinish)(); }
+        if (finished) {
+          runOnJS(onFinish)();
+        }
       });
     }, 2800);
 
-    // Failsafe: ensure splash always finishes
-    const failsafe = setTimeout(() => { onFinish(); }, 4000);
+    // Failsafe: always call onFinish
+    const failsafe = setTimeout(() => {
+      onFinish();
+    }, 4000);
 
-    return () => { clearTimeout(timeout); clearTimeout(failsafe); };
+    return () => {
+      clearTimeout(timeout);
+      clearTimeout(failsafe);
+    };
   }, []);
 
   const logoAnimatedStyle = useAnimatedStyle(() => ({
@@ -136,7 +144,6 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const taglineAnimatedStyle = useAnimatedStyle(() => ({ opacity: taglineOpacity.value }));
   const containerAnimatedStyle = useAnimatedStyle(() => ({
     opacity: fadeOut.value,
-    pointerEvents: fadeOut.value < 0.1 ? 'none' : 'auto',
   }));
 
   return (
@@ -191,7 +198,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
 }
 
 const styles = StyleSheet.create({
-  container: { ...StyleSheet.absoluteFillObject, zIndex: 100 },
+  container: { flex: 1 },
   gradient: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   shimmerContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   sparkle: { position: 'absolute', fontSize: 28 },
