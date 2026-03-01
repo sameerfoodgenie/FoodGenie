@@ -100,7 +100,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       lastUserId.current = null;
       setPreferences(defaultPreferences);
       setBehavior(null);
-      setPrefsLoaded(true); // CRITICAL: Mark as loaded even without user
+      setPrefsLoaded(true);
       return;
     }
 
@@ -109,12 +109,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (isLoadingRef.current) return;
 
     lastUserId.current = user.id;
+    isLoadingRef.current = true;
+
     loadFromDB(user.id);
   }, [user?.id, authLoading]);
 
+  // Failsafe: if prefsLoaded is still false after 4 seconds, force it
+  useEffect(() => {
+    if (prefsLoaded) return;
+    const timer = setTimeout(() => {
+      setPrefsLoaded(true);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [prefsLoaded]);
+
   const loadFromDB = async (userId: string) => {
-    if (isLoadingRef.current) return;
-    isLoadingRef.current = true;
     try {
       const results = await Promise.allSettled([
         loadPreferences(userId),

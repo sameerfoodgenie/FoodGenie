@@ -32,11 +32,11 @@ function MainApp() {
 export default function RootLayout() {
   const [appLoading, setAppLoading] = useState(true);
 
-  // 5-second failsafe: force loading to false no matter what
+  // 3-second failsafe: force loading to false no matter what
   useEffect(() => {
     const failsafe = setTimeout(() => {
       setAppLoading(false);
-    }, 5000);
+    }, 3000);
     return () => clearTimeout(failsafe);
   }, []);
 
