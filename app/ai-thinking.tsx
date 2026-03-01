@@ -23,26 +23,23 @@ const DEFAULT_MESSAGES = [
 
 export default function AIThinkingScreen() {
   const router = useRouter();
-  const appContext = useApp();
+  const {
+    preferences,
+    currentQuery,
+    setAiResults,
+    incrementSession,
+  } = useApp();
   const [messageIndex, setMessageIndex] = useState(0);
-  const [displayMessages, setDisplayMessages] = useState<string[]>(DEFAULT_MESSAGES);
-  const hasNavigated = useRef(false);
-
-  // Capture current values on mount via ref to avoid stale closures
-  const contextRef = useRef({
-    preferences: appContext.preferences,
-    currentQuery: appContext.currentQuery,
-    setAiResults: appContext.setAiResults,
-    incrementSession: appContext.incrementSession,
+  const [displayMessages] = useState<string[]>(() => {
+    if (currentQuery) {
+      try {
+        const dynamic = getAnalysisText(currentQuery);
+        if (dynamic && dynamic.length > 0) return dynamic;
+      } catch { /* use defaults */ }
+    }
+    return DEFAULT_MESSAGES;
   });
-
-  // Update ref on every render so we always have latest
-  contextRef.current = {
-    preferences: appContext.preferences,
-    currentQuery: appContext.currentQuery,
-    setAiResults: appContext.setAiResults,
-    incrementSession: appContext.incrementSession,
-  };
+  const hasNavigated = useRef(false);
 
   const scale = useSharedValue(1);
   const rotate = useSharedValue(0);
@@ -52,19 +49,6 @@ export default function AIThinkingScreen() {
 
   useEffect(() => {
     if (hasNavigated.current) return;
-
-    // Generate dynamic messages based on query
-    const query = contextRef.current.currentQuery || '';
-    if (query) {
-      try {
-        const dynamic = getAnalysisText(query);
-        if (dynamic && dynamic.length > 0) {
-          setDisplayMessages(dynamic);
-        }
-      } catch {
-        // Use defaults
-      }
-    }
 
     // Start animations
     scale.value = withRepeat(
@@ -97,37 +81,35 @@ export default function AIThinkingScreen() {
       setMessageIndex(prev => prev + 1);
     }, 2000);
 
-    // Process AI and navigate after delay
+    // Process AI request
     const processTimer = setTimeout(() => {
       if (hasNavigated.current) return;
 
-      const ctx = contextRef.current;
       try {
         const results = processAIRequest({
-          query: ctx.currentQuery || '',
-          diet: ctx.preferences.diet,
-          budgetMin: ctx.preferences.budgetMin,
-          budgetMax: ctx.preferences.budgetMax,
-          spiceLevel: ctx.preferences.spiceLevel,
-          mode: ctx.preferences.mode,
+          query: currentQuery || '',
+          diet: preferences.diet,
+          budgetMin: preferences.budgetMin,
+          budgetMax: preferences.budgetMax,
+          spiceLevel: preferences.spiceLevel,
+          mode: preferences.mode,
         });
-        ctx.setAiResults(results);
+        setAiResults(results);
       } catch (e) {
         console.log('AI processing error:', e);
-        ctx.setAiResults([]);
+        setAiResults([]);
       }
 
       // Non-blocking session increment
-      ctx.incrementSession().catch(() => {});
+      incrementSession().catch(() => {});
 
-      // Navigate to results — use back + push instead of replace
-      // because replace on a fullScreenModal can hang navigation
-      navigateToResults();
+      // Navigate to results using replace (not back+push)
+      goToResults();
     }, 2500);
 
-    // Failsafe
+    // Failsafe navigation
     const failsafe = setTimeout(() => {
-      navigateToResults();
+      goToResults();
     }, 6000);
 
     return () => {
@@ -138,29 +120,13 @@ export default function AIThinkingScreen() {
     };
   }, []);
 
-  const navigateToResults = () => {
+  const goToResults = () => {
     if (hasNavigated.current) return;
     hasNavigated.current = true;
     try {
-      // Dismiss the modal first, then push results after a tick
-      if (router.canGoBack()) {
-        router.back();
-      }
-      setTimeout(() => {
-        try {
-          router.push('/results');
-        } catch (e) {
-          console.log('Push results error:', e);
-        }
-      }, 100);
+      router.replace('/results');
     } catch (e) {
       console.log('Navigation error:', e);
-      // Last resort: try direct replace
-      try {
-        router.replace('/results');
-      } catch (e2) {
-        console.log('Replace fallback error:', e2);
-      }
     }
   };
 

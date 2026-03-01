@@ -34,7 +34,7 @@ export default function RootLayout() {
                 />
                 <Stack.Screen
                   name="ai-thinking"
-                  options={{ headerShown: false, animation: 'fade' }}
+                  options={{ headerShown: false, animation: 'fade', gestureEnabled: false }}
                 />
                 <Stack.Screen
                   name="results"

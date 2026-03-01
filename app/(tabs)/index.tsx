@@ -30,15 +30,6 @@ import { theme } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
 import ModePromptModal from '../../components/ModePromptModal';
 
-function getScreenWidth() {
-  try {
-    const w = Dimensions.get('window').width;
-    return w > 0 ? w : 375;
-  } catch {
-    return 375;
-  }
-}
-
 export default function HomeScreen() {
   const router = useRouter();
   const { preferences, updatePreferences, updateMode, prefsLoaded, setCurrentQuery } = useApp();
@@ -48,7 +39,12 @@ export default function HomeScreen() {
   const [guidedQuery, setGuidedQuery] = useState('');
   const hasRedirected = useRef(false);
   const isNavigating = useRef(false);
-  const [screenWidth, setScreenWidth] = useState(getScreenWidth);
+  const [screenWidth, setScreenWidth] = useState(() => {
+    try {
+      const w = Dimensions.get('window').width;
+      return w > 0 ? w : 375;
+    } catch { return 375; }
+  });
 
   useEffect(() => {
     const update = () => {
@@ -115,11 +111,7 @@ export default function HomeScreen() {
     if (hasRedirected.current) return;
     hasRedirected.current = true;
     const timer = setTimeout(() => {
-      try {
-        router.push('/onboarding');
-      } catch (e) {
-        console.log('Navigation error:', e);
-      }
+      try { router.push('/onboarding'); } catch (e) { console.log('Nav error:', e); }
     }, 500);
     return () => clearTimeout(timer);
   }, [prefsLoaded, preferences.onboardingComplete]);
@@ -168,14 +160,15 @@ export default function HomeScreen() {
   const handleGuidedSubmit = useCallback(() => {
     if (isNavigating.current) return;
     isNavigating.current = true;
+    const query = guidedQuery.trim();
     setShowGuidedPrompt(false);
-    setCurrentQuery(guidedQuery);
+    setCurrentQuery(query);
     setGuidedQuery('');
-    // Small delay to let state settle before navigation
+    // Navigate after a tick so state updates propagate
     setTimeout(() => {
       try { router.push('/ai-thinking'); } catch (e) { console.log(e); }
       setTimeout(() => { isNavigating.current = false; }, 2000);
-    }, 150);
+    }, 200);
   }, [guidedQuery]);
 
   const handleVoiceInput = useCallback(() => {
@@ -235,13 +228,13 @@ export default function HomeScreen() {
 
             {/* Sparkles */}
             <Animated.View style={[styles.sparkle, styles.sparkle1, animatedSparkle]}>
-              <Text style={styles.sparkleEmoji}>✨</Text>
+              <Text style={styles.sparkleEmoji}>{"✨"}</Text>
             </Animated.View>
             <Animated.View style={[styles.sparkle, styles.sparkle2, animatedSparkle]}>
-              <Text style={styles.sparkleEmoji}>⭐</Text>
+              <Text style={styles.sparkleEmoji}>{"⭐"}</Text>
             </Animated.View>
             <Animated.View style={[styles.sparkle, styles.sparkle3, animatedSparkle]}>
-              <Text style={styles.sparkleEmoji}>💫</Text>
+              <Text style={styles.sparkleEmoji}>{"💫"}</Text>
             </Animated.View>
 
             {/* Ring button */}
@@ -322,7 +315,7 @@ export default function HomeScreen() {
         <View style={styles.guidedOverlay}>
           <View style={styles.guidedModal}>
             <View style={styles.guidedHeader}>
-              <Text style={styles.guidedEmoji}>🧞‍♂️</Text>
+              <Text style={styles.guidedEmoji}>{"🧞‍♂️"}</Text>
               <Text style={styles.guidedTitle}>What are you craving?</Text>
               <Text style={styles.guidedHint}>Feeling adventurous or want something safe?</Text>
             </View>
