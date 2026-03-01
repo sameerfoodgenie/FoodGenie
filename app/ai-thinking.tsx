@@ -10,14 +10,12 @@ import Animated, {
   withSequence,
   withTiming,
   Easing,
-  FadeIn,
-  FadeOut,
 } from 'react-native-reanimated';
 import { theme } from '../constants/theme';
 import { useApp } from '../contexts/AppContext';
 import { processAIRequest, getAnalysisText } from '../services/aiEngine';
 
-const MESSAGES = [
+const DEFAULT_MESSAGES = [
   'Checking chef-approved kitchens...',
   'Filtering by your budget range...',
   'Ranking by confidence scores...',
@@ -25,10 +23,26 @@ const MESSAGES = [
 
 export default function AIThinkingScreen() {
   const router = useRouter();
-  const { preferences, currentQuery, setAiResults, incrementSession } = useApp();
+  const appContext = useApp();
   const [messageIndex, setMessageIndex] = useState(0);
+  const [displayMessages, setDisplayMessages] = useState<string[]>(DEFAULT_MESSAGES);
   const hasNavigated = useRef(false);
-  const messagesRef = useRef<string[]>(MESSAGES);
+
+  // Capture current values on mount via ref to avoid stale closures
+  const contextRef = useRef({
+    preferences: appContext.preferences,
+    currentQuery: appContext.currentQuery,
+    setAiResults: appContext.setAiResults,
+    incrementSession: appContext.incrementSession,
+  });
+
+  // Update ref on every render so we always have latest
+  contextRef.current = {
+    preferences: appContext.preferences,
+    currentQuery: appContext.currentQuery,
+    setAiResults: appContext.setAiResults,
+    incrementSession: appContext.incrementSession,
+  };
 
   const scale = useSharedValue(1);
   const rotate = useSharedValue(0);
@@ -40,18 +54,19 @@ export default function AIThinkingScreen() {
     if (hasNavigated.current) return;
 
     // Generate dynamic messages based on query
-    if (currentQuery) {
+    const query = contextRef.current.currentQuery || '';
+    if (query) {
       try {
-        const dynamicMessages = getAnalysisText(currentQuery);
-        if (dynamicMessages && dynamicMessages.length > 0) {
-          messagesRef.current = dynamicMessages;
+        const dynamic = getAnalysisText(query);
+        if (dynamic && dynamic.length > 0) {
+          setDisplayMessages(dynamic);
         }
-      } catch (e) {
-        // Use default messages
+      } catch {
+        // Use defaults
       }
     }
 
-    // Animations
+    // Start animations
     scale.value = withRepeat(
       withSequence(
         withTiming(1.1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
@@ -77,55 +92,42 @@ export default function AIThinkingScreen() {
     animateDots();
     const dotInterval = setInterval(animateDots, 1200);
 
-    // Cycle through messages
+    // Cycle messages
     const messageInterval = setInterval(() => {
-      setMessageIndex(prev => {
-        const msgs = messagesRef.current;
-        return (prev + 1) % msgs.length;
-      });
-    }, 2500);
+      setMessageIndex(prev => prev + 1);
+    }, 2000);
 
-    // Process AI request and navigate
+    // Process AI and navigate after delay
     const processTimer = setTimeout(() => {
       if (hasNavigated.current) return;
+
+      const ctx = contextRef.current;
       try {
         const results = processAIRequest({
-          query: currentQuery || '',
-          diet: preferences.diet,
-          budgetMin: preferences.budgetMin,
-          budgetMax: preferences.budgetMax,
-          spiceLevel: preferences.spiceLevel,
-          mode: preferences.mode,
+          query: ctx.currentQuery || '',
+          diet: ctx.preferences.diet,
+          budgetMin: ctx.preferences.budgetMin,
+          budgetMax: ctx.preferences.budgetMax,
+          spiceLevel: ctx.preferences.spiceLevel,
+          mode: ctx.preferences.mode,
         });
-        setAiResults(results);
+        ctx.setAiResults(results);
       } catch (e) {
         console.log('AI processing error:', e);
-        setAiResults([]);
+        ctx.setAiResults([]);
       }
 
       // Non-blocking session increment
-      incrementSession().catch(() => {});
+      ctx.incrementSession().catch(() => {});
 
-      if (!hasNavigated.current) {
-        hasNavigated.current = true;
-        try {
-          router.replace('/results');
-        } catch (e) {
-          console.log('Navigation error:', e);
-        }
-      }
+      // Navigate to results — use back + push instead of replace
+      // because replace on a fullScreenModal can hang navigation
+      navigateToResults();
     }, 2500);
 
-    // Failsafe navigation
+    // Failsafe
     const failsafe = setTimeout(() => {
-      if (!hasNavigated.current) {
-        hasNavigated.current = true;
-        try {
-          router.replace('/results');
-        } catch (e) {
-          console.log('Failsafe navigation error:', e);
-        }
-      }
+      navigateToResults();
     }, 6000);
 
     return () => {
@@ -136,7 +138,33 @@ export default function AIThinkingScreen() {
     };
   }, []);
 
-  const displayMessage = messagesRef.current[messageIndex % messagesRef.current.length] || MESSAGES[0];
+  const navigateToResults = () => {
+    if (hasNavigated.current) return;
+    hasNavigated.current = true;
+    try {
+      // Dismiss the modal first, then push results after a tick
+      if (router.canGoBack()) {
+        router.back();
+      }
+      setTimeout(() => {
+        try {
+          router.push('/results');
+        } catch (e) {
+          console.log('Push results error:', e);
+        }
+      }, 100);
+    } catch (e) {
+      console.log('Navigation error:', e);
+      // Last resort: try direct replace
+      try {
+        router.replace('/results');
+      } catch (e2) {
+        console.log('Replace fallback error:', e2);
+      }
+    }
+  };
+
+  const currentMessage = displayMessages[messageIndex % displayMessages.length] || DEFAULT_MESSAGES[0];
 
   const mascotStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }, { rotate: `${rotate.value}deg` }],
@@ -164,7 +192,7 @@ export default function AIThinkingScreen() {
           <Animated.View style={[styles.dot, dot3Style]} />
         </View>
 
-        <Text style={styles.message}>{displayMessage}</Text>
+        <Text style={styles.message}>{currentMessage}</Text>
 
         <Text style={styles.trustNote}>
           Finding chef-verified, fairly priced Top 3 matches

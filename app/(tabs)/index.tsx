@@ -105,7 +105,7 @@ export default function HomeScreen() {
     }
   }, [prefsLoaded, preferences.sessionCount, preferences.mode]);
 
-  // Onboarding redirect - only once, with navigation guard
+  // Onboarding redirect - only once
   useEffect(() => {
     if (!prefsLoaded) return;
     if (preferences.onboardingComplete) {
@@ -146,27 +146,22 @@ export default function HomeScreen() {
   const handleAskGenie = useCallback(() => {
     if (isNavigating.current) return;
     isNavigating.current = true;
-    
-    try {
-      pressScale.value = withSequence(withSpring(0.93, { damping: 12 }), withSpring(1, { damping: 10 }));
 
-      if (!preferences.onboardingComplete) {
-        router.push('/onboarding');
-        setTimeout(() => { isNavigating.current = false; }, 1500);
-        return;
-      }
+    pressScale.value = withSequence(withSpring(0.93, { damping: 12 }), withSpring(1, { damping: 10 }));
 
-      if (preferences.mode === 'quick') {
-        setCurrentQuery('');
-        router.push('/ai-thinking');
-        setTimeout(() => { isNavigating.current = false; }, 1500);
-      } else {
-        isNavigating.current = false;
-        setShowGuidedPrompt(true);
-      }
-    } catch (e) {
-      console.log('Navigation error:', e);
+    if (!preferences.onboardingComplete) {
+      try { router.push('/onboarding'); } catch (e) { console.log(e); }
+      setTimeout(() => { isNavigating.current = false; }, 2000);
+      return;
+    }
+
+    if (preferences.mode === 'quick') {
+      setCurrentQuery('');
+      try { router.push('/ai-thinking'); } catch (e) { console.log(e); }
+      setTimeout(() => { isNavigating.current = false; }, 2000);
+    } else {
       isNavigating.current = false;
+      setShowGuidedPrompt(true);
     }
   }, [preferences.onboardingComplete, preferences.mode]);
 
@@ -176,22 +171,23 @@ export default function HomeScreen() {
     setShowGuidedPrompt(false);
     setCurrentQuery(guidedQuery);
     setGuidedQuery('');
-    router.push('/ai-thinking');
-    setTimeout(() => { isNavigating.current = false; }, 1500);
+    // Small delay to let state settle before navigation
+    setTimeout(() => {
+      try { router.push('/ai-thinking'); } catch (e) { console.log(e); }
+      setTimeout(() => { isNavigating.current = false; }, 2000);
+    }, 150);
   }, [guidedQuery]);
 
   const handleVoiceInput = useCallback(() => {
     if (isNavigating.current) return;
     isNavigating.current = true;
     setShowGuidedPrompt(false);
-    router.push('/voice-chat');
-    setTimeout(() => { isNavigating.current = false; }, 1500);
+    try { router.push('/voice-chat'); } catch (e) { console.log(e); }
+    setTimeout(() => { isNavigating.current = false; }, 2000);
   }, []);
 
   const handleModeSelect = useCallback(async (mode: 'quick' | 'guided') => {
-    try {
-      await updateMode(mode);
-    } catch { /* ignore */ }
+    try { await updateMode(mode); } catch { /* ignore */ }
   }, [updateMode]);
 
   if (!prefsLoaded) {

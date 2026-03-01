@@ -26,47 +26,47 @@ export default function RootLayout() {
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen
                   name="login"
-                  options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+                  options={{ headerShown: false, animation: 'fade' }}
                 />
                 <Stack.Screen
                   name="onboarding"
-                  options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+                  options={{ headerShown: false, animation: 'fade' }}
                 />
                 <Stack.Screen
                   name="ai-thinking"
-                  options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+                  options={{ headerShown: false, animation: 'fade' }}
                 />
                 <Stack.Screen
                   name="results"
-                  options={{ presentation: 'card', animation: 'slide_from_right' }}
+                  options={{ headerShown: false, animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                   name="decision-lens"
-                  options={{ presentation: 'card', animation: 'slide_from_bottom' }}
+                  options={{ headerShown: false, animation: 'slide_from_bottom' }}
                 />
                 <Stack.Screen
                   name="recommendations"
-                  options={{ presentation: 'card', animation: 'slide_from_right' }}
+                  options={{ headerShown: false, animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                   name="dish/[id]"
-                  options={{ presentation: 'card', animation: 'slide_from_right' }}
+                  options={{ headerShown: false, animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                   name="trust-profile"
-                  options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+                  options={{ headerShown: false, presentation: 'modal', animation: 'slide_from_bottom' }}
                 />
                 <Stack.Screen
                   name="voice-chat"
-                  options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
+                  options={{ headerShown: false, animation: 'slide_from_bottom' }}
                 />
                 <Stack.Screen
                   name="daily-meals"
-                  options={{ presentation: 'card', animation: 'slide_from_right' }}
+                  options={{ headerShown: false, animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                   name="partner-apps"
-                  options={{ presentation: 'card', animation: 'slide_from_right' }}
+                  options={{ headerShown: false, animation: 'slide_from_right' }}
                 />
               </Stack>
               {showSplash ? <SplashScreen onFinish={handleSplashFinish} /> : null}
