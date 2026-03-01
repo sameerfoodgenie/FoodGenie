@@ -16,7 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeInUp, FadeInRight } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeInUp, FadeInRight, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
 import { theme } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
 import ModePromptModal from '../../components/ModePromptModal';
@@ -38,6 +38,7 @@ const TOP_PICKS = [
     reason: 'Matches your taste profile perfectly',
     total: 310,
     emoji: '🍗',
+    verified: true,
   },
   {
     id: 'tp2',
@@ -46,6 +47,7 @@ const TOP_PICKS = [
     reason: 'High protein, within your budget',
     total: 250,
     emoji: '🥬',
+    verified: false,
   },
   {
     id: 'tp3',
@@ -54,6 +56,7 @@ const TOP_PICKS = [
     reason: 'Top rated, chef-verified kitchen',
     total: 360,
     emoji: '🍚',
+    verified: true,
   },
 ];
 
@@ -71,8 +74,15 @@ export default function HomeScreen() {
   const [showModePrompt, setShowModePrompt] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedChip, setSelectedChip] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const hasRedirected = useRef(false);
   const isNavigating = useRef(false);
+
+  // Shimmer animation for Get Matches button
+  const shimmerOpacity = useSharedValue(1);
+  const shimmerStyle = useAnimatedStyle(() => ({
+    opacity: shimmerOpacity.value,
+  }));
 
   const { preferences, prefsLoaded, updatePreferences, updateMode, setCurrentQuery } = app;
 
@@ -110,13 +120,24 @@ export default function HomeScreen() {
 
       const finalQuery = text || query.trim();
       setCurrentQuery(finalQuery);
-      setQuery('');
       setSelectedChip(null);
+      setIsSearching(true);
+      shimmerOpacity.value = withRepeat(
+        withSequence(
+          withTiming(0.4, { duration: 600 }),
+          withTiming(1, { duration: 600 }),
+        ),
+        -1,
+        false,
+      );
 
       setTimeout(() => {
+        setIsSearching(false);
+        setQuery('');
+        shimmerOpacity.value = 1;
         try { router.push('/ai-thinking'); } catch (e) { /* ignore */ }
         setTimeout(() => { isNavigating.current = false; }, 2000);
-      }, 150);
+      }, 1200);
     },
     [preferences.onboardingComplete, query, setCurrentQuery, router],
   );
@@ -192,7 +213,7 @@ export default function HomeScreen() {
                   </View>
                   <View style={styles.heroTitleBlock}>
                     <Text style={styles.heroTitle}>Ask FoodGenie</Text>
-                    <Text style={styles.heroSubtitle}>Tell me what you are craving</Text>
+                    <Text style={styles.heroSubtitle}>Describe your craving. I will find your best match.</Text>
                   </View>
                   {preferences.mode === 'quick' ? (
                     <View style={styles.modeBadge}>
@@ -217,18 +238,21 @@ export default function HomeScreen() {
                     />
                   </View>
                   <Pressable
-                    style={({ pressed }) => [styles.heroCTA, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+                    style={({ pressed }) => [styles.heroCTA, pressed && !isSearching && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
                     onPress={() => handleAskGenie()}
+                    disabled={isSearching}
                   >
-                    <LinearGradient
-                      colors={theme.gradients.goldShine}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.heroCTAGradient}
-                    >
-                      <MaterialIcons name="auto-awesome" size={18} color={theme.textOnPrimary} />
-                      <Text style={styles.heroCTAText}>Get Matches</Text>
-                    </LinearGradient>
+                    <Animated.View style={shimmerStyle}>
+                      <LinearGradient
+                        colors={theme.gradients.goldShine}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.heroCTAGradient}
+                      >
+                        <MaterialIcons name={isSearching ? 'hourglass-top' : 'auto-awesome'} size={18} color={theme.textOnPrimary} />
+                        <Text style={styles.heroCTAText}>{isSearching ? 'Finding...' : 'Get Matches'}</Text>
+                      </LinearGradient>
+                    </Animated.View>
                   </Pressable>
                 </View>
                 <Text style={styles.heroHint}>Example: "high protein dinner under ₹300"</Text>
@@ -264,16 +288,16 @@ export default function HomeScreen() {
             <Text style={styles.whySectionTitle}>Why FoodGenie</Text>
             <View style={styles.whyBadges}>
               {[
-                { icon: '✅', text: 'Chef-verified kitchens' },
-                { icon: '🛡️', text: 'Bias-free recommendations' },
-                { icon: '🚚', text: 'Order via partners' },
+                { icon: 'verified' as const, text: 'Chef-verified kitchens' },
+                { icon: 'shield' as const, text: 'Bias-free recommendations' },
+                { icon: 'local-shipping' as const, text: 'Order via partners' },
               ].map((badge, i) => (
                 <Animated.View
                   key={badge.text}
                   entering={FadeInRight.delay(450 + i * 80).duration(350)}
                 >
                   <View style={styles.whyPill}>
-                    <Text style={styles.whyPillIcon}>{badge.icon}</Text>
+                    <MaterialIcons name={badge.icon} size={14} color={theme.textMuted} />
                     <Text style={styles.whyPillText}>{badge.text}</Text>
                   </View>
                 </Animated.View>
@@ -298,6 +322,12 @@ export default function HomeScreen() {
                     style={({ pressed }) => [styles.pickCard, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
                     onPress={() => handleAskGenie(pick.name)}
                   >
+                    {pick.verified ? (
+                      <View style={styles.pickVerifiedBadge}>
+                        <MaterialIcons name="verified" size={11} color={theme.success} />
+                        <Text style={styles.pickVerifiedText}>Verified</Text>
+                      </View>
+                    ) : null}
                     <View style={styles.pickEmojiContainer}>
                       <Text style={styles.pickEmoji}>{pick.emoji}</Text>
                     </View>
@@ -305,9 +335,9 @@ export default function HomeScreen() {
                     <Text style={styles.pickRestaurant} numberOfLines={1}>{pick.restaurant}</Text>
                     <Text style={styles.pickReason} numberOfLines={2}>{pick.reason}</Text>
                     <View style={styles.pickFooter}>
-                      <Text style={styles.pickTotal}>~₹{pick.total}</Text>
+                      <Text style={styles.pickTotal}>Est. ₹{pick.total}</Text>
                       <View style={styles.pickOrderBtn}>
-                        <MaterialIcons name="storefront" size={12} color={theme.primary} />
+                        <MaterialIcons name="storefront" size={11} color={theme.primary} />
                         <Text style={styles.pickOrderText}>Order</Text>
                       </View>
                     </View>
@@ -524,20 +554,19 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginBottom: 12,
   },
-  whyBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  whyBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   whyPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(31,31,31,0.8)',
-    paddingHorizontal: 14,
-    paddingVertical: 9,
+    gap: 7,
+    backgroundColor: 'rgba(31,31,31,0.45)',
+    paddingHorizontal: 13,
+    paddingVertical: 8,
     borderRadius: theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: 'rgba(63,63,70,0.4)',
+    borderColor: 'rgba(63,63,70,0.25)',
   },
-  whyPillIcon: { fontSize: 14 },
-  whyPillText: { fontSize: 13, fontWeight: '500', color: theme.textSecondary },
+  whyPillText: { fontSize: 12, fontWeight: '500', color: theme.textMuted },
 
   // ── Top Picks ──
   topPicksSection: { marginBottom: 28 },
@@ -579,19 +608,32 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(63,63,70,0.3)',
     paddingTop: 12,
   },
-  pickTotal: { fontSize: 17, fontWeight: '700', color: theme.primary },
+  pickTotal: { fontSize: 17, fontWeight: '700', color: theme.textPrimary },
+  pickVerifiedBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(34,197,94,0.1)',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: theme.borderRadius.full,
+    zIndex: 1,
+  },
+  pickVerifiedText: { fontSize: 9, fontWeight: '700', color: theme.success, letterSpacing: 0.3 },
   pickOrderBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(251,191,36,0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     borderRadius: theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.25)',
+    borderColor: 'rgba(251,191,36,0.35)',
   },
-  pickOrderText: { fontSize: 11, fontWeight: '600', color: theme.primary },
+  pickOrderText: { fontSize: 10, fontWeight: '600', color: theme.primary },
 
   // ── Explore ──
   exploreSection: { paddingHorizontal: 20, marginBottom: 16 },
