@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/template';
 import { mockDishes, mockRestaurants, Dish, Restaurant, ChatMessage, initialChatMessages } from '../services/mockData';
 import { ConfidenceResult } from '../services/aiEngine';
@@ -12,7 +11,6 @@ import {
   trackIgnoredBestMatch,
   resetIgnoredCount,
   trackSpiceChoice,
-  UserPreferences as DBPreferences,
   UserBehavior,
 } from '../services/preferencesService';
 
@@ -90,12 +88,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const lastUserId = useRef<string | null>(null);
+  const isLoadingRef = useRef(false);
 
   // Load from Supabase when user changes
   useEffect(() => {
     if (user?.id) {
       // Prevent duplicate loads for the same user
       if (lastUserId.current === user.id && prefsLoaded) return;
+      if (isLoadingRef.current) return;
       lastUserId.current = user.id;
       loadFromDB(user.id);
     } else {
@@ -106,21 +106,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id]);
 
-  // Load cart from local storage
-  useEffect(() => {
-    AsyncStorage.getItem('foodgenie_cart').then(data => {
-      if (data) {
-        try { setCart(JSON.parse(data)); } catch { /* ignore parse errors */ }
-      }
-    }).catch(() => {});
-  }, []);
-
-  // Persist cart
-  useEffect(() => {
-    AsyncStorage.setItem('foodgenie_cart', JSON.stringify(cart)).catch(() => {});
-  }, [cart]);
-
   const loadFromDB = async (userId: string) => {
+    if (isLoadingRef.current) return;
+    isLoadingRef.current = true;
     try {
       const [dbPrefs, dbBehavior] = await Promise.all([
         loadPreferences(userId).catch(() => null),
@@ -147,6 +135,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.log('Error loading preferences:', e);
     } finally {
+      isLoadingRef.current = false;
       setPrefsLoaded(true);
     }
   };
@@ -179,7 +168,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!user?.id) return 0;
     try {
       const count = await trackIgnoredBestMatch(user.id);
-      const updated = await loadBehavior(user.id);
+      const updated = await loadBehavior(user.id).catch(() => null);
       if (updated) setBehavior(updated);
       return count;
     } catch { return 0; }
@@ -189,7 +178,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!user?.id) return;
     try {
       await resetIgnoredCount(user.id);
-      const updated = await loadBehavior(user.id);
+      const updated = await loadBehavior(user.id).catch(() => null);
       if (updated) setBehavior(updated);
     } catch { /* ignore */ }
   }, [user?.id]);
@@ -198,7 +187,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!user?.id) return { contradictions: 0 };
     try {
       const result = await trackSpiceChoice(user.id, level);
-      const updated = await loadBehavior(user.id);
+      const updated = await loadBehavior(user.id).catch(() => null);
       if (updated) setBehavior(updated);
       return { contradictions: result.contradictions };
     } catch { return { contradictions: 0 }; }

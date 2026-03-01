@@ -26,7 +26,6 @@ import Animated, {
   FadeIn,
   FadeInDown,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import { theme } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
 import ModePromptModal from '../../components/ModePromptModal';
@@ -96,10 +95,13 @@ export default function HomeScreen() {
     }
     if (hasRedirected.current) return;
     hasRedirected.current = true;
-    // Small delay to ensure the navigation stack is ready
     const timer = setTimeout(() => {
-      router.push('/onboarding');
-    }, 300);
+      try {
+        router.push('/onboarding');
+      } catch (e) {
+        console.log('Navigation error:', e);
+      }
+    }, 500);
     return () => clearTimeout(timer);
   }, [prefsLoaded, preferences.onboardingComplete]);
 
@@ -124,46 +126,53 @@ export default function HomeScreen() {
 
   const handleAskGenie = useCallback(() => {
     if (isNavigating.current) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    pressScale.value = withSequence(withSpring(0.93, { damping: 12 }), withSpring(1, { damping: 10 }));
+    isNavigating.current = true;
+    
+    try {
+      pressScale.value = withSequence(withSpring(0.93, { damping: 12 }), withSpring(1, { damping: 10 }));
 
-    if (!preferences.onboardingComplete) {
-      router.push('/onboarding');
-      return;
-    }
+      if (!preferences.onboardingComplete) {
+        router.push('/onboarding');
+        setTimeout(() => { isNavigating.current = false; }, 1500);
+        return;
+      }
 
-    if (preferences.mode === 'quick') {
-      isNavigating.current = true;
-      setCurrentQuery('');
-      router.push('/ai-thinking');
-      setTimeout(() => { isNavigating.current = false; }, 1000);
-    } else {
-      setShowGuidedPrompt(true);
+      if (preferences.mode === 'quick') {
+        setCurrentQuery('');
+        router.push('/ai-thinking');
+        setTimeout(() => { isNavigating.current = false; }, 1500);
+      } else {
+        isNavigating.current = false;
+        setShowGuidedPrompt(true);
+      }
+    } catch (e) {
+      console.log('Navigation error:', e);
+      isNavigating.current = false;
     }
   }, [preferences.onboardingComplete, preferences.mode]);
 
   const handleGuidedSubmit = useCallback(() => {
     if (isNavigating.current) return;
     isNavigating.current = true;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setShowGuidedPrompt(false);
     setCurrentQuery(guidedQuery);
     setGuidedQuery('');
     router.push('/ai-thinking');
-    setTimeout(() => { isNavigating.current = false; }, 1000);
+    setTimeout(() => { isNavigating.current = false; }, 1500);
   }, [guidedQuery]);
 
   const handleVoiceInput = useCallback(() => {
     if (isNavigating.current) return;
     isNavigating.current = true;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setShowGuidedPrompt(false);
     router.push('/voice-chat');
-    setTimeout(() => { isNavigating.current = false; }, 1000);
+    setTimeout(() => { isNavigating.current = false; }, 1500);
   }, []);
 
   const handleModeSelect = useCallback(async (mode: 'quick' | 'guided') => {
-    await updateMode(mode);
+    try {
+      await updateMode(mode);
+    } catch { /* ignore */ }
   }, [updateMode]);
 
   if (!prefsLoaded) {
@@ -249,7 +258,7 @@ export default function HomeScreen() {
 
           {/* Explore link */}
           <Animated.View entering={FadeIn.delay(700).duration(500)} style={styles.exploreSection}>
-            <Pressable onPress={() => { Haptics.selectionAsync(); setShowExplore(!showExplore); }} style={styles.exploreLink}>
+            <Pressable onPress={() => setShowExplore(!showExplore)} style={styles.exploreLink}>
               <Text style={styles.exploreLinkText}>Explore manually</Text>
               <MaterialIcons name={showExplore ? 'expand-less' : 'arrow-forward'} size={16} color={theme.textSecondary} />
             </Pressable>
@@ -258,7 +267,7 @@ export default function HomeScreen() {
               <Animated.View entering={FadeInDown.duration(250)} style={styles.exploreOptions}>
                 <Pressable
                   style={({ pressed }) => [styles.exploreOption, pressed && styles.exploreOptionPressed]}
-                  onPress={() => { Haptics.selectionAsync(); setShowExplore(false); router.push('/recommendations'); }}
+                  onPress={() => { setShowExplore(false); router.push('/recommendations'); }}
                 >
                   <LinearGradient colors={['rgba(251, 191, 36, 0.12)', 'rgba(251, 191, 36, 0.04)']} style={styles.exploreOptionIcon}>
                     <MaterialIcons name="restaurant-menu" size={20} color={theme.primary} />
@@ -268,7 +277,7 @@ export default function HomeScreen() {
                 </Pressable>
                 <Pressable
                   style={({ pressed }) => [styles.exploreOption, pressed && styles.exploreOptionPressed]}
-                  onPress={() => { Haptics.selectionAsync(); setShowExplore(false); router.push('/daily-meals'); }}
+                  onPress={() => { setShowExplore(false); router.push('/daily-meals'); }}
                 >
                   <LinearGradient colors={['rgba(251, 191, 36, 0.12)', 'rgba(251, 191, 36, 0.04)']} style={styles.exploreOptionIcon}>
                     <MaterialIcons name="storefront" size={20} color={theme.primary} />
@@ -283,7 +292,7 @@ export default function HomeScreen() {
           {/* Trust line */}
           <Animated.View entering={FadeIn.delay(900).duration(400)} style={styles.trustLine}>
             <MaterialIcons name="verified" size={14} color={theme.success} />
-            <Text style={styles.trustText}>All kitchens chef-verified & hygiene-audited</Text>
+            <Text style={styles.trustText}>All kitchens chef-verified and hygiene-audited</Text>
           </Animated.View>
         </View>
       </SafeAreaView>
