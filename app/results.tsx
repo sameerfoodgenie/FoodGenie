@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
+  Modal,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,13 +18,55 @@ import { theme } from '../constants/theme';
 import { useApp } from '../contexts/AppContext';
 import { mockRestaurants } from '../services/mockData';
 import ClarificationModal from '../components/ClarificationModal';
+import PartnerBottomSheet from '../components/PartnerBottomSheet';
+import { openPartnerApp, recordPartnerRedirect, getPartnerById, PartnerApp } from '../services/partnerApps';
+import { useAuth, useAlert } from '@/template';
 
 export default function ResultsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { aiResults, addToCart, recordIgnoredBestMatch, recordSpiceChoice, preferences, updatePreferences, syncPreferencesToDB } = useApp();
+  const { user } = useAuth();
+  const { showAlert } = useAlert();
   const [expandedReason, setExpandedReason] = useState<string | null>(null);
   const [showClarification, setShowClarification] = useState(false);
+  const [showPartnerSheet, setShowPartnerSheet] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingPartner, setPendingPartner] = useState<PartnerApp | null>(null);
+
+  const preferredPartnerId = preferences.preferredPartnerApp || null;
+  const preferredPartner = preferredPartnerId ? getPartnerById(preferredPartnerId) : null;
+
+  const handleOrderOn = () => {
+    Haptics.selectionAsync();
+    if (preferredPartner) {
+      setPendingPartner(preferredPartner);
+      setShowConfirm(true);
+    } else {
+      setShowPartnerSheet(true);
+    }
+  };
+
+  const handlePartnerSelect = (app: PartnerApp) => {
+    setShowPartnerSheet(false);
+    setPendingPartner(app);
+    setShowConfirm(true);
+  };
+
+  const handleConfirmPartner = async () => {
+    if (!pendingPartner) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setShowConfirm(false);
+    if (user?.id) {
+      await recordPartnerRedirect(user.id, pendingPartner.id);
+    }
+    updatePreferences({ lastPartnerUsed: pendingPartner.id });
+    const success = await openPartnerApp(pendingPartner);
+    if (!success) {
+      showAlert('Could not open app', 'Please install the app and try again');
+    }
+    setPendingPartner(null);
+  };
 
   const handleDishPress = (dishId: string) => {
     Haptics.selectionAsync();
@@ -208,6 +251,35 @@ export default function ResultsScreen() {
           </Animated.View>
         ) : null}
 
+        {/* Order via Partner Apps link */}
+        {aiResults.length > 0 ? (
+          <Animated.View entering={FadeInDown.delay(550).duration(400)}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.partnerLink,
+                pressed && { opacity: 0.8 },
+              ]}
+              onPress={handleOrderOn}
+            >
+              <MaterialIcons name="storefront" size={20} color={theme.primary} />
+              <Text style={styles.partnerLinkText}>
+                {preferredPartner
+                  ? `Order on ${preferredPartner.name}`
+                  : 'Order via partner apps'}
+              </Text>
+              <MaterialIcons name="arrow-forward" size={18} color={theme.primary} />
+            </Pressable>
+
+            <Pressable
+              style={styles.managePartnersLink}
+              onPress={() => { Haptics.selectionAsync(); router.push('/partner-apps'); }}
+            >
+              <Text style={styles.managePartnersText}>Manage partner apps</Text>
+              <MaterialIcons name="chevron-right" size={16} color={theme.textMuted} />
+            </Pressable>
+          </Animated.View>
+        ) : null}
+
         {/* Trust footer */}
         <View style={styles.trustFooter}>
           <MaterialIcons name="info" size={16} color={theme.primary} />
@@ -234,6 +306,50 @@ export default function ResultsScreen() {
         onSelect={handleClarificationSelect}
         onBudgetConfirm={handleBudgetAdjust}
       />
+
+      <PartnerBottomSheet
+        visible={showPartnerSheet}
+        onClose={() => setShowPartnerSheet(false)}
+        onSelect={handlePartnerSelect}
+        preferredPartnerId={preferredPartnerId}
+      />
+
+      {/* Partner confirm modal */}
+      <Modal
+        visible={showConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowConfirm(false)}
+      >
+        <Pressable style={styles.confirmOverlay} onPress={() => setShowConfirm(false)}>
+          <Pressable style={styles.confirmSheet} onPress={() => {}}>
+            <View style={styles.confirmHandle} />
+            {pendingPartner ? (
+              <View style={styles.confirmContent}>
+                <Text style={{ fontSize: 36 }}>{pendingPartner.iconEmoji}</Text>
+                <Text style={styles.confirmTitle}>Opening {pendingPartner.name}</Text>
+                <Text style={styles.confirmMessage}>
+                  You will complete checkout in the selected app.
+                </Text>
+                <View style={styles.confirmActions}>
+                  <Pressable
+                    style={styles.confirmCancelBtn}
+                    onPress={() => { Haptics.selectionAsync(); setShowConfirm(false); }}
+                  >
+                    <Text style={styles.confirmCancelText}>Cancel</Text>
+                  </Pressable>
+                  <Pressable style={styles.confirmContinueBtn} onPress={handleConfirmPartner}>
+                    <LinearGradient colors={theme.gradients.genie} style={styles.confirmContinueGradient}>
+                      <MaterialIcons name="open-in-new" size={16} color={theme.textOnPrimary} />
+                      <Text style={styles.confirmContinueText}>Continue</Text>
+                    </LinearGradient>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -303,4 +419,41 @@ const styles = StyleSheet.create({
   stickyCTA: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: theme.background, paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.border },
   viewCartButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: theme.backgroundTertiary, borderRadius: theme.borderRadius.lg, paddingVertical: 16, borderWidth: 2, borderColor: theme.primary },
   viewCartText: { fontSize: 16, fontWeight: '700', color: theme.primary },
+
+  // Partner links
+  partnerLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: theme.background,
+    borderRadius: theme.borderRadius.lg,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.2)',
+    ...theme.shadows.card,
+  },
+  partnerLinkText: { fontSize: 15, fontWeight: '600', color: theme.primary },
+  managePartnersLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 10,
+  },
+  managePartnersText: { fontSize: 13, color: theme.textMuted },
+
+  // Partner confirm modal
+  confirmOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  confirmSheet: { backgroundColor: theme.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 12, paddingBottom: 40 },
+  confirmHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: theme.border, alignSelf: 'center', marginBottom: 20 },
+  confirmContent: { paddingHorizontal: 24, alignItems: 'center' },
+  confirmTitle: { fontSize: 20, fontWeight: '700', color: theme.textPrimary, marginTop: 12, marginBottom: 8 },
+  confirmMessage: { fontSize: 14, color: theme.textSecondary, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+  confirmActions: { flexDirection: 'row', gap: 12, width: '100%' },
+  confirmCancelBtn: { flex: 1, paddingVertical: 16, borderRadius: theme.borderRadius.lg, backgroundColor: theme.backgroundSecondary, alignItems: 'center', borderWidth: 1, borderColor: theme.border },
+  confirmCancelText: { fontSize: 16, fontWeight: '600', color: theme.textSecondary },
+  confirmContinueBtn: { flex: 1, borderRadius: theme.borderRadius.lg, overflow: 'hidden' },
+  confirmContinueGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16 },
+  confirmContinueText: { fontSize: 16, fontWeight: '700', color: theme.textOnPrimary },
 });

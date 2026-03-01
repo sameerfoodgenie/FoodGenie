@@ -5,3 +5,4 @@ export { default as SplashScreen } from './SplashScreen';
 export { default as AnimatedDietIcon } from './AnimatedDietIcon';
 export { default as ClarificationModal } from './ClarificationModal';
 export { default as ModePromptModal } from './ModePromptModal';
+export { default as PartnerBottomSheet } from './PartnerBottomSheet';

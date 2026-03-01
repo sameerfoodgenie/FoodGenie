@@ -24,6 +24,9 @@ interface UserPreferences {
   mode: 'quick' | 'guided';
   onboardingComplete: boolean;
   sessionCount: number;
+  preferredPartnerApp: string | null;
+  lastPartnerUsed: string | null;
+  partnerRedirectCount: number;
 }
 
 interface CartItem {
@@ -82,6 +85,9 @@ const defaultPreferences: UserPreferences = {
   mode: 'guided',
   onboardingComplete: false,
   sessionCount: 0,
+  preferredPartnerApp: null,
+  lastPartnerUsed: null,
+  partnerRedirectCount: 0,
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -136,6 +142,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           mode: dbPrefs.mode,
           onboardingComplete: dbPrefs.onboarding_complete,
           sessionCount: dbPrefs.session_count,
+          preferredPartnerApp: dbPrefs.preferred_partner_app || null,
+          lastPartnerUsed: dbPrefs.last_partner_used || null,
+          partnerRedirectCount: dbPrefs.partner_redirect_count || 0,
         });
       }
       if (dbBehavior) {

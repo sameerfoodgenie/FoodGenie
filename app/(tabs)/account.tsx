@@ -16,6 +16,7 @@ import { theme } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
 import { config } from '../../constants/config';
 import { useAlert, useAuth } from '@/template';
+import { useRouter } from 'expo-router';
 
 interface ActiveSubscription {
   id: string;
@@ -57,6 +58,7 @@ const mockSubscriptions: ActiveSubscription[] = [
 
 export default function AccountScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { preferences, updatePreferences } = useApp();
   const { showAlert } = useAlert();
   const { user, logout } = useAuth();
@@ -363,6 +365,15 @@ export default function AccountScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account Settings</Text>
             
+            <Pressable
+              style={styles.settingsItem}
+              onPress={() => router.push('/partner-apps')}
+            >
+              <MaterialIcons name="storefront" size={22} color={theme.primary} />
+              <Text style={styles.settingsItemText}>Partner Apps</Text>
+              <MaterialIcons name="chevron-right" size={22} color={theme.textMuted} />
+            </Pressable>
+
             <Pressable style={styles.settingsItem}>
               <MaterialIcons name="payment" size={22} color={theme.textSecondary} />
               <Text style={styles.settingsItemText}>Payment Methods</Text>

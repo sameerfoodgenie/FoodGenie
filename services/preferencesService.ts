@@ -10,6 +10,9 @@ export interface UserPreferences {
   mode: 'quick' | 'guided';
   onboarding_complete: boolean;
   session_count: number;
+  preferred_partner_app: string | null;
+  last_partner_used: string | null;
+  partner_redirect_count: number;
 }
 
 export interface UserBehavior {
@@ -40,6 +43,9 @@ export async function loadPreferences(userId: string): Promise<UserPreferences |
     mode: data.mode,
     onboarding_complete: data.onboarding_complete,
     session_count: data.session_count,
+    preferred_partner_app: data.preferred_partner_app || null,
+    last_partner_used: data.last_partner_used || null,
+    partner_redirect_count: data.partner_redirect_count || 0,
   };
 }
 
