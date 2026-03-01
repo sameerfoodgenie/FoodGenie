@@ -148,17 +148,16 @@ export default function OnboardingScreen() {
 
   const handleFinish = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    updatePreferences({
+    const newPrefs = {
       diet,
       budgetMin,
       budgetMax,
       spiceLevel,
       onboardingComplete: true,
-    });
-    // Sync to DB after state update
-    setTimeout(async () => {
-      await syncPreferencesToDB();
-    }, 100);
+    };
+    updatePreferences(newPrefs);
+    // Pass values directly to avoid stale closure issue
+    await syncPreferencesToDB(newPrefs);
     router.replace('/(tabs)');
   };
 

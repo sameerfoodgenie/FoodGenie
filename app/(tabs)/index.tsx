@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -43,6 +43,7 @@ export default function HomeScreen() {
   const [showGuidedPrompt, setShowGuidedPrompt] = useState(false);
   const [guidedQuery, setGuidedQuery] = useState('');
   const [showSpiceAlert, setShowSpiceAlert] = useState(false);
+  const hasRedirected = useRef(false);
 
   // Animations
   const floatY = useSharedValue(0);
@@ -84,10 +85,14 @@ export default function HomeScreen() {
     }
   }, [prefsLoaded, preferences.sessionCount]);
 
-  // Check onboarding
+  // Check onboarding (guard against repeated navigation)
   useEffect(() => {
-    if (prefsLoaded && !preferences.onboardingComplete) {
+    if (prefsLoaded && !preferences.onboardingComplete && !hasRedirected.current) {
+      hasRedirected.current = true;
       router.push('/onboarding');
+    }
+    if (prefsLoaded && preferences.onboardingComplete) {
+      hasRedirected.current = false;
     }
   }, [prefsLoaded, preferences.onboardingComplete]);
 

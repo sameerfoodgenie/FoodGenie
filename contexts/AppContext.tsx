@@ -39,7 +39,7 @@ interface AppContextType {
   // User preferences
   preferences: UserPreferences;
   updatePreferences: (prefs: Partial<UserPreferences>) => void;
-  syncPreferencesToDB: () => Promise<void>;
+  syncPreferencesToDB: (overrides?: Partial<UserPreferences>) => Promise<void>;
   
   // Behavior
   behavior: UserBehavior | null;
@@ -161,16 +161,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPreferences(prev => ({ ...prev, ...prefs }));
   };
 
-  const syncPreferencesToDB = async () => {
+  const syncPreferencesToDB = async (overrides?: Partial<UserPreferences>) => {
     if (!user?.id) return;
+    const merged = overrides ? { ...preferences, ...overrides } : preferences;
     await savePreferences(user.id, {
-      diet: preferences.diet,
-      budget_min: preferences.budgetMin,
-      budget_max: preferences.budgetMax,
-      spice_level: preferences.spiceLevel,
-      mode: preferences.mode,
-      onboarding_complete: preferences.onboardingComplete,
-      session_count: preferences.sessionCount,
+      diet: merged.diet,
+      budget_min: merged.budgetMin,
+      budget_max: merged.budgetMax,
+      spice_level: merged.spiceLevel,
+      mode: merged.mode,
+      onboarding_complete: merged.onboardingComplete,
+      session_count: merged.sessionCount,
     });
   };
 
