@@ -65,28 +65,37 @@ export default function AIThinkingScreen() {
     }, 2500);
 
     // Process AI request
-    const processTimer = setTimeout(async () => {
-      const results = processAIRequest({
-        query: currentQuery || '',
-        diet: preferences.diet,
-        budgetMin: preferences.budgetMin,
-        budgetMax: preferences.budgetMax,
-        spiceLevel: preferences.spiceLevel,
-        mode: preferences.mode,
-      });
+    const processTimer = setTimeout(() => {
+      try {
+        const results = processAIRequest({
+          query: currentQuery || '',
+          diet: preferences.diet,
+          budgetMin: preferences.budgetMin,
+          budgetMax: preferences.budgetMax,
+          spiceLevel: preferences.spiceLevel,
+          mode: preferences.mode,
+        });
+        setAiResults(results);
+      } catch (e) {
+        console.log('AI processing error:', e);
+      }
 
-      setAiResults(results);
-      
-      // Increment session count
-      await incrementSession();
-      
+      // Non-blocking session increment — do NOT await
+      incrementSession().catch(() => {});
+
       router.replace('/results');
     }, 2500);
+
+    // Failsafe: navigate to results after 6s no matter what
+    const failsafe = setTimeout(() => {
+      router.replace('/results');
+    }, 6000);
 
     return () => {
       clearInterval(dotInterval);
       clearInterval(messageInterval);
       clearTimeout(processTimer);
+      clearTimeout(failsafe);
     };
   }, []);
 
