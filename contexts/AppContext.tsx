@@ -78,26 +78,29 @@ const defaultPreferences: UserPreferences = {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
   const [behavior, setBehavior] = useState<UserBehavior | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [aiResults, setAiResults] = useState<ConfidenceResult[]>([]);
-  const [currentQuery, setCurrentQuery] = useState('');
+  const [aiResults, setAiResultsState] = useState<ConfidenceResult[]>([]);
+  const [currentQuery, setCurrentQueryState] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChatMessages);
   const [isLoading, setIsLoading] = useState(false);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const lastUserId = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
 
-  // Load from Supabase when user changes
+  // Load from Supabase when user changes or auth finishes loading
   useEffect(() => {
+    // Wait for auth to finish loading before deciding
+    if (authLoading) return;
+
     if (!user?.id) {
-      // User logged out or not logged in
+      // User is not logged in — reset to defaults and mark loaded
       lastUserId.current = null;
       setPreferences(defaultPreferences);
       setBehavior(null);
-      setPrefsLoaded(false);
+      setPrefsLoaded(true); // CRITICAL: Mark as loaded even without user
       return;
     }
 
@@ -107,7 +110,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     lastUserId.current = user.id;
     loadFromDB(user.id);
-  }, [user?.id]);
+  }, [user?.id, authLoading]);
 
   const loadFromDB = async (userId: string) => {
     if (isLoadingRef.current) return;
@@ -219,6 +222,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch { return 0; }
   }, [user?.id]);
 
+  const setAiResults = useCallback((results: ConfidenceResult[]) => {
+    setAiResultsState(results);
+  }, []);
+
+  const setCurrentQuery = useCallback((query: string) => {
+    setCurrentQueryState(query);
+  }, []);
+
   const addToCart = useCallback((dish: Dish, addons: string[] = []) => {
     setCart(prev => {
       const existing = prev.find(item => item.dish.id === dish.id);
@@ -268,9 +279,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateQuantity,
         clearCart,
         cartTotal,
-        aiResults,
+        aiResults: aiResultsState,
         setAiResults,
-        currentQuery,
+        currentQuery: currentQueryState,
         setCurrentQuery,
         chatMessages,
         addChatMessage,

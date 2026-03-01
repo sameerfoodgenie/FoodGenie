@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,11 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeInUp,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { theme } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
 import ModePromptModal from '../../components/ModePromptModal';
@@ -33,22 +29,23 @@ const QUICK_SUGGESTIONS = [
   { label: 'Chef special', emoji: '👨‍🍳' },
 ];
 
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good Morning';
+  if (hour < 17) return 'Good Afternoon';
+  return 'Good Evening';
+}
+
 export default function HomeScreen() {
   const router = useRouter();
-  const {
-    preferences,
-    updatePreferences,
-    updateMode,
-    prefsLoaded,
-    setCurrentQuery,
-    setAiResults,
-    incrementSession,
-  } = useApp();
+  const app = useApp();
   const [showExplore, setShowExplore] = useState(false);
   const [showModePrompt, setShowModePrompt] = useState(false);
   const [query, setQuery] = useState('');
   const hasRedirected = useRef(false);
   const isNavigating = useRef(false);
+
+  const { preferences, prefsLoaded, updatePreferences, updateMode, setCurrentQuery } = app;
 
   // Mode prompt after 5 sessions
   useEffect(() => {
@@ -68,14 +65,10 @@ export default function HomeScreen() {
     if (hasRedirected.current) return;
     hasRedirected.current = true;
     const timer = setTimeout(() => {
-      try {
-        router.push('/onboarding');
-      } catch (e) {
-        console.log('Nav error:', e);
-      }
+      try { router.push('/onboarding'); } catch (e) { /* ignore */ }
     }, 500);
     return () => clearTimeout(timer);
-  }, [prefsLoaded, preferences.onboardingComplete]);
+  }, [prefsLoaded, preferences.onboardingComplete, router]);
 
   const handleAskGenie = useCallback(
     (text?: string) => {
@@ -83,52 +76,32 @@ export default function HomeScreen() {
       isNavigating.current = true;
 
       if (!preferences.onboardingComplete) {
-        try {
-          router.push('/onboarding');
-        } catch (e) {
-          console.log(e);
-        }
-        setTimeout(() => {
-          isNavigating.current = false;
-        }, 2000);
+        try { router.push('/onboarding'); } catch (e) { /* ignore */ }
+        setTimeout(() => { isNavigating.current = false; }, 2000);
         return;
       }
 
       const finalQuery = text || query.trim();
-
-      // Set the query in context synchronously
       setCurrentQuery(finalQuery);
       setQuery('');
 
       // Navigate after a tick to let state propagate
       setTimeout(() => {
-        try {
-          router.push('/ai-thinking');
-        } catch (e) {
-          console.log('Nav error:', e);
-        }
-        setTimeout(() => {
-          isNavigating.current = false;
-        }, 2000);
-      }, 100);
+        try { router.push('/ai-thinking'); } catch (e) { /* ignore */ }
+        setTimeout(() => { isNavigating.current = false; }, 2000);
+      }, 150);
     },
     [preferences.onboardingComplete, query, setCurrentQuery, router],
   );
 
   const handleChipPress = useCallback(
-    (label: string) => {
-      handleAskGenie(label);
-    },
+    (label: string) => { handleAskGenie(label); },
     [handleAskGenie],
   );
 
   const handleModeSelect = useCallback(
     async (mode: 'quick' | 'guided') => {
-      try {
-        await updateMode(mode);
-      } catch {
-        /* ignore */
-      }
+      try { await updateMode(mode); } catch { /* ignore */ }
     },
     [updateMode],
   );
@@ -200,12 +173,7 @@ export default function HomeScreen() {
               {/* Input Area */}
               <View style={styles.inputRow}>
                 <View style={styles.inputWrapper}>
-                  <MaterialIcons
-                    name="search"
-                    size={20}
-                    color={theme.textMuted}
-                    style={styles.inputIcon}
-                  />
+                  <MaterialIcons name="search" size={20} color={theme.textMuted} style={styles.inputIcon} />
                   <TextInput
                     style={styles.queryInput}
                     value={query}
@@ -253,16 +221,8 @@ export default function HomeScreen() {
             <View style={styles.stepsRow}>
               {[
                 { icon: 'chat', label: 'Tell your craving', color: 'rgba(251, 191, 36, 0.15)' },
-                {
-                  icon: 'psychology',
-                  label: 'AI finds matches',
-                  color: 'rgba(34, 197, 94, 0.15)',
-                },
-                {
-                  icon: 'delivery-dining',
-                  label: 'Order via partners',
-                  color: 'rgba(59, 130, 246, 0.15)',
-                },
+                { icon: 'psychology', label: 'AI finds matches', color: 'rgba(34, 197, 94, 0.15)' },
+                { icon: 'delivery-dining', label: 'Order via partners', color: 'rgba(59, 130, 246, 0.15)' },
               ].map((step, i) => (
                 <Animated.View
                   key={step.label}
@@ -292,14 +252,8 @@ export default function HomeScreen() {
             {showExplore ? (
               <Animated.View entering={FadeInDown.duration(250)} style={styles.exploreOptions}>
                 <Pressable
-                  style={({ pressed }) => [
-                    styles.exploreOption,
-                    pressed && styles.exploreOptionPressed,
-                  ]}
-                  onPress={() => {
-                    setShowExplore(false);
-                    router.push('/recommendations');
-                  }}
+                  style={({ pressed }) => [styles.exploreOption, pressed && styles.exploreOptionPressed]}
+                  onPress={() => { setShowExplore(false); router.push('/recommendations'); }}
                 >
                   <LinearGradient
                     colors={['rgba(251, 191, 36, 0.12)', 'rgba(251, 191, 36, 0.04)']}
@@ -314,14 +268,8 @@ export default function HomeScreen() {
                   <MaterialIcons name="chevron-right" size={20} color={theme.textMuted} />
                 </Pressable>
                 <Pressable
-                  style={({ pressed }) => [
-                    styles.exploreOption,
-                    pressed && styles.exploreOptionPressed,
-                  ]}
-                  onPress={() => {
-                    setShowExplore(false);
-                    router.push('/daily-meals');
-                  }}
+                  style={({ pressed }) => [styles.exploreOption, pressed && styles.exploreOptionPressed]}
+                  onPress={() => { setShowExplore(false); router.push('/daily-meals'); }}
                 >
                   <LinearGradient
                     colors={['rgba(251, 191, 36, 0.12)', 'rgba(251, 191, 36, 0.04)']}
@@ -354,7 +302,6 @@ export default function HomeScreen() {
         </ScrollView>
       </SafeAreaView>
 
-      {/* Mode prompt */}
       <ModePromptModal
         visible={showModePrompt}
         onClose={() => setShowModePrompt(false)}
@@ -364,234 +311,56 @@ export default function HomeScreen() {
   );
 }
 
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good Morning';
-  if (hour < 17) return 'Good Afternoon';
-  return 'Good Evening';
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 32 },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 16,
-    paddingBottom: 24,
-  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, paddingBottom: 24 },
   greetingBlock: { flex: 1 },
   greeting: { fontSize: 26, fontWeight: '700', color: theme.textPrimary },
   subGreeting: { fontSize: 15, color: theme.textSecondary, marginTop: 4 },
-  profileButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.backgroundTertiary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(251, 191, 36, 0.2)',
-  },
-
-  // Ask Card
-  askCard: {
-    borderRadius: theme.borderRadius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(251, 191, 36, 0.12)',
-    padding: 20,
-    marginBottom: 28,
-  },
-  askCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 18,
-    gap: 12,
-  },
-  genieAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: theme.backgroundTertiary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(251, 191, 36, 0.3)',
-  },
+  profileButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: theme.backgroundTertiary, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.2)' },
+  askCard: { borderRadius: theme.borderRadius.xl, borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.12)', padding: 20, marginBottom: 28 },
+  askCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 18, gap: 12 },
+  genieAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: theme.backgroundTertiary, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'rgba(251, 191, 36, 0.3)' },
   genieMascot: { width: 36, height: 36 },
   askCardTitle: { flex: 1 },
-  askTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: theme.primary,
-  },
-  askSubtitle: {
-    fontSize: 13,
-    color: theme.textSecondary,
-    marginTop: 2,
-  },
-  modeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: 'rgba(251, 191, 36, 0.15)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: theme.borderRadius.full,
-  },
+  askTitle: { fontSize: 20, fontWeight: '700', color: theme.primary },
+  askSubtitle: { fontSize: 13, color: theme.textSecondary, marginTop: 2 },
+  modeBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(251, 191, 36, 0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: theme.borderRadius.full },
   modeBadgeText: { fontSize: 11, fontWeight: '700', color: theme.primary },
-
-  // Input
-  inputRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 14,
-  },
-  inputWrapper: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.backgroundSecondary,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: theme.border,
-    paddingHorizontal: 12,
-  },
+  inputRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+  inputWrapper: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: theme.backgroundSecondary, borderRadius: theme.borderRadius.lg, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 12 },
   inputIcon: { marginRight: 8 },
-  queryInput: {
-    flex: 1,
-    fontSize: 15,
-    color: theme.textPrimary,
-    paddingVertical: 14,
-  },
-  sendButton: {
-    borderRadius: theme.borderRadius.lg,
-    overflow: 'hidden',
-  },
+  queryInput: { flex: 1, fontSize: 15, color: theme.textPrimary, paddingVertical: 14 },
+  sendButton: { borderRadius: theme.borderRadius.lg, overflow: 'hidden' },
   sendButtonPressed: { opacity: 0.8 },
-  sendButtonGradient: {
-    width: 52,
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: theme.borderRadius.lg,
-  },
-
-  // Chips
+  sendButtonGradient: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center', borderRadius: theme.borderRadius.lg },
   chipsScroll: { marginHorizontal: -20 },
-  chipsContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 20,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: theme.backgroundSecondary,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: theme.borderRadius.full,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  chipPressed: {
-    backgroundColor: 'rgba(251, 191, 36, 0.1)',
-    borderColor: 'rgba(251, 191, 36, 0.3)',
-  },
+  chipsContainer: { flexDirection: 'row', gap: 8, paddingHorizontal: 20 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: theme.backgroundSecondary, paddingHorizontal: 14, paddingVertical: 9, borderRadius: theme.borderRadius.full, borderWidth: 1, borderColor: theme.border },
+  chipPressed: { backgroundColor: 'rgba(251, 191, 36, 0.1)', borderColor: 'rgba(251, 191, 36, 0.3)' },
   chipEmoji: { fontSize: 14 },
   chipLabel: { fontSize: 13, fontWeight: '500', color: theme.textSecondary },
-
-  // How it works
   howSection: { marginBottom: 28 },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.textSecondary,
-    marginBottom: 14,
-  },
-  stepsRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  stepCard: {
-    flex: 1,
-    backgroundColor: theme.backgroundSecondary,
-    borderRadius: theme.borderRadius.lg,
-    padding: 14,
-    alignItems: 'center',
-    gap: 10,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  stepIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: theme.textSecondary,
-    textAlign: 'center',
-    lineHeight: 16,
-  },
-
-  // Explore
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: theme.textSecondary, marginBottom: 14 },
+  stepsRow: { flexDirection: 'row', gap: 10 },
+  stepCard: { flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: theme.borderRadius.lg, padding: 14, alignItems: 'center', gap: 10, borderWidth: 1, borderColor: theme.border },
+  stepIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  stepLabel: { fontSize: 12, fontWeight: '500', color: theme.textSecondary, textAlign: 'center', lineHeight: 16 },
   exploreSection: { marginBottom: 24 },
-  exploreLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 8,
-  },
+  exploreLink: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 8 },
   exploreLinkText: { fontSize: 15, color: theme.textSecondary, fontWeight: '500' },
   exploreOptions: { gap: 10, marginTop: 8 },
-  exploreOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.backgroundSecondary,
-    borderRadius: theme.borderRadius.lg,
-    padding: 14,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(251, 191, 36, 0.08)',
-  },
-  exploreOptionPressed: {
-    backgroundColor: theme.backgroundTertiary,
-    borderColor: 'rgba(251, 191, 36, 0.25)',
-  },
-  exploreOptionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  exploreOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme.backgroundSecondary, borderRadius: theme.borderRadius.lg, padding: 14, gap: 12, borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.08)' },
+  exploreOptionPressed: { backgroundColor: theme.backgroundTertiary, borderColor: 'rgba(251, 191, 36, 0.25)' },
+  exploreOptionIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   exploreOptionContent: { flex: 1 },
   exploreOptionText: { fontSize: 15, fontWeight: '600', color: theme.textPrimary },
   exploreOptionSub: { fontSize: 12, color: theme.textMuted, marginTop: 2 },
-
-  // Trust
-  trustLine: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    paddingVertical: 8,
-  },
+  trustLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 8 },
   trustBadge: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   trustText: { fontSize: 12, color: theme.textMuted, fontWeight: '500' },
-  trustDivider: {
-    width: 1,
-    height: 14,
-    backgroundColor: theme.border,
-  },
+  trustDivider: { width: 1, height: 14, backgroundColor: theme.border },
 });

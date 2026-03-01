@@ -23,33 +23,29 @@ const DEFAULT_MESSAGES = [
 
 export default function AIThinkingScreen() {
   const router = useRouter();
-  const appContext = useApp();
+  const { preferences, currentQuery, setAiResults, incrementSession } = useApp();
   const [messageIndex, setMessageIndex] = useState(0);
   const hasNavigated = useRef(false);
 
-  // Capture context values at mount time via ref to avoid stale closures
-  const contextSnapshot = useRef({
-    preferences: appContext.preferences,
-    currentQuery: appContext.currentQuery,
-  });
+  // Snapshot preferences and query at mount time for the delayed processing
+  const prefsRef = useRef(preferences);
+  const queryRef = useRef(currentQuery);
+  const setAiResultsRef = useRef(setAiResults);
+  const incrementSessionRef = useRef(incrementSession);
 
-  // Update snapshot on every render so we always have latest
-  contextSnapshot.current = {
-    preferences: appContext.preferences,
-    currentQuery: appContext.currentQuery,
-  };
+  // Keep refs updated
+  prefsRef.current = preferences;
+  queryRef.current = currentQuery;
+  setAiResultsRef.current = setAiResults;
+  incrementSessionRef.current = incrementSession;
 
   const [displayMessages] = useState<string[]>(() => {
-    const q = appContext.currentQuery;
-    if (q) {
-      try {
-        const dynamic = getAnalysisText(q);
-        if (dynamic && dynamic.length > 0) return dynamic;
-      } catch {
-        /* use defaults */
-      }
+    try {
+      const dynamic = getAnalysisText(currentQuery || '');
+      return dynamic && dynamic.length > 0 ? dynamic : DEFAULT_MESSAGES;
+    } catch {
+      return DEFAULT_MESSAGES;
     }
-    return DEFAULT_MESSAGES;
   });
 
   const scale = useSharedValue(1);
@@ -58,53 +54,41 @@ export default function AIThinkingScreen() {
   const dotScale2 = useSharedValue(1);
   const dotScale3 = useSharedValue(1);
 
-  const goToResults = useCallback(() => {
+  const navigateToResults = useCallback(() => {
     if (hasNavigated.current) return;
     hasNavigated.current = true;
     try {
       router.replace('/results');
     } catch (e) {
-      console.log('Navigation error:', e);
+      // Fallback if replace fails
+      try { router.push('/results'); } catch { /* give up */ }
     }
   }, [router]);
 
   useEffect(() => {
-    if (hasNavigated.current) return;
-
-    // Start animations
+    // Animations
     scale.value = withRepeat(
       withSequence(
         withTiming(1.1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
         withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
       ),
-      -1,
-      true,
+      -1, true,
     );
     rotate.value = withRepeat(
       withSequence(
         withTiming(-5, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
         withTiming(5, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
       ),
-      -1,
-      true,
+      -1, true,
     );
 
     const animateDots = () => {
-      dotScale1.value = withSequence(
-        withTiming(1.5, { duration: 300 }),
-        withTiming(1, { duration: 300 }),
-      );
+      dotScale1.value = withSequence(withTiming(1.5, { duration: 300 }), withTiming(1, { duration: 300 }));
       setTimeout(() => {
-        dotScale2.value = withSequence(
-          withTiming(1.5, { duration: 300 }),
-          withTiming(1, { duration: 300 }),
-        );
+        dotScale2.value = withSequence(withTiming(1.5, { duration: 300 }), withTiming(1, { duration: 300 }));
       }, 200);
       setTimeout(() => {
-        dotScale3.value = withSequence(
-          withTiming(1.5, { duration: 300 }),
-          withTiming(1, { duration: 300 }),
-        );
+        dotScale3.value = withSequence(withTiming(1.5, { duration: 300 }), withTiming(1, { duration: 300 }));
       }, 400);
     };
     animateDots();
@@ -112,41 +96,40 @@ export default function AIThinkingScreen() {
 
     // Cycle messages
     const messageInterval = setInterval(() => {
-      setMessageIndex((prev) => prev + 1);
+      setMessageIndex(prev => prev + 1);
     }, 2000);
 
-    // Process AI request after a delay to let context settle
+    // Process AI request after delay
     const processTimer = setTimeout(() => {
       if (hasNavigated.current) return;
 
-      const snap = contextSnapshot.current;
-
       try {
+        const snap = prefsRef.current;
+        const q = queryRef.current;
         const results = processAIRequest({
-          query: snap.currentQuery || '',
-          diet: snap.preferences.diet,
-          budgetMin: snap.preferences.budgetMin,
-          budgetMax: snap.preferences.budgetMax,
-          spiceLevel: snap.preferences.spiceLevel,
-          mode: snap.preferences.mode,
+          query: q || '',
+          diet: snap.diet,
+          budgetMin: snap.budgetMin,
+          budgetMax: snap.budgetMax,
+          spiceLevel: snap.spiceLevel,
+          mode: snap.mode,
         });
-        appContext.setAiResults(results);
+        setAiResultsRef.current(results);
       } catch (e) {
         console.log('AI processing error:', e);
-        appContext.setAiResults([]);
+        setAiResultsRef.current([]);
       }
 
       // Non-blocking session increment
-      appContext.incrementSession().catch(() => {});
+      incrementSessionRef.current().catch(() => {});
 
-      // Navigate to results
-      goToResults();
+      navigateToResults();
     }, 2500);
 
-    // Failsafe navigation — always navigate after 6s no matter what
+    // Failsafe: always navigate after 5 seconds
     const failsafe = setTimeout(() => {
-      goToResults();
-    }, 6000);
+      navigateToResults();
+    }, 5000);
 
     return () => {
       clearInterval(dotInterval);
@@ -154,23 +137,16 @@ export default function AIThinkingScreen() {
       clearTimeout(processTimer);
       clearTimeout(failsafe);
     };
-  }, [goToResults]);
+  }, [navigateToResults]);
 
-  const currentMessage =
-    displayMessages[messageIndex % displayMessages.length] || DEFAULT_MESSAGES[0];
+  const currentMessage = displayMessages[messageIndex % displayMessages.length] || DEFAULT_MESSAGES[0];
 
   const mascotStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }, { rotate: `${rotate.value}deg` }],
   }));
-  const dot1Style = useAnimatedStyle(() => ({
-    transform: [{ scale: dotScale1.value }],
-  }));
-  const dot2Style = useAnimatedStyle(() => ({
-    transform: [{ scale: dotScale2.value }],
-  }));
-  const dot3Style = useAnimatedStyle(() => ({
-    transform: [{ scale: dotScale3.value }],
-  }));
+  const dot1Style = useAnimatedStyle(() => ({ transform: [{ scale: dotScale1.value }] }));
+  const dot2Style = useAnimatedStyle(() => ({ transform: [{ scale: dotScale2.value }] }));
+  const dot3Style = useAnimatedStyle(() => ({ transform: [{ scale: dotScale3.value }] }));
 
   return (
     <LinearGradient colors={theme.gradients.genie} style={styles.container}>
@@ -192,10 +168,7 @@ export default function AIThinkingScreen() {
         </View>
 
         <Text style={styles.message}>{currentMessage}</Text>
-
-        <Text style={styles.trustNote}>
-          Finding chef-verified, fairly priced Top 3 matches
-        </Text>
+        <Text style={styles.trustNote}>Finding chef-verified, fairly priced Top 3 matches</Text>
       </View>
     </LinearGradient>
   );
@@ -204,34 +177,10 @@ export default function AIThinkingScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   content: { alignItems: 'center', paddingHorizontal: 40 },
-  mascotContainer: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 40,
-  },
+  mascotContainer: { width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 40 },
   mascot: { width: 120, height: 120 },
   dotsContainer: { flexDirection: 'row', gap: 12, marginBottom: 32 },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-  },
-  message: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.95)',
-    textAlign: 'center',
-    minHeight: 50,
-  },
-  trustNote: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.7)',
-    textAlign: 'center',
-    marginTop: 24,
-  },
+  dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.8)' },
+  message: { fontSize: 18, fontWeight: '600', color: 'rgba(255,255,255,0.95)', textAlign: 'center', minHeight: 50 },
+  trustNote: { fontSize: 14, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginTop: 24 },
 });
