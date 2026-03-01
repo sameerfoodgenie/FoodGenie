@@ -44,6 +44,7 @@ export default function HomeScreen() {
   const [showGuidedPrompt, setShowGuidedPrompt] = useState(false);
   const [guidedQuery, setGuidedQuery] = useState('');
   const hasRedirected = useRef(false);
+  const isNavigating = useRef(false);
 
   // Animations
   const floatY = useSharedValue(0);
@@ -78,22 +79,28 @@ export default function HomeScreen() {
     ), -1, true);
   }, []);
 
-  // Check if mode prompt should appear (after 5 sessions)
+  // Mode prompt after 5 sessions
   useEffect(() => {
     if (prefsLoaded && preferences.sessionCount === 5 && preferences.mode === 'guided') {
-      setTimeout(() => setShowModePrompt(true), 1000);
+      const timer = setTimeout(() => setShowModePrompt(true), 1000);
+      return () => clearTimeout(timer);
     }
-  }, [prefsLoaded, preferences.sessionCount]);
+  }, [prefsLoaded, preferences.sessionCount, preferences.mode]);
 
-  // Check onboarding (guard against repeated navigation)
+  // Onboarding redirect - only once, with navigation guard
   useEffect(() => {
-    if (prefsLoaded && !preferences.onboardingComplete && !hasRedirected.current) {
-      hasRedirected.current = true;
-      router.push('/onboarding');
-    }
-    if (prefsLoaded && preferences.onboardingComplete) {
+    if (!prefsLoaded) return;
+    if (preferences.onboardingComplete) {
       hasRedirected.current = false;
+      return;
     }
+    if (hasRedirected.current) return;
+    hasRedirected.current = true;
+    // Small delay to ensure the navigation stack is ready
+    const timer = setTimeout(() => {
+      router.push('/onboarding');
+    }, 300);
+    return () => clearTimeout(timer);
   }, [prefsLoaded, preferences.onboardingComplete]);
 
   const animatedFloat = useAnimatedStyle(() => ({
@@ -116,6 +123,7 @@ export default function HomeScreen() {
   }));
 
   const handleAskGenie = useCallback(() => {
+    if (isNavigating.current) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     pressScale.value = withSequence(withSpring(0.93, { damping: 12 }), withSpring(1, { damping: 10 }));
 
@@ -125,32 +133,39 @@ export default function HomeScreen() {
     }
 
     if (preferences.mode === 'quick') {
+      isNavigating.current = true;
       setCurrentQuery('');
       router.push('/ai-thinking');
+      setTimeout(() => { isNavigating.current = false; }, 1000);
     } else {
       setShowGuidedPrompt(true);
     }
   }, [preferences.onboardingComplete, preferences.mode]);
 
   const handleGuidedSubmit = useCallback(() => {
+    if (isNavigating.current) return;
+    isNavigating.current = true;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setShowGuidedPrompt(false);
     setCurrentQuery(guidedQuery);
     setGuidedQuery('');
     router.push('/ai-thinking');
+    setTimeout(() => { isNavigating.current = false; }, 1000);
   }, [guidedQuery]);
 
   const handleVoiceInput = useCallback(() => {
+    if (isNavigating.current) return;
+    isNavigating.current = true;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setShowGuidedPrompt(false);
     router.push('/voice-chat');
+    setTimeout(() => { isNavigating.current = false; }, 1000);
   }, []);
 
   const handleModeSelect = useCallback(async (mode: 'quick' | 'guided') => {
     await updateMode(mode);
-  }, []);
+  }, [updateMode]);
 
-  // Show loading while prefs are loading
   if (!prefsLoaded) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>

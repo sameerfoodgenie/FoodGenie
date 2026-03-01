@@ -7,7 +7,7 @@ export interface Dish {
   restaurantId: string;
   price: number;
   originalPrice: number;
-  image: string;
+  image: any; // require() returns a number, not string
   rating: number;
   chefScore: number;
   deliveryTime: string;
@@ -23,7 +23,7 @@ export interface Restaurant {
   id: string;
   name: string;
   cuisine: string;
-  image: string;
+  image: any;
   chefScore: number;
   hygieneScore: number;
   rating: number;
@@ -661,7 +661,7 @@ export const mockMealPlans: MealPlan[] = [
     duration: 'Weekly',
     meals: 10,
     badges: ['Fixed Menu', 'Chef Score 92', 'Mon-Fri'],
-    description: 'Authentic North Indian lunch & dinner',
+    description: 'Authentic North Indian lunch and dinner',
     cuisine: 'North Indian',
     chefScore: 92,
   },
@@ -686,7 +686,7 @@ export const initialChatMessages: ChatMessage[] = [
   {
     id: '1',
     type: 'genie',
-    text: "Hi! I'm FoodGenie 🧞‍♂️\n\nTell me what you're in the mood for, and I'll find the perfect meal — no endless scrolling, just smart picks.",
+    text: "Hi! I am FoodGenie.\n\nTell me what you are in the mood for, and I will find the perfect meal - no endless scrolling, just smart picks.",
     timestamp: new Date(),
   },
 ];

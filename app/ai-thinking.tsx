@@ -22,14 +22,13 @@ export default function AIThinkingScreen() {
   const { preferences, currentQuery, setAiResults, incrementSession } = useApp();
   const [messageIndex, setMessageIndex] = useState(0);
   const hasNavigated = useRef(false);
+  const [displayMessage, setDisplayMessage] = useState('Checking chef-approved kitchens...');
 
   const messagesRef = useRef([
     'Checking chef-approved kitchens...',
     'Filtering by your budget range...',
     'Ranking by confidence...',
   ]);
-
-  const [displayMessage, setDisplayMessage] = useState(messagesRef.current[0]);
 
   const scale = useSharedValue(1);
   const rotate = useSharedValue(0);
@@ -42,11 +41,18 @@ export default function AIThinkingScreen() {
 
     // Generate dynamic messages based on query
     if (currentQuery) {
-      const dynamicMessages = getAnalysisText(currentQuery);
-      messagesRef.current = dynamicMessages;
-      setDisplayMessage(dynamicMessages[0]);
+      try {
+        const dynamicMessages = getAnalysisText(currentQuery);
+        if (dynamicMessages && dynamicMessages.length > 0) {
+          messagesRef.current = dynamicMessages;
+          setDisplayMessage(dynamicMessages[0]);
+        }
+      } catch (e) {
+        console.log('Error generating analysis text:', e);
+      }
     }
 
+    // Animations
     scale.value = withRepeat(
       withSequence(
         withTiming(1.1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
@@ -68,15 +74,17 @@ export default function AIThinkingScreen() {
     animateDots();
     const dotInterval = setInterval(animateDots, 1200);
 
+    // Cycle through messages
     const messageInterval = setInterval(() => {
       setMessageIndex(prev => {
-        const next = (prev + 1) % messagesRef.current.length;
-        setDisplayMessage(messagesRef.current[next]);
+        const msgs = messagesRef.current;
+        const next = (prev + 1) % msgs.length;
+        setDisplayMessage(msgs[next]);
         return next;
       });
     }, 2500);
 
-    // Process AI request
+    // Process AI request and navigate
     const processTimer = setTimeout(() => {
       if (hasNavigated.current) return;
       try {
@@ -91,6 +99,7 @@ export default function AIThinkingScreen() {
         setAiResults(results);
       } catch (e) {
         console.log('AI processing error:', e);
+        setAiResults([]);
       }
 
       // Non-blocking session increment
@@ -102,7 +111,7 @@ export default function AIThinkingScreen() {
       }
     }, 2500);
 
-    // Failsafe: navigate to results after 6s no matter what
+    // Failsafe navigation
     const failsafe = setTimeout(() => {
       if (!hasNavigated.current) {
         hasNavigated.current = true;
@@ -141,7 +150,7 @@ export default function AIThinkingScreen() {
         </View>
 
         <Animated.Text
-          key={messageIndex}
+          key={`msg-${messageIndex}`}
           entering={FadeIn.duration(300)}
           exiting={FadeOut.duration(300)}
           style={styles.message}

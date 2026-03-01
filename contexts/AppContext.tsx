@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/template';
 import { mockDishes, mockRestaurants, Dish, Restaurant, ChatMessage, initialChatMessages } from '../services/mockData';
@@ -36,43 +36,30 @@ interface CartItem {
 }
 
 interface AppContextType {
-  // User preferences
   preferences: UserPreferences;
   updatePreferences: (prefs: Partial<UserPreferences>) => void;
   syncPreferencesToDB: (overrides?: Partial<UserPreferences>) => Promise<void>;
-  
-  // Behavior
   behavior: UserBehavior | null;
   recordIgnoredBestMatch: () => Promise<number>;
   resetIgnored: () => Promise<void>;
   recordSpiceChoice: (level: number) => Promise<{ contradictions: number }>;
   updateMode: (mode: 'quick' | 'guided') => Promise<void>;
   incrementSession: () => Promise<number>;
-  
-  // Cart
   cart: CartItem[];
   addToCart: (dish: Dish, addons?: string[]) => void;
   removeFromCart: (dishId: string) => void;
   updateQuantity: (dishId: string, quantity: number) => void;
   clearCart: () => void;
   cartTotal: number;
-  
-  // AI Results
   aiResults: ConfidenceResult[];
   setAiResults: (results: ConfidenceResult[]) => void;
   currentQuery: string;
   setCurrentQuery: (query: string) => void;
-  
-  // Chat
   chatMessages: ChatMessage[];
   addChatMessage: (message: ChatMessage) => void;
-  
-  // App state
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   prefsLoaded: boolean;
-  
-  // Data
   allDishes: Dish[];
   allRestaurants: Restaurant[];
 }
@@ -102,12 +89,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChatMessages);
   const [isLoading, setIsLoading] = useState(false);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const lastUserId = useRef<string | null>(null);
 
   // Load from Supabase when user changes
   useEffect(() => {
     if (user?.id) {
+      // Prevent duplicate loads for the same user
+      if (lastUserId.current === user.id && prefsLoaded) return;
+      lastUserId.current = user.id;
       loadFromDB(user.id);
     } else {
+      lastUserId.current = null;
       setPreferences(defaultPreferences);
       setBehavior(null);
       setPrefsLoaded(false);
@@ -117,20 +109,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Load cart from local storage
   useEffect(() => {
     AsyncStorage.getItem('foodgenie_cart').then(data => {
-      if (data) setCart(JSON.parse(data));
-    });
+      if (data) {
+        try { setCart(JSON.parse(data)); } catch { /* ignore parse errors */ }
+      }
+    }).catch(() => {});
   }, []);
 
   // Persist cart
   useEffect(() => {
-    AsyncStorage.setItem('foodgenie_cart', JSON.stringify(cart));
+    AsyncStorage.setItem('foodgenie_cart', JSON.stringify(cart)).catch(() => {});
   }, [cart]);
 
   const loadFromDB = async (userId: string) => {
     try {
       const [dbPrefs, dbBehavior] = await Promise.all([
-        loadPreferences(userId),
-        loadBehavior(userId),
+        loadPreferences(userId).catch(() => null),
+        loadBehavior(userId).catch(() => null),
       ]);
 
       if (dbPrefs) {
@@ -157,62 +151,80 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updatePreferences = (prefs: Partial<UserPreferences>) => {
+  const updatePreferences = useCallback((prefs: Partial<UserPreferences>) => {
     setPreferences(prev => ({ ...prev, ...prefs }));
-  };
+  }, []);
 
-  const syncPreferencesToDB = async (overrides?: Partial<UserPreferences>) => {
+  const syncPreferencesToDB = useCallback(async (overrides?: Partial<UserPreferences>) => {
     if (!user?.id) return;
-    const merged = overrides ? { ...preferences, ...overrides } : preferences;
-    await savePreferences(user.id, {
-      diet: merged.diet,
-      budget_min: merged.budgetMin,
-      budget_max: merged.budgetMax,
-      spice_level: merged.spiceLevel,
-      mode: merged.mode,
-      onboarding_complete: merged.onboardingComplete,
-      session_count: merged.sessionCount,
-    });
-  };
+    try {
+      const currentPrefs = overrides
+        ? { ...preferences, ...overrides }
+        : preferences;
+      await savePreferences(user.id, {
+        diet: currentPrefs.diet,
+        budget_min: currentPrefs.budgetMin,
+        budget_max: currentPrefs.budgetMax,
+        spice_level: currentPrefs.spiceLevel,
+        mode: currentPrefs.mode,
+        onboarding_complete: currentPrefs.onboardingComplete,
+        session_count: currentPrefs.sessionCount,
+      });
+    } catch (e) {
+      console.log('Error syncing preferences:', e);
+    }
+  }, [user?.id, preferences]);
 
-  const recordIgnoredBestMatch = async (): Promise<number> => {
+  const recordIgnoredBestMatch = useCallback(async (): Promise<number> => {
     if (!user?.id) return 0;
-    const count = await trackIgnoredBestMatch(user.id);
-    const updated = await loadBehavior(user.id);
-    if (updated) setBehavior(updated);
-    return count;
-  };
+    try {
+      const count = await trackIgnoredBestMatch(user.id);
+      const updated = await loadBehavior(user.id);
+      if (updated) setBehavior(updated);
+      return count;
+    } catch { return 0; }
+  }, [user?.id]);
 
-  const resetIgnored = async () => {
+  const resetIgnored = useCallback(async () => {
     if (!user?.id) return;
-    await resetIgnoredCount(user.id);
-    const updated = await loadBehavior(user.id);
-    if (updated) setBehavior(updated);
-  };
+    try {
+      await resetIgnoredCount(user.id);
+      const updated = await loadBehavior(user.id);
+      if (updated) setBehavior(updated);
+    } catch { /* ignore */ }
+  }, [user?.id]);
 
-  const recordSpiceChoice = async (level: number): Promise<{ contradictions: number }> => {
+  const recordSpiceChoice = useCallback(async (level: number): Promise<{ contradictions: number }> => {
     if (!user?.id) return { contradictions: 0 };
-    const result = await trackSpiceChoice(user.id, level);
-    const updated = await loadBehavior(user.id);
-    if (updated) setBehavior(updated);
-    return { contradictions: result.contradictions };
-  };
+    try {
+      const result = await trackSpiceChoice(user.id, level);
+      const updated = await loadBehavior(user.id);
+      if (updated) setBehavior(updated);
+      return { contradictions: result.contradictions };
+    } catch { return { contradictions: 0 }; }
+  }, [user?.id]);
 
-  const updateMode = async (mode: 'quick' | 'guided') => {
+  const updateMode = useCallback(async (mode: 'quick' | 'guided') => {
     updatePreferences({ mode });
     if (!user?.id) return;
-    await savePreferences(user.id, { mode });
-    await saveBehavior(user.id, { preferred_mode: mode });
-  };
+    try {
+      await Promise.all([
+        savePreferences(user.id, { mode }),
+        saveBehavior(user.id, { preferred_mode: mode }),
+      ]);
+    } catch { /* ignore */ }
+  }, [user?.id, updatePreferences]);
 
-  const incrementSession = async (): Promise<number> => {
+  const incrementSession = useCallback(async (): Promise<number> => {
     if (!user?.id) return 0;
-    const count = await incrementSessionCount(user.id);
-    setPreferences(prev => ({ ...prev, sessionCount: count }));
-    return count;
-  };
+    try {
+      const count = await incrementSessionCount(user.id);
+      setPreferences(prev => ({ ...prev, sessionCount: count }));
+      return count;
+    } catch { return 0; }
+  }, [user?.id]);
 
-  const addToCart = (dish: Dish, addons: string[] = []) => {
+  const addToCart = useCallback((dish: Dish, addons: string[] = []) => {
     setCart(prev => {
       const existing = prev.find(item => item.dish.id === dish.id);
       if (existing) {
@@ -224,24 +236,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { dish, quantity: 1, addons }];
     });
-  };
+  }, []);
 
-  const removeFromCart = (dishId: string) => {
+  const removeFromCart = useCallback((dishId: string) => {
     setCart(prev => prev.filter(item => item.dish.id !== dishId));
-  };
+  }, []);
 
-  const updateQuantity = (dishId: string, quantity: number) => {
+  const updateQuantity = useCallback((dishId: string, quantity: number) => {
     if (quantity <= 0) { removeFromCart(dishId); return; }
     setCart(prev => prev.map(item => item.dish.id === dishId ? { ...item, quantity } : item));
-  };
+  }, [removeFromCart]);
 
-  const clearCart = () => setCart([]);
+  const clearCart = useCallback(() => setCart([]), []);
 
   const cartTotal = cart.reduce((sum, item) => sum + item.dish.price * item.quantity, 0);
 
-  const addChatMessage = (message: ChatMessage) => {
+  const addChatMessage = useCallback((message: ChatMessage) => {
     setChatMessages(prev => [...prev, message]);
-  };
+  }, []);
 
   return (
     <AppContext.Provider
