@@ -68,7 +68,7 @@ export default function HomeScreen() {
       try { router.push('/onboarding'); } catch (e) { /* ignore */ }
     }, 500);
     return () => clearTimeout(timer);
-  }, [prefsLoaded, preferences.onboardingComplete, router]);
+  }, [prefsLoaded, preferences.onboardingComplete]);
 
   const handleAskGenie = useCallback(
     (text?: string) => {
@@ -85,7 +85,6 @@ export default function HomeScreen() {
       setCurrentQuery(finalQuery);
       setQuery('');
 
-      // Navigate after a tick to let state propagate
       setTimeout(() => {
         try { router.push('/ai-thinking'); } catch (e) { /* ignore */ }
         setTimeout(() => { isNavigating.current = false; }, 2000);

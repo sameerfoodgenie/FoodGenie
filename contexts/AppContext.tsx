@@ -92,11 +92,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Load from Supabase when user changes or auth finishes loading
   useEffect(() => {
-    // Wait for auth to finish loading before deciding
-    if (authLoading) return;
+    // If auth is still loading, don't do anything yet
+    if (authLoading) {
+      return;
+    }
 
+    // Auth finished loading
     if (!user?.id) {
-      // User is not logged in — reset to defaults and mark loaded
+      // Not logged in: reset and mark loaded immediately
       lastUserId.current = null;
       setPreferences(defaultPreferences);
       setBehavior(null);
@@ -104,24 +107,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Prevent duplicate loads for the same user
+    // User is logged in - load their data
     if (lastUserId.current === user.id && prefsLoaded) return;
     if (isLoadingRef.current) return;
 
     lastUserId.current = user.id;
     isLoadingRef.current = true;
+    setPrefsLoaded(false);
 
     loadFromDB(user.id);
   }, [user?.id, authLoading]);
 
-  // Failsafe: if prefsLoaded is still false after 4 seconds, force it
+  // Failsafe: ensure prefsLoaded becomes true within 5s
   useEffect(() => {
-    if (prefsLoaded) return;
     const timer = setTimeout(() => {
       setPrefsLoaded(true);
-    }, 4000);
+    }, 5000);
     return () => clearTimeout(timer);
-  }, [prefsLoaded]);
+  }, []);
 
   const loadFromDB = async (userId: string) => {
     try {
