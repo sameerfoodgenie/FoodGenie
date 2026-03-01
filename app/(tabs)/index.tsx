@@ -70,7 +70,7 @@ function getGreeting() {
 export default function HomeScreen() {
   const router = useRouter();
   const app = useApp();
-  const [showExplore, setShowExplore] = useState(false);
+  
   const [showModePrompt, setShowModePrompt] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedChip, setSelectedChip] = useState<string | null>(null);
@@ -347,54 +347,41 @@ export default function HomeScreen() {
             </ScrollView>
           </Animated.View>
 
-          {/* ─── DIVIDER + EXPLORE MANUALLY ─── */}
-          <Animated.View entering={FadeIn.delay(650).duration(400)} style={styles.exploreSection}>
-            <View style={styles.exploreDivider} />
-            <Pressable onPress={() => setShowExplore(!showExplore)} style={styles.exploreLink}>
-              <Text style={styles.exploreLinkText}>Explore manually</Text>
-              <MaterialIcons
-                name={showExplore ? 'expand-less' : 'chevron-right'}
-                size={16}
-                color={theme.textMuted}
-              />
-            </Pressable>
-
-            {showExplore ? (
-              <Animated.View entering={FadeInDown.duration(250)} style={styles.exploreOptions}>
-                <Pressable
-                  style={({ pressed }) => [styles.exploreOption, pressed && styles.exploreOptionPressed]}
-                  onPress={() => { setShowExplore(false); router.push('/explore'); }}
-                >
-                  <LinearGradient
-                    colors={['rgba(251,191,36,0.12)', 'rgba(251,191,36,0.04)']}
-                    style={styles.exploreOptionIcon}
-                  >
-                    <MaterialIcons name="restaurant-menu" size={18} color={theme.primary} />
-                  </LinearGradient>
-                  <View style={styles.exploreOptionContent}>
-                    <Text style={styles.exploreOptionText}>Explore Dishes</Text>
-                    <Text style={styles.exploreOptionSub}>Browse categories and top picks</Text>
+          {/* ─── EXPLORE YOUR WAY ─── */}
+          <Animated.View entering={FadeInUp.delay(650).duration(400)} style={styles.exploreSection}>
+            <Text style={styles.exploreSectionTitle}>Explore your way</Text>
+            <View style={styles.exploreCards}>
+              <Pressable
+                style={({ pressed }) => [styles.exploreCard, pressed && styles.exploreCardPressed]}
+                onPress={() => router.push('/explore')}
+              >
+                <View style={styles.exploreCardLeft}>
+                  <View style={styles.exploreCardIconWrap}>
+                    <MaterialIcons name="restaurant-menu" size={22} color={theme.primary} />
                   </View>
-                  <MaterialIcons name="chevron-right" size={18} color={theme.textMuted} />
-                </Pressable>
-                <Pressable
-                  style={({ pressed }) => [styles.exploreOption, pressed && styles.exploreOptionPressed]}
-                  onPress={() => { setShowExplore(false); router.push('/explore'); }}
-                >
-                  <LinearGradient
-                    colors={['rgba(251,191,36,0.12)', 'rgba(251,191,36,0.04)']}
-                    style={styles.exploreOptionIcon}
-                  >
-                    <MaterialIcons name="storefront" size={18} color={theme.primary} />
-                  </LinearGradient>
-                  <View style={styles.exploreOptionContent}>
-                    <Text style={styles.exploreOptionText}>Explore Restaurants</Text>
-                    <Text style={styles.exploreOptionSub}>Top rated and reliable kitchens</Text>
+                  <View style={styles.exploreCardText}>
+                    <Text style={styles.exploreCardTitle}>Explore Dishes</Text>
+                    <Text style={styles.exploreCardSub}>Browse categories & cuisines</Text>
                   </View>
-                  <MaterialIcons name="chevron-right" size={18} color={theme.textMuted} />
-                </Pressable>
-              </Animated.View>
-            ) : null}
+                </View>
+                <MaterialIcons name="chevron-right" size={22} color={theme.textMuted} />
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.exploreCard, pressed && styles.exploreCardPressed]}
+                onPress={() => router.push('/explore')}
+              >
+                <View style={styles.exploreCardLeft}>
+                  <View style={styles.exploreCardIconWrap}>
+                    <MaterialIcons name="storefront" size={22} color={theme.primary} />
+                  </View>
+                  <View style={styles.exploreCardText}>
+                    <Text style={styles.exploreCardTitle}>Explore Restaurants</Text>
+                    <Text style={styles.exploreCardSub}>Top rated & reliable kitchens</Text>
+                  </View>
+                </View>
+                <MaterialIcons name="chevron-right" size={22} color={theme.textMuted} />
+              </Pressable>
+            </View>
           </Animated.View>
         </ScrollView>
       </SafeAreaView>
@@ -635,43 +622,47 @@ const styles = StyleSheet.create({
   },
   pickOrderText: { fontSize: 10, fontWeight: '600', color: theme.primary },
 
-  // ── Explore ──
-  exploreSection: { paddingHorizontal: 20, marginBottom: 16 },
-  exploreDivider: {
-    height: 1,
-    backgroundColor: 'rgba(63,63,70,0.3)',
-    marginBottom: 16,
+  // ── Explore Your Way ──
+  exploreSection: { paddingHorizontal: 20, marginTop: 12, marginBottom: 16 },
+  exploreSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: theme.textPrimary,
+    marginBottom: 14,
   },
-  exploreLink: {
+  exploreCards: { gap: 12 },
+  exploreCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(20,20,20,0.9)',
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1.5,
+    borderColor: 'rgba(251,191,36,0.18)',
   },
-  exploreLinkText: { fontSize: 14, color: theme.textMuted, fontWeight: '500' },
-  exploreOptions: { gap: 10, marginTop: 10 },
-  exploreOption: {
+  exploreCardPressed: {
+    backgroundColor: 'rgba(30,30,30,1)',
+    borderColor: 'rgba(251,191,36,0.4)',
+    transform: [{ scale: 0.98 }],
+  },
+  exploreCardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.backgroundSecondary,
-    borderRadius: theme.borderRadius.lg,
-    padding: 14,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.08)',
+    gap: 14,
+    flex: 1,
   },
-  exploreOptionPressed: {
-    backgroundColor: theme.backgroundTertiary,
-    borderColor: 'rgba(251,191,36,0.25)',
-  },
-  exploreOptionIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+  exploreCardIconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: 'rgba(251,191,36,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(251,191,36,0.15)',
   },
-  exploreOptionContent: { flex: 1 },
-  exploreOptionText: { fontSize: 15, fontWeight: '600', color: theme.textPrimary },
-  exploreOptionSub: { fontSize: 12, color: theme.textMuted, marginTop: 2 },
+  exploreCardText: { flex: 1 },
+  exploreCardTitle: { fontSize: 16, fontWeight: '700', color: theme.textPrimary },
+  exploreCardSub: { fontSize: 13, color: theme.textSecondary, marginTop: 3 },
 });
