@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Dimensions,
   TextInput,
   ScrollView,
   ActivityIndicator,
@@ -36,7 +35,15 @@ const QUICK_SUGGESTIONS = [
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { preferences, updatePreferences, updateMode, prefsLoaded, setCurrentQuery } = useApp();
+  const {
+    preferences,
+    updatePreferences,
+    updateMode,
+    prefsLoaded,
+    setCurrentQuery,
+    setAiResults,
+    incrementSession,
+  } = useApp();
   const [showExplore, setShowExplore] = useState(false);
   const [showModePrompt, setShowModePrompt] = useState(false);
   const [query, setQuery] = useState('');
@@ -61,38 +68,70 @@ export default function HomeScreen() {
     if (hasRedirected.current) return;
     hasRedirected.current = true;
     const timer = setTimeout(() => {
-      try { router.push('/onboarding'); } catch (e) { console.log('Nav error:', e); }
+      try {
+        router.push('/onboarding');
+      } catch (e) {
+        console.log('Nav error:', e);
+      }
     }, 500);
     return () => clearTimeout(timer);
   }, [prefsLoaded, preferences.onboardingComplete]);
 
-  const handleAskGenie = useCallback((text?: string) => {
-    if (isNavigating.current) return;
-    isNavigating.current = true;
+  const handleAskGenie = useCallback(
+    (text?: string) => {
+      if (isNavigating.current) return;
+      isNavigating.current = true;
 
-    if (!preferences.onboardingComplete) {
-      try { router.push('/onboarding'); } catch (e) { console.log(e); }
-      setTimeout(() => { isNavigating.current = false; }, 2000);
-      return;
-    }
+      if (!preferences.onboardingComplete) {
+        try {
+          router.push('/onboarding');
+        } catch (e) {
+          console.log(e);
+        }
+        setTimeout(() => {
+          isNavigating.current = false;
+        }, 2000);
+        return;
+      }
 
-    const finalQuery = text || query.trim();
-    setCurrentQuery(finalQuery);
-    setQuery('');
+      const finalQuery = text || query.trim();
 
-    setTimeout(() => {
-      try { router.push('/ai-thinking'); } catch (e) { console.log(e); }
-      setTimeout(() => { isNavigating.current = false; }, 2000);
-    }, 150);
-  }, [preferences.onboardingComplete, query]);
+      // Set the query in context synchronously
+      setCurrentQuery(finalQuery);
+      setQuery('');
 
-  const handleChipPress = useCallback((label: string) => {
-    handleAskGenie(label);
-  }, [handleAskGenie]);
+      // Navigate after a tick to let state propagate
+      setTimeout(() => {
+        try {
+          router.push('/ai-thinking');
+        } catch (e) {
+          console.log('Nav error:', e);
+        }
+        setTimeout(() => {
+          isNavigating.current = false;
+        }, 2000);
+      }, 100);
+    },
+    [preferences.onboardingComplete, query, setCurrentQuery, router],
+  );
 
-  const handleModeSelect = useCallback(async (mode: 'quick' | 'guided') => {
-    try { await updateMode(mode); } catch { /* ignore */ }
-  }, [updateMode]);
+  const handleChipPress = useCallback(
+    (label: string) => {
+      handleAskGenie(label);
+    },
+    [handleAskGenie],
+  );
+
+  const handleModeSelect = useCallback(
+    async (mode: 'quick' | 'guided') => {
+      try {
+        await updateMode(mode);
+      } catch {
+        /* ignore */
+      }
+    },
+    [updateMode],
+  );
 
   if (!prefsLoaded) {
     return (
@@ -161,7 +200,12 @@ export default function HomeScreen() {
               {/* Input Area */}
               <View style={styles.inputRow}>
                 <View style={styles.inputWrapper}>
-                  <MaterialIcons name="search" size={20} color={theme.textMuted} style={styles.inputIcon} />
+                  <MaterialIcons
+                    name="search"
+                    size={20}
+                    color={theme.textMuted}
+                    style={styles.inputIcon}
+                  />
                   <TextInput
                     style={styles.queryInput}
                     value={query}
@@ -173,16 +217,10 @@ export default function HomeScreen() {
                   />
                 </View>
                 <Pressable
-                  style={({ pressed }) => [
-                    styles.sendButton,
-                    pressed && styles.sendButtonPressed,
-                  ]}
+                  style={({ pressed }) => [styles.sendButton, pressed && styles.sendButtonPressed]}
                   onPress={() => handleAskGenie()}
                 >
-                  <LinearGradient
-                    colors={theme.gradients.genie}
-                    style={styles.sendButtonGradient}
-                  >
+                  <LinearGradient colors={theme.gradients.genie} style={styles.sendButtonGradient}>
                     <MaterialIcons name="auto-awesome" size={22} color={theme.textOnPrimary} />
                   </LinearGradient>
                 </Pressable>
@@ -198,10 +236,7 @@ export default function HomeScreen() {
                 {QUICK_SUGGESTIONS.map((chip) => (
                   <Pressable
                     key={chip.label}
-                    style={({ pressed }) => [
-                      styles.chip,
-                      pressed && styles.chipPressed,
-                    ]}
+                    style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}
                     onPress={() => handleChipPress(chip.label)}
                   >
                     <Text style={styles.chipEmoji}>{chip.emoji}</Text>
@@ -218,8 +253,16 @@ export default function HomeScreen() {
             <View style={styles.stepsRow}>
               {[
                 { icon: 'chat', label: 'Tell your craving', color: 'rgba(251, 191, 36, 0.15)' },
-                { icon: 'psychology', label: 'AI finds matches', color: 'rgba(34, 197, 94, 0.15)' },
-                { icon: 'delivery-dining', label: 'Order via partners', color: 'rgba(59, 130, 246, 0.15)' },
+                {
+                  icon: 'psychology',
+                  label: 'AI finds matches',
+                  color: 'rgba(34, 197, 94, 0.15)',
+                },
+                {
+                  icon: 'delivery-dining',
+                  label: 'Order via partners',
+                  color: 'rgba(59, 130, 246, 0.15)',
+                },
               ].map((step, i) => (
                 <Animated.View
                   key={step.label}
@@ -237,10 +280,7 @@ export default function HomeScreen() {
 
           {/* Explore manually */}
           <Animated.View entering={FadeIn.delay(600).duration(400)} style={styles.exploreSection}>
-            <Pressable
-              onPress={() => setShowExplore(!showExplore)}
-              style={styles.exploreLink}
-            >
+            <Pressable onPress={() => setShowExplore(!showExplore)} style={styles.exploreLink}>
               <Text style={styles.exploreLinkText}>Explore manually</Text>
               <MaterialIcons
                 name={showExplore ? 'expand-less' : 'chevron-right'}
@@ -252,8 +292,14 @@ export default function HomeScreen() {
             {showExplore ? (
               <Animated.View entering={FadeInDown.duration(250)} style={styles.exploreOptions}>
                 <Pressable
-                  style={({ pressed }) => [styles.exploreOption, pressed && styles.exploreOptionPressed]}
-                  onPress={() => { setShowExplore(false); router.push('/recommendations'); }}
+                  style={({ pressed }) => [
+                    styles.exploreOption,
+                    pressed && styles.exploreOptionPressed,
+                  ]}
+                  onPress={() => {
+                    setShowExplore(false);
+                    router.push('/recommendations');
+                  }}
                 >
                   <LinearGradient
                     colors={['rgba(251, 191, 36, 0.12)', 'rgba(251, 191, 36, 0.04)']}
@@ -268,8 +314,14 @@ export default function HomeScreen() {
                   <MaterialIcons name="chevron-right" size={20} color={theme.textMuted} />
                 </Pressable>
                 <Pressable
-                  style={({ pressed }) => [styles.exploreOption, pressed && styles.exploreOptionPressed]}
-                  onPress={() => { setShowExplore(false); router.push('/daily-meals'); }}
+                  style={({ pressed }) => [
+                    styles.exploreOption,
+                    pressed && styles.exploreOptionPressed,
+                  ]}
+                  onPress={() => {
+                    setShowExplore(false);
+                    router.push('/daily-meals');
+                  }}
                 >
                   <LinearGradient
                     colors={['rgba(251, 191, 36, 0.12)', 'rgba(251, 191, 36, 0.04)']}
