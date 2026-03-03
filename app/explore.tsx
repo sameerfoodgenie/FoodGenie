@@ -12,7 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { theme } from '../constants/theme';
@@ -31,7 +32,8 @@ interface DishCategory {
   name: string;
   emoji: string;
   image: string;
-  keywords: string[]; // matched against _rawTags and dish name
+  gradient: [string, string];
+  keywords: string[];
 }
 
 const DISH_CATEGORIES: DishCategory[] = [
@@ -40,6 +42,7 @@ const DISH_CATEGORIES: DishCategory[] = [
     name: 'Biryani',
     emoji: '🍚',
     image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=80',
+    gradient: ['rgba(234,179,8,0.7)', 'rgba(202,138,4,0.9)'],
     keywords: ['biryani', 'dum', 'pulao'],
   },
   {
@@ -47,6 +50,7 @@ const DISH_CATEGORIES: DishCategory[] = [
     name: 'Pizza & Fast Food',
     emoji: '🍕',
     image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&q=80',
+    gradient: ['rgba(239,68,68,0.6)', 'rgba(185,28,28,0.9)'],
     keywords: ['pizza', 'burger', 'fries', 'pasta', 'sandwich', 'momos', 'wrap'],
   },
   {
@@ -54,6 +58,7 @@ const DISH_CATEGORIES: DishCategory[] = [
     name: 'North Indian',
     emoji: '🍛',
     image: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&q=80',
+    gradient: ['rgba(245,158,11,0.6)', 'rgba(180,83,9,0.9)'],
     keywords: ['north-indian', 'punjabi', 'paneer', 'dal', 'naan', 'roti', 'chole', 'rajma', 'paratha'],
   },
   {
@@ -61,6 +66,7 @@ const DISH_CATEGORIES: DishCategory[] = [
     name: 'Chinese',
     emoji: '🥡',
     image: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?w=400&q=80',
+    gradient: ['rgba(220,38,38,0.6)', 'rgba(153,27,27,0.9)'],
     keywords: ['chinese', 'noodles', 'manchurian', 'schezwan', 'hakka', 'fried rice'],
   },
   {
@@ -68,6 +74,7 @@ const DISH_CATEGORIES: DishCategory[] = [
     name: 'Healthy',
     emoji: '🥗',
     image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80',
+    gradient: ['rgba(34,197,94,0.6)', 'rgba(21,128,61,0.9)'],
     keywords: ['healthy', 'high-protein', 'salad', 'smoothie', 'protein', 'quinoa', 'millet', 'sprout'],
   },
   {
@@ -75,6 +82,7 @@ const DISH_CATEGORIES: DishCategory[] = [
     name: 'Street Food',
     emoji: '🌮',
     image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400&q=80',
+    gradient: ['rgba(251,146,60,0.6)', 'rgba(194,65,12,0.9)'],
     keywords: ['street-food', 'chaat', 'pav bhaji', 'samosa', 'pani puri', 'vada pav', 'bhel'],
   },
   {
@@ -82,6 +90,7 @@ const DISH_CATEGORIES: DishCategory[] = [
     name: 'Desserts',
     emoji: '🍰',
     image: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=400&q=80',
+    gradient: ['rgba(168,85,247,0.6)', 'rgba(107,33,168,0.9)'],
     keywords: ['dessert', 'sweet', 'gulab', 'cake', 'jalebi', 'kheer', 'halwa', 'brownie'],
   },
   {
@@ -89,6 +98,7 @@ const DISH_CATEGORIES: DishCategory[] = [
     name: 'Beverages',
     emoji: '🥤',
     image: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=80',
+    gradient: ['rgba(59,130,246,0.6)', 'rgba(29,78,216,0.9)'],
     keywords: ['beverage', 'juice', 'shake', 'coffee', 'chai', 'lassi', 'smoothie', 'buttermilk'],
   },
   {
@@ -96,6 +106,7 @@ const DISH_CATEGORIES: DishCategory[] = [
     name: 'South Indian',
     emoji: '🫓',
     image: 'https://images.unsplash.com/photo-1630383249896-424e482df921?w=400&q=80',
+    gradient: ['rgba(234,179,8,0.6)', 'rgba(161,98,7,0.9)'],
     keywords: ['south-indian', 'dosa', 'idli', 'sambar', 'uttapam', 'pongal', 'vada'],
   },
   {
@@ -103,9 +114,13 @@ const DISH_CATEGORIES: DishCategory[] = [
     name: 'Thalis',
     emoji: '🍱',
     image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&q=80',
+    gradient: ['rgba(245,158,11,0.7)', 'rgba(146,64,14,0.9)'],
     keywords: ['thali', 'combo', 'unlimited'],
   },
 ];
+
+// Alternate tile heights for visual dynamism
+const TILE_HEIGHTS = [TILE_WIDTH * 0.85, TILE_WIDTH * 1.0];
 
 function getDishesForCategory(category: DishCategory, allDishes: Dish[]): Dish[] {
   return allDishes.filter((dish) => {
@@ -118,24 +133,78 @@ function getDishesForCategory(category: DishCategory, allDishes: Dish[]): Dish[]
   });
 }
 
+// VEG TYPE EMOJI
+function vegTypeLabel(vt: string): { label: string; color: string } {
+  switch (vt) {
+    case 'pure_veg':
+      return { label: '🟢 Pure Veg', color: '#22C55E' };
+    case 'veg_egg':
+      return { label: '🟡 Veg & Egg', color: '#EAB308' };
+    case 'nonveg':
+      return { label: '🔴 Non-Veg', color: '#EF4444' };
+    default:
+      return { label: '🍽️ Multi', color: theme.textSecondary };
+  }
+}
+
 export default function ExploreScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ view?: string }>();
   const { preferences, updatePreferences, allDishes, allRestaurants, dataLoaded } = useApp();
   const { user } = useAuth();
   const { showAlert } = useAlert();
+
+  const [activeTab, setActiveTab] = useState<'dishes' | 'restaurants'>(
+    params.view === 'restaurants' ? 'restaurants' : 'dishes',
+  );
   const [selectedCategory, setSelectedCategory] = useState<DishCategory | null>(null);
   const [showOrderSheet, setShowOrderSheet] = useState(false);
   const [orderContext, setOrderContext] = useState<{ dish: string; restaurant: string; price: number } | null>(null);
+  const [areaFilter, setAreaFilter] = useState<string | null>(null);
 
   const preferredPartnerId = preferences.preferredPartnerApp || null;
   const preferredPartner = preferredPartnerId ? getPartnerById(preferredPartnerId) : null;
 
-  const topRestaurants = useMemo(() => {
-    return allRestaurants
-      .filter((r) => r.rating >= 4.0)
-      .sort((a, b) => b.rating - a.rating)
-      .slice(0, 10);
+  // Dish count per category (for badge)
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const cat of DISH_CATEGORIES) {
+      counts[cat.id] = getDishesForCategory(cat, allDishes).length;
+    }
+    return counts;
+  }, [allDishes]);
+
+  // Unique areas for filter
+  const areas = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of allRestaurants) {
+      const extra = r as any;
+      const area = extra._area || (r as any).area;
+      if (area) set.add(area);
+    }
+    return Array.from(set).sort();
   }, [allRestaurants]);
+
+  // Filtered restaurants
+  const filteredRestaurants = useMemo(() => {
+    let list = [...allRestaurants];
+    if (areaFilter) {
+      list = list.filter((r) => {
+        const extra = r as any;
+        return (extra._area || '') === areaFilter;
+      });
+    }
+    return list.sort((a, b) => b.rating - a.rating);
+  }, [allRestaurants, areaFilter]);
+
+  // Count dishes per restaurant
+  const restaurantDishCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const d of allDishes) {
+      counts[d.restaurantId] = (counts[d.restaurantId] || 0) + 1;
+    }
+    return counts;
+  }, [allDishes]);
 
   const handleOrderDish = useCallback(
     async (dishName: string, restaurantName: string, price: number) => {
@@ -157,13 +226,10 @@ export default function ExploreScreen() {
     [preferredPartner, user?.id, updatePreferences, showAlert],
   );
 
-  const handleCategoryPress = useCallback(
-    (category: DishCategory) => {
-      Haptics.selectionAsync();
-      setSelectedCategory(category);
-    },
-    [],
-  );
+  const handleCategoryPress = useCallback((category: DishCategory) => {
+    Haptics.selectionAsync();
+    setSelectedCategory(category);
+  }, []);
 
   const handleBack = useCallback(() => {
     Haptics.selectionAsync();
@@ -182,19 +248,19 @@ export default function ExploreScreen() {
     [router],
   );
 
-  // Loading state while data loads
+  // Loading state
   if (!dataLoaded) {
     return (
       <SafeAreaView edges={['top']} style={styles.container}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={theme.primary} />
-          <Text style={{ color: theme.textMuted, marginTop: 12, fontSize: 14 }}>Loading restaurants...</Text>
+          <Text style={{ color: theme.textMuted, marginTop: 12, fontSize: 14 }}>Loading...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  // Category detail view
+  // ── Category detail view ──
   if (selectedCategory) {
     const dishes = getDishesForCategory(selectedCategory, allDishes);
     return (
@@ -218,9 +284,7 @@ export default function ExploreScreen() {
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🔍</Text>
             <Text style={styles.emptyTitle}>No dishes yet</Text>
-            <Text style={styles.emptySubtitle}>
-              We are adding more dishes to this category soon.
-            </Text>
+            <Text style={styles.emptySubtitle}>We are adding more dishes to this category soon.</Text>
           </View>
         ) : (
           <FlatList
@@ -231,34 +295,20 @@ export default function ExploreScreen() {
             renderItem={({ item, index }) => (
               <Animated.View entering={FadeInDown.delay(index * 80).duration(350)}>
                 <Pressable
-                  style={({ pressed }) => [
-                    styles.dishRow,
-                    pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
-                  ]}
+                  style={({ pressed }) => [styles.dishRow, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
                   onPress={() => handleDishPress(item.id)}
                 >
-                  <Image
-                    source={item.image}
-                    style={styles.dishRowImage}
-                    contentFit="cover"
-                    transition={200}
-                  />
+                  <Image source={item.image} style={styles.dishRowImage} contentFit="cover" transition={200} />
                   <View style={styles.dishRowContent}>
-                    <Text style={styles.dishRowName} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <Text style={styles.dishRowRestaurant} numberOfLines={1}>
-                      {item.restaurant}
-                    </Text>
+                    <Text style={styles.dishRowName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={styles.dishRowRestaurant} numberOfLines={1}>{item.restaurant}</Text>
                     <View style={styles.dishRowMeta}>
                       <MaterialIcons name="star" size={13} color={theme.accent} />
                       <Text style={styles.dishRowRating}>{item.rating}</Text>
                       <Text style={styles.dishRowDot}>·</Text>
                       <Text style={styles.dishRowTime}>{item.deliveryTime}</Text>
                       <Text style={styles.dishRowDot}>·</Text>
-                      <Text style={styles.dishRowSpice}>
-                        {'🌶️'.repeat(item.spiceLevel)}
-                      </Text>
+                      <Text style={styles.dishRowSpice}>{'🌶️'.repeat(item.spiceLevel)}</Text>
                     </View>
                     <View style={styles.dishRowTagsRow}>
                       {item.tags.slice(0, 2).map((tag) => (
@@ -290,7 +340,7 @@ export default function ExploreScreen() {
     );
   }
 
-  // Main explore view
+  // ── Main explore view ──
   return (
     <SafeAreaView edges={['top']} style={styles.container}>
       {/* Header */}
@@ -307,116 +357,188 @@ export default function ExploreScreen() {
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ─── Browse by Dish ─── */}
-        <Animated.View entering={FadeIn.delay(100).duration(400)}>
-          <Text style={styles.sectionTitle}>Browse by dish</Text>
-          <Text style={styles.sectionSubtitle}>
-            Find exactly what you are craving
-          </Text>
-        </Animated.View>
-
-        <View style={styles.categoryGrid}>
-          {DISH_CATEGORIES.map((cat, i) => (
-            <Animated.View
-              key={cat.id}
-              entering={FadeInDown.delay(150 + i * 60).duration(350)}
-            >
-              <Pressable
-                style={({ pressed }) => [
-                  styles.categoryTile,
-                  pressed && { opacity: 0.88, transform: [{ scale: 0.97 }] },
-                ]}
-                onPress={() => handleCategoryPress(cat)}
-              >
-                <Image
-                  source={{ uri: cat.image }}
-                  style={styles.categoryImage}
-                  contentFit="cover"
-                  transition={200}
-                />
-                <View style={styles.categoryOverlay} />
-                <View style={styles.categoryLabelBlock}>
-                  <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
-                  <Text style={styles.categoryName}>{cat.name}</Text>
-                </View>
-              </Pressable>
-            </Animated.View>
-          ))}
-        </View>
-
-        {/* ─── Top Rated & Reliable ─── */}
-        <Animated.View entering={FadeIn.delay(500).duration(400)} style={styles.restaurantSection}>
-          <Text style={styles.sectionTitle}>Top Rated & Reliable</Text>
-          <Text style={styles.sectionSubtitle}>
-            Consistently great kitchens you can trust
-          </Text>
-        </Animated.View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.restaurantScroll}
+      {/* Tab switcher */}
+      <View style={styles.tabBar}>
+        <Pressable
+          style={[styles.tab, activeTab === 'dishes' && styles.tabActive]}
+          onPress={() => { Haptics.selectionAsync(); setActiveTab('dishes'); }}
         >
-          {topRestaurants.map((rest, i) => (
-            <Animated.View
-              key={rest.id}
-              entering={FadeInRight.delay(550 + i * 90).duration(400)}
-            >
-              <View style={styles.restaurantCard}>
-                <Image
-                  source={rest.image}
-                  style={styles.restaurantImage}
-                  contentFit="cover"
-                  transition={200}
-                />
-                <View style={styles.restaurantBody}>
-                  <View style={styles.restaurantNameRow}>
-                    <Text style={styles.restaurantName} numberOfLines={1}>
-                      {rest.name}
-                    </Text>
-                    {rest.chefScore >= 90 ? (
-                      <MaterialIcons name="verified" size={16} color={theme.success} />
-                    ) : null}
-                  </View>
-                  <Text style={styles.restaurantCuisine}>{rest.cuisine}</Text>
-                  <View style={styles.restaurantMeta}>
-                    <View style={styles.ratingBadge}>
-                      <MaterialIcons name="star" size={13} color={theme.accent} />
-                      <Text style={styles.ratingText}>{rest.rating}</Text>
-                    </View>
-                    <Text style={styles.restaurantDot}>·</Text>
-                    <Text style={styles.restaurantTime}>{rest.deliveryTime}</Text>
-                  </View>
-                  <Text style={styles.restaurantPrice}>{rest.priceRange}</Text>
+          <MaterialIcons name="restaurant-menu" size={16} color={activeTab === 'dishes' ? theme.primary : theme.textMuted} />
+          <Text style={[styles.tabText, activeTab === 'dishes' && styles.tabTextActive]}>Dishes</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.tab, activeTab === 'restaurants' && styles.tabActive]}
+          onPress={() => { Haptics.selectionAsync(); setActiveTab('restaurants'); }}
+        >
+          <MaterialIcons name="storefront" size={16} color={activeTab === 'restaurants' ? theme.primary : theme.textMuted} />
+          <Text style={[styles.tabText, activeTab === 'restaurants' && styles.tabTextActive]}>Restaurants</Text>
+        </Pressable>
+      </View>
+
+      {activeTab === 'dishes' ? (
+        /* ─── DISHES TAB ─── */
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View entering={FadeIn.delay(100).duration(400)}>
+            <Text style={styles.sectionTitle}>Browse by dish</Text>
+            <Text style={styles.sectionSubtitle}>Find exactly what you are craving</Text>
+          </Animated.View>
+
+          <View style={styles.categoryGrid}>
+            {DISH_CATEGORIES.map((cat, i) => {
+              const height = TILE_HEIGHTS[i % 2 === 0 ? 0 : 1];
+              const count = categoryCounts[cat.id] || 0;
+              return (
+                <Animated.View key={cat.id} entering={FadeInDown.delay(150 + i * 60).duration(350)}>
                   <Pressable
                     style={({ pressed }) => [
-                      styles.exploreMenuBtn,
-                      pressed && { opacity: 0.85 },
+                      styles.categoryTile,
+                      { height },
+                      pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] },
                     ]}
+                    onPress={() => handleCategoryPress(cat)}
+                  >
+                    <Image source={{ uri: cat.image }} style={styles.categoryImage} contentFit="cover" transition={200} />
+                    {/* Gradient overlay */}
+                    <LinearGradient
+                      colors={['transparent', 'rgba(0,0,0,0.25)', cat.gradient[1]]}
+                      locations={[0, 0.4, 1]}
+                      style={styles.categoryGradient}
+                    />
+                    {/* Top-right count badge */}
+                    <View style={styles.categoryCountBadge}>
+                      <Text style={styles.categoryCountText}>{count}</Text>
+                    </View>
+                    {/* Bottom label */}
+                    <View style={styles.categoryLabelBlock}>
+                      <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+                      <View style={styles.categoryLabelTextBlock}>
+                        <Text style={styles.categoryName}>{cat.name}</Text>
+                        <Text style={styles.categoryCountSub}>
+                          {count} {count === 1 ? 'dish' : 'dishes'}
+                        </Text>
+                      </View>
+                    </View>
+                    {/* Subtle gold corner accent */}
+                    <View style={styles.categoryCornerAccent} />
+                  </Pressable>
+                </Animated.View>
+              );
+            })}
+          </View>
+          <View style={{ height: 48 }} />
+        </ScrollView>
+      ) : (
+        /* ─── RESTAURANTS TAB ─── */
+        <View style={{ flex: 1 }}>
+          {/* Area filter chips */}
+          <View style={styles.filterBarOuter}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterBar}
+            >
+              <Pressable
+                style={[styles.filterChip, !areaFilter && styles.filterChipActive]}
+                onPress={() => { Haptics.selectionAsync(); setAreaFilter(null); }}
+              >
+                <Text style={[styles.filterChipText, !areaFilter && styles.filterChipTextActive]}>All</Text>
+              </Pressable>
+              {areas.map((area) => (
+                <Pressable
+                  key={area}
+                  style={[styles.filterChip, areaFilter === area && styles.filterChipActive]}
+                  onPress={() => { Haptics.selectionAsync(); setAreaFilter(area === areaFilter ? null : area); }}
+                >
+                  <Text style={[styles.filterChipText, areaFilter === area && styles.filterChipTextActive]}>{area}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+
+          <FlatList
+            data={filteredRestaurants}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            columnWrapperStyle={styles.restGridRow}
+            contentContainerStyle={styles.restGridContent}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item, index }) => {
+              const extra = item as any;
+              const area = extra._area || '';
+              const vegInfo = vegTypeLabel(extra._vegType || '');
+              const dishCount = restaurantDishCounts[item.id] || 0;
+              const tier = extra._reliabilityTier || 'medium';
+              const isVerified = extra._isVerified || false;
+
+              return (
+                <Animated.View entering={FadeInDown.delay(index * 60).duration(350)} style={styles.restCardWrapper}>
+                  <Pressable
+                    style={({ pressed }) => [styles.restCard, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
                     onPress={() => {
                       Haptics.selectionAsync();
-                      const firstDish = rest.featuredDishes[0];
-                      if (firstDish) {
-                        router.push(`/dish/${firstDish}`);
-                      }
+                      const firstDish = item.featuredDishes[0];
+                      if (firstDish) router.push(`/dish/${firstDish}`);
                     }}
                   >
-                    <MaterialIcons name="restaurant-menu" size={14} color={theme.primary} />
-                    <Text style={styles.exploreMenuText}>Explore menu</Text>
-                  </Pressable>
-                </View>
-              </View>
-            </Animated.View>
-          ))}
-        </ScrollView>
+                    {/* Image */}
+                    <View style={styles.restCardImageWrap}>
+                      <Image source={item.image} style={styles.restCardImage} contentFit="cover" transition={200} />
+                      <LinearGradient
+                        colors={['transparent', 'rgba(0,0,0,0.7)']}
+                        style={styles.restCardImgGradient}
+                      />
+                      {/* Rating badge */}
+                      <View style={styles.restRatingBadge}>
+                        <MaterialIcons name="star" size={11} color="#FFF" />
+                        <Text style={styles.restRatingText}>{item.rating}</Text>
+                      </View>
+                      {/* Tier badge */}
+                      {tier === 'high' ? (
+                        <View style={styles.restTierBadge}>
+                          <MaterialIcons name="workspace-premium" size={10} color={theme.primary} />
+                        </View>
+                      ) : null}
+                    </View>
 
-        <View style={{ height: 48 }} />
-      </ScrollView>
+                    {/* Info */}
+                    <View style={styles.restCardBody}>
+                      <View style={styles.restNameRow}>
+                        <Text style={styles.restCardName} numberOfLines={1}>{item.name}</Text>
+                        {isVerified ? (
+                          <MaterialIcons name="verified" size={13} color={theme.success} />
+                        ) : null}
+                      </View>
+                      <Text style={styles.restCardCuisine} numberOfLines={1}>{item.cuisine}</Text>
+                      {area ? (
+                        <View style={styles.restAreaRow}>
+                          <MaterialIcons name="location-on" size={11} color={theme.textMuted} />
+                          <Text style={styles.restAreaText} numberOfLines={1}>{area}</Text>
+                        </View>
+                      ) : null}
+                      <View style={styles.restCardFooter}>
+                        <Text style={[styles.restVegLabel, { color: vegInfo.color }]}>{vegInfo.label}</Text>
+                        <Text style={styles.restDishCount}>{dishCount} dishes</Text>
+                      </View>
+                      <Text style={styles.restCardPrice}>{item.priceRange}</Text>
+                    </View>
+                  </Pressable>
+                </Animated.View>
+              );
+            }}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyEmoji}>🏪</Text>
+                <Text style={styles.emptyTitle}>No restaurants found</Text>
+                <Text style={styles.emptySubtitle}>Try a different area filter.</Text>
+              </View>
+            }
+          />
+        </View>
+      )}
 
       <OrderPartnerSheet
         visible={showOrderSheet}
@@ -456,137 +578,210 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: '700', color: theme.textPrimary },
   headerSubtitle: { fontSize: 13, color: theme.textSecondary, marginTop: 2 },
 
+  // Tab bar
+  tabBar: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    backgroundColor: theme.backgroundSecondary,
+    borderRadius: 14,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  tabActive: {
+    backgroundColor: 'rgba(251,191,36,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(251,191,36,0.25)',
+  },
+  tabText: { fontSize: 14, fontWeight: '600', color: theme.textMuted },
+  tabTextActive: { color: theme.primary },
+
   scroll: { flex: 1 },
-  scrollContent: { paddingTop: 24, paddingBottom: 32 },
+  scrollContent: { paddingTop: 20, paddingBottom: 32 },
 
   // Sections
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: theme.textPrimary,
-    paddingHorizontal: 20,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: theme.textSecondary,
-    paddingHorizontal: 20,
-    marginTop: 4,
-    marginBottom: 20,
-  },
+  sectionTitle: { fontSize: 20, fontWeight: '700', color: theme.textPrimary, paddingHorizontal: 20 },
+  sectionSubtitle: { fontSize: 14, color: theme.textSecondary, paddingHorizontal: 20, marginTop: 4, marginBottom: 20 },
 
-  // Category Grid
+  // ── Dynamic Category Grid ──
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     paddingHorizontal: 20,
     gap: TILE_GAP,
-    marginBottom: 40,
+    marginBottom: 24,
   },
   categoryTile: {
     width: TILE_WIDTH,
-    height: TILE_WIDTH * 0.75,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(251,191,36,0.18)',
     ...theme.shadows.card,
   },
   categoryImage: {
     width: '100%',
     height: '100%',
   },
-  categoryOverlay: {
+  categoryGradient: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  categoryCountBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    minWidth: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  categoryCountText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   categoryLabelBlock: {
     position: 'absolute',
-    bottom: 12,
-    left: 12,
-    right: 12,
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
-  categoryEmoji: { fontSize: 18 },
+  categoryEmoji: { fontSize: 20 },
+  categoryLabelTextBlock: { flex: 1 },
   categoryName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: 0.2,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  categoryCountSub: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: 1,
+    fontWeight: '500',
+  },
+  categoryCornerAccent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 40,
+    height: 40,
+    borderTopLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    backgroundColor: 'rgba(251,191,36,0.15)',
   },
 
-  // Restaurant Section
-  restaurantSection: { marginBottom: 4 },
-  restaurantScroll: { paddingHorizontal: 20, gap: 14, paddingBottom: 8 },
-  restaurantCard: {
-    width: 230,
+  // ── Area filter bar ──
+  filterBarOuter: {
+    minHeight: 52,
+    paddingVertical: 8,
+  },
+  filterBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: theme.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: 'rgba(63,63,70,0.3)',
+  },
+  filterChipActive: {
+    backgroundColor: 'rgba(251,191,36,0.12)',
+    borderColor: 'rgba(251,191,36,0.4)',
+  },
+  filterChipText: { fontSize: 13, fontWeight: '500', color: theme.textSecondary },
+  filterChipTextActive: { color: theme.primary, fontWeight: '600' },
+
+  // ── Restaurant Grid ──
+  restGridContent: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 48, gap: 12 },
+  restGridRow: { justifyContent: 'space-between' },
+  restCardWrapper: { width: (SCREEN_WIDTH - 16 * 2 - 12) / 2 },
+  restCard: {
     backgroundColor: theme.backgroundSecondary,
     borderRadius: 18,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.12)',
+    borderColor: 'rgba(251,191,36,0.1)',
     ...theme.shadows.card,
   },
-  restaurantImage: {
-    width: '100%',
-    height: 120,
+  restCardImageWrap: { height: 110, position: 'relative' },
+  restCardImage: { width: '100%', height: '100%' },
+  restCardImgGradient: {
+    ...StyleSheet.absoluteFillObject,
   },
-  restaurantBody: { padding: 14 },
-  restaurantNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 2,
-  },
-  restaurantName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: theme.textPrimary,
-    flex: 1,
-  },
-  restaurantCuisine: {
-    fontSize: 13,
-    color: theme.textMuted,
-    marginBottom: 10,
-  },
-  restaurantMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
-  },
-  ratingBadge: {
+  restRatingBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: 'rgba(251,191,36,0.1)',
-    paddingHorizontal: 8,
+    backgroundColor: 'rgba(245,158,11,0.85)',
+    paddingHorizontal: 7,
     paddingVertical: 3,
-    borderRadius: theme.borderRadius.full,
+    borderRadius: 8,
   },
-  ratingText: { fontSize: 13, fontWeight: '700', color: theme.primary },
-  restaurantDot: { fontSize: 12, color: theme.textMuted },
-  restaurantTime: { fontSize: 13, color: theme.textSecondary },
-  restaurantPrice: {
-    fontSize: 13,
-    color: theme.textSecondary,
-    marginBottom: 14,
-  },
-  exploreMenuBtn: {
-    flexDirection: 'row',
+  restRatingText: { fontSize: 11, fontWeight: '700', color: '#FFF' },
+  restTierBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.3)',
-    backgroundColor: 'rgba(251,191,36,0.06)',
+    borderColor: 'rgba(251,191,36,0.4)',
   },
-  exploreMenuText: { fontSize: 13, fontWeight: '600', color: theme.primary },
+  restCardBody: { padding: 12 },
+  restNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
+  restCardName: { fontSize: 14, fontWeight: '700', color: theme.textPrimary, flex: 1 },
+  restCardCuisine: { fontSize: 11, color: theme.textMuted, marginBottom: 4 },
+  restAreaRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginBottom: 6 },
+  restAreaText: { fontSize: 11, color: theme.textSecondary, flex: 1 },
+  restCardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  restVegLabel: { fontSize: 10, fontWeight: '600' },
+  restDishCount: { fontSize: 10, color: theme.textMuted, fontWeight: '500' },
+  restCardPrice: { fontSize: 11, color: theme.textSecondary, fontWeight: '500' },
 
-  // Category Detail: Dish List
+  // ── Category Detail: Dish List ──
   dishList: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 40, gap: 10 },
   dishRow: {
     flexDirection: 'row',
@@ -598,20 +793,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(251,191,36,0.08)',
   },
-  dishRowImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 14,
-  },
+  dishRowImage: { width: 80, height: 80, borderRadius: 14 },
   dishRowContent: { flex: 1 },
   dishRowName: { fontSize: 16, fontWeight: '700', color: theme.textPrimary },
   dishRowRestaurant: { fontSize: 13, color: theme.textMuted, marginTop: 2 },
-  dishRowMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 6,
-  },
+  dishRowMeta: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 },
   dishRowRating: { fontSize: 13, fontWeight: '600', color: theme.textPrimary },
   dishRowDot: { fontSize: 10, color: theme.textMuted },
   dishRowTime: { fontSize: 12, color: theme.textSecondary },
@@ -626,11 +812,7 @@ const styles = StyleSheet.create({
   dishRowTagText: { fontSize: 10, fontWeight: '600', color: theme.primary },
   dishRowRight: { alignItems: 'flex-end', gap: 2 },
   dishRowPrice: { fontSize: 18, fontWeight: '700', color: theme.textPrimary },
-  dishRowOriginal: {
-    fontSize: 13,
-    color: theme.textMuted,
-    textDecorationLine: 'line-through',
-  },
+  dishRowOriginal: { fontSize: 13, color: theme.textMuted, textDecorationLine: 'line-through' },
   dishOrderBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -643,20 +825,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(251,191,36,0.3)',
     backgroundColor: 'rgba(251,191,36,0.06)',
   },
-  dishOrderText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: theme.primary,
-  },
+  dishOrderText: { fontSize: 11, fontWeight: '600', color: theme.primary },
 
   // Empty state
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 40,
-    paddingTop: 80,
-  },
+  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, paddingTop: 80 },
   emptyEmoji: { fontSize: 48, marginBottom: 16 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: theme.textPrimary, marginBottom: 6 },
   emptySubtitle: { fontSize: 14, color: theme.textSecondary, textAlign: 'center', lineHeight: 20 },

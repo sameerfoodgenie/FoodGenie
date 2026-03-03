@@ -218,7 +218,13 @@ export async function fetchLiveData(): Promise<LiveDataResult> {
       lastAudit: r.is_verified ? '1 week ago' : 'Pending',
       improvements: [],
       featuredDishes: [],
-    };
+      // Extra fields for filtering in Explore
+      _area: r.area || null,
+      _vegType: r.veg_type || null,
+      _priceBand: r.price_band || null,
+      _reliabilityTier: r.reliability_tier || null,
+      _isVerified: r.is_verified || false,
+    } as Restaurant & Record<string, any>;
   });
 
   // Convert dishes to app Dish type

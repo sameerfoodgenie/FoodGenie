@@ -275,7 +275,7 @@ export default function HomeScreen() {
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.exploreCard, pressed && styles.exploreCardPressed]}
-                onPress={() => router.push('/explore')}
+                onPress={() => router.push('/explore?view=restaurants')}
               >
                 <View style={styles.exploreCardLeft}>
                   <View style={styles.exploreCardIconWrap}>
