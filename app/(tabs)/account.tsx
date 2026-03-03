@@ -374,6 +374,15 @@ export default function AccountScreen() {
               <MaterialIcons name="chevron-right" size={22} color={theme.textMuted} />
             </Pressable>
 
+            <Pressable
+              style={styles.settingsItem}
+              onPress={() => router.push('/ops' as any)}
+            >
+              <MaterialIcons name="admin-panel-settings" size={22} color={theme.primary} />
+              <Text style={styles.settingsItemText}>Ops Panel</Text>
+              <MaterialIcons name="chevron-right" size={22} color={theme.textMuted} />
+            </Pressable>
+
             <Pressable style={styles.settingsItem}>
               <MaterialIcons name="payment" size={22} color={theme.textSecondary} />
               <Text style={styles.settingsItemText}>Payment Methods</Text>

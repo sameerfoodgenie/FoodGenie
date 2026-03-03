@@ -28,6 +28,12 @@ export default function RootLayout() {
                 <Stack.Screen name="daily-meals" options={{ headerShown: false, animation: 'slide_from_right' }} />
                 <Stack.Screen name="partner-apps" options={{ headerShown: false, animation: 'slide_from_right' }} />
                 <Stack.Screen name="explore" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                <Stack.Screen name="ops/index" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                <Stack.Screen name="ops/onboard-restaurant" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                <Stack.Screen name="ops/restaurants" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                <Stack.Screen name="ops/restaurant-detail" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                <Stack.Screen name="ops/add-dish" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                <Stack.Screen name="ops/add-dish-tags" options={{ headerShown: false, animation: 'slide_from_right' }} />
               </Stack>
             </View>
           </AppProvider>
