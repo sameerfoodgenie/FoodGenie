@@ -254,43 +254,23 @@ export default function HomeScreen() {
 
           {/* ─── EXPLORE YOUR WAY ─── */}
           <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.exploreSection}>
-            <Text style={styles.exploreSectionTitle}>Explore your way</Text>
-            <View style={styles.exploreCards}>
-              <Pressable
-                style={({ pressed }) => [styles.exploreCard, pressed && styles.exploreCardPressed]}
-                onPress={() => router.push('/explore')}
-              >
-                <View style={styles.exploreCardLeft}>
-                  <View style={styles.exploreCardIconWrap}>
-                    <MaterialIcons name="restaurant-menu" size={24} color={theme.primary} />
-                  </View>
-                  <View style={styles.exploreCardText}>
-                    <Text style={styles.exploreCardTitle}>Explore Dishes</Text>
-                    <Text style={styles.exploreCardSub}>Browse cuisines & categories</Text>
-                  </View>
+            <Pressable
+              style={({ pressed }) => [styles.exploreCard, pressed && styles.exploreCardPressed]}
+              onPress={() => router.push('/explore')}
+            >
+              <View style={styles.exploreCardLeft}>
+                <View style={styles.exploreCardIconWrap}>
+                  <MaterialIcons name="explore" size={26} color={theme.primary} />
                 </View>
-                <View style={styles.exploreArrowWrap}>
-                  <MaterialIcons name="chevron-right" size={24} color={theme.textMuted} />
+                <View style={styles.exploreCardText}>
+                  <Text style={styles.exploreCardTitle}>Explore your way</Text>
+                  <Text style={styles.exploreCardSub}>Browse dishes & restaurants</Text>
                 </View>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [styles.exploreCard, pressed && styles.exploreCardPressed]}
-                onPress={() => router.push('/explore?view=restaurants')}
-              >
-                <View style={styles.exploreCardLeft}>
-                  <View style={styles.exploreCardIconWrap}>
-                    <MaterialIcons name="storefront" size={24} color={theme.primary} />
-                  </View>
-                  <View style={styles.exploreCardText}>
-                    <Text style={styles.exploreCardTitle}>Explore Restaurants</Text>
-                    <Text style={styles.exploreCardSub}>Top rated & reliable kitchens</Text>
-                  </View>
-                </View>
-                <View style={styles.exploreArrowWrap}>
-                  <MaterialIcons name="chevron-right" size={24} color={theme.textMuted} />
-                </View>
-              </Pressable>
-            </View>
+              </View>
+              <View style={styles.exploreArrowWrap}>
+                <MaterialIcons name="chevron-right" size={24} color={theme.textMuted} />
+              </View>
+            </Pressable>
           </Animated.View>
 
           {/* ─── WHY FOODGENIE ─── */}
@@ -488,13 +468,6 @@ const styles = StyleSheet.create({
 
   // ── Explore Your Way ──
   exploreSection: { paddingHorizontal: 20, marginBottom: 8 },
-  exploreSectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: theme.textPrimary,
-    marginBottom: 14,
-  },
-  exploreCards: { gap: 12 },
   exploreCard: {
     flexDirection: 'row',
     alignItems: 'center',
