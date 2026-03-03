@@ -20,6 +20,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -42,6 +43,8 @@ import {
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = SCREEN_WIDTH - 48;
 const CARD_HEIGHT = CARD_WIDTH * (16 / 9);
+
+const IS_WEB = Platform.OS === 'web';
 
 interface VibeData {
   headline: string;
@@ -89,6 +92,14 @@ export default function SnapShareScreen() {
   const { user, sendOTP, verifyOTPAndLogin, signInWithGoogle, operationLoading } = useAuth();
   const { showAlert } = useAlert();
   const viewShotRef = useRef<ViewShot>(null);
+  const cameraRef = useRef<CameraView>(null);
+
+  // Camera state
+  const [showCamera, setShowCamera] = useState(false);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [cameraFacing, setCameraFacing] = useState<'front' | 'back'>('back');
+  const [isCapturing, setIsCapturing] = useState(false);
 
   const [isSharing, setIsSharing] = useState(false);
   const [hasShared, setHasShared] = useState(false);
@@ -132,10 +143,7 @@ export default function SnapShareScreen() {
     setShowLoginModal(false);
 
     try {
-      // Link any guest shares to this user
       await linkGuestSharesToUser(userId);
-
-      // Claim the reward
       await claimReward(userId, 'vibe_sharer', {
         headline: vibe.headline.replace('\n', ' '),
         score: vibe.score,
@@ -148,7 +156,6 @@ export default function SnapShareScreen() {
       animateReward();
     } catch (e) {
       console.log('Claim reward error:', e);
-      // Still show reward UI even if DB fails
       unlockShareReward();
       setShowReward(true);
       setPendingReward(false);
@@ -157,6 +164,74 @@ export default function SnapShareScreen() {
       setIsClaiming(false);
     }
   }, [vibe, unlockShareReward, animateReward]);
+
+  // ── Camera Handlers ──
+
+  const handleOpenCamera = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    if (IS_WEB) {
+      showAlert('Camera Unavailable', 'Camera works only on mobile preview. Please use the OnSpace app or download the APK to use this feature.');
+      return;
+    }
+
+    if (!cameraPermission?.granted) {
+      const result = await requestCameraPermission();
+      if (!result.granted) {
+        showAlert(
+          'Camera Permission Required',
+          'Please enable camera access in your device settings to use Snap & Share.',
+        );
+        return;
+      }
+    }
+
+    setShowCamera(true);
+  }, [cameraPermission, requestCameraPermission, showAlert]);
+
+  const handleCapture = useCallback(async () => {
+    if (!cameraRef.current || isCapturing) return;
+    setIsCapturing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+    try {
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.85,
+      });
+      if (photo?.uri) {
+        setCapturedPhoto(photo.uri);
+        setShowCamera(false);
+      }
+    } catch (e) {
+      console.log('Capture error:', e);
+      showAlert('Capture Failed', 'Could not take photo. Please try again.');
+    } finally {
+      setIsCapturing(false);
+    }
+  }, [isCapturing, showAlert]);
+
+  const handleCloseCamera = useCallback(() => {
+    Haptics.selectionAsync();
+    setShowCamera(false);
+  }, []);
+
+  const handleFlipCamera = useCallback(() => {
+    Haptics.selectionAsync();
+    setCameraFacing((prev) => (prev === 'back' ? 'front' : 'back'));
+  }, []);
+
+  const handleRetake = useCallback(() => {
+    Haptics.selectionAsync();
+    setCapturedPhoto(null);
+    setShowCamera(true);
+  }, []);
+
+  const handleRemovePhoto = useCallback(() => {
+    Haptics.selectionAsync();
+    setCapturedPhoto(null);
+  }, []);
+
+  // ── Share Handler ──
 
   const handleShare = useCallback(async () => {
     if (isSharing) return;
@@ -182,9 +257,7 @@ export default function SnapShareScreen() {
       // User cancelled — still count as shared for UX
     }
 
-    // Track share event (works for guests too)
     trackShareEvent(user?.id || null, 'vibe').catch(() => {});
-
     setHasShared(true);
     setIsSharing(false);
   }, [isSharing, vibe, user?.id]);
@@ -193,10 +266,8 @@ export default function SnapShareScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     if (user?.id) {
-      // Logged in — claim immediately
       handleClaimReward(user.id);
     } else {
-      // Guest — show login modal
       setPendingReward(true);
       setLoginStage('options');
       setLoginEmail('');
@@ -213,7 +284,6 @@ export default function SnapShareScreen() {
     if (error) {
       showAlert('Error', error);
     }
-    // useEffect will handle reward claim when user appears
   }, [signInWithGoogle, showAlert]);
 
   const handleLoginSendOTP = useCallback(async () => {
@@ -257,7 +327,6 @@ export default function SnapShareScreen() {
         showAlert('Verification Failed', error);
         return;
       }
-      // useEffect handles reward claim
     } catch (e: any) {
       showAlert('Error', e?.message || 'Something went wrong');
     }
@@ -268,6 +337,77 @@ export default function SnapShareScreen() {
     router.back();
   }, [router]);
 
+  // ── Full-screen Camera View ──
+  if (showCamera) {
+    return (
+      <View style={styles.cameraFullScreen}>
+        <CameraView
+          ref={cameraRef}
+          style={StyleSheet.absoluteFillObject}
+          facing={cameraFacing}
+        />
+
+        {/* Camera overlay UI */}
+        <SafeAreaView edges={['top', 'bottom']} style={styles.cameraOverlay}>
+          {/* Top bar */}
+          <View style={styles.cameraTopBar}>
+            <Pressable
+              onPress={handleCloseCamera}
+              style={({ pressed }) => [styles.cameraTopBtn, pressed && { opacity: 0.7 }]}
+            >
+              <MaterialIcons name="close" size={26} color="#FFF" />
+            </Pressable>
+            <Text style={styles.cameraTopTitle}>Snap your vibe</Text>
+            <Pressable
+              onPress={handleFlipCamera}
+              style={({ pressed }) => [styles.cameraTopBtn, pressed && { opacity: 0.7 }]}
+            >
+              <MaterialIcons name="flip-camera-ios" size={26} color="#FFF" />
+            </Pressable>
+          </View>
+
+          {/* Center guide */}
+          <View style={styles.cameraGuideArea}>
+            <View style={styles.cameraGuideFrame}>
+              <View style={[styles.cameraCorner, styles.cameraCornerTL]} />
+              <View style={[styles.cameraCorner, styles.cameraCornerTR]} />
+              <View style={[styles.cameraCorner, styles.cameraCornerBL]} />
+              <View style={[styles.cameraCorner, styles.cameraCornerBR]} />
+            </View>
+          </View>
+
+          {/* Bottom bar */}
+          <View style={styles.cameraBottomBar}>
+            <View style={styles.cameraBottomSpacer} />
+            {/* Capture button */}
+            <Pressable
+              onPress={handleCapture}
+              disabled={isCapturing}
+              style={({ pressed }) => [
+                styles.captureBtn,
+                pressed && { transform: [{ scale: 0.92 }] },
+                isCapturing && { opacity: 0.5 },
+              ]}
+            >
+              <LinearGradient
+                colors={['#FBBF24', '#F59E0B', '#D97706']}
+                style={styles.captureBtnGradient}
+              >
+                {isCapturing ? (
+                  <ActivityIndicator size="small" color="#000" />
+                ) : (
+                  <View style={styles.captureBtnInner} />
+                )}
+              </LinearGradient>
+            </Pressable>
+            <View style={styles.cameraBottomSpacer} />
+          </View>
+        </SafeAreaView>
+      </View>
+    );
+  }
+
+  // ── Main Snap & Share Screen ──
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -292,12 +432,27 @@ export default function SnapShareScreen() {
             style={styles.viewShot}
           >
             <View style={[styles.shareCard, { width: CARD_WIDTH, height: CARD_HEIGHT }]}>
-              <LinearGradient
-                colors={['#0D0D0D', '#1A1200', '#0D0D0D']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
+              {/* Background: captured photo or gradient */}
+              {capturedPhoto ? (
+                <>
+                  <Image
+                    source={{ uri: capturedPhoto }}
+                    style={StyleSheet.absoluteFillObject}
+                    contentFit="cover"
+                  />
+                  <LinearGradient
+                    colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.65)']}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                </>
+              ) : (
+                <LinearGradient
+                  colors={['#0D0D0D', '#1A1200', '#0D0D0D']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFillObject}
+                />
+              )}
               <View style={styles.cornerGlowTL} />
               <View style={styles.cornerGlowBR} />
 
@@ -337,6 +492,26 @@ export default function SnapShareScreen() {
               </View>
             </View>
           </ViewShot>
+
+          {/* Photo badge overlay (outside ViewShot) */}
+          {capturedPhoto ? (
+            <Animated.View entering={FadeIn.duration(200)} style={styles.photoBadge}>
+              <Pressable
+                onPress={handleRetake}
+                style={({ pressed }) => [styles.photoBadgeBtn, pressed && { opacity: 0.8 }]}
+              >
+                <MaterialIcons name="refresh" size={14} color={theme.primary} />
+                <Text style={styles.photoBadgeText}>Retake</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleRemovePhoto}
+                style={({ pressed }) => [styles.photoBadgeBtn, styles.photoBadgeBtnRemove, pressed && { opacity: 0.8 }]}
+              >
+                <MaterialIcons name="close" size={14} color="#EF4444" />
+                <Text style={[styles.photoBadgeText, { color: '#EF4444' }]}>Remove</Text>
+              </Pressable>
+            </Animated.View>
+          ) : null}
         </Animated.View>
 
         {/* Action Area */}
@@ -386,8 +561,22 @@ export default function SnapShareScreen() {
               </Text>
             </View>
           ) : (
-            /* ── Share Button ── */
-            <>
+            /* ── Camera + Share Buttons ── */
+            <View style={styles.actionButtons}>
+              {/* Snap photo button */}
+              <Pressable
+                style={({ pressed }) => [styles.snapBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+                onPress={handleOpenCamera}
+              >
+                <View style={styles.snapBtnInner}>
+                  <MaterialIcons name="camera-alt" size={20} color={theme.primary} />
+                  <Text style={styles.snapBtnText}>
+                    {capturedPhoto ? 'Retake Photo' : 'Snap a Photo'}
+                  </Text>
+                </View>
+              </Pressable>
+
+              {/* Share button */}
               <Pressable
                 style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
                 onPress={handleShare}
@@ -400,8 +589,10 @@ export default function SnapShareScreen() {
                   </Text>
                 </LinearGradient>
               </Pressable>
-              <Text style={styles.shareHint}>Share your vibe and unlock a reward</Text>
-            </>
+              <Text style={styles.shareHint}>
+                {capturedPhoto ? 'Your photo is the card background' : 'Add a photo or share the vibe card directly'}
+              </Text>
+            </View>
           )}
         </Animated.View>
       </SafeAreaView>
@@ -422,7 +613,6 @@ export default function SnapShareScreen() {
             <View style={styles.modalHandle} />
 
             {loginStage === 'options' ? (
-              /* ── Login Options ── */
               <Animated.View entering={FadeIn.duration(300)} style={styles.modalContent}>
                 <View style={styles.modalHeaderBlock}>
                   <View style={styles.modalRewardIcon}>
@@ -464,7 +654,6 @@ export default function SnapShareScreen() {
                 </View>
               </Animated.View>
             ) : loginStage === 'email' ? (
-              /* ── Email Input ── */
               <Animated.View entering={FadeIn.duration(300)} style={styles.modalContent}>
                 <Pressable
                   style={styles.modalBackBtn}
@@ -501,7 +690,6 @@ export default function SnapShareScreen() {
                 </Pressable>
               </Animated.View>
             ) : (
-              /* ── OTP Verify ── */
               <Animated.View entering={FadeIn.duration(300)} style={styles.modalContent}>
                 <Pressable
                   style={styles.modalBackBtn}
@@ -623,7 +811,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 46,
     letterSpacing: -0.5,
-    textShadowColor: 'rgba(251,191,36,0.25)',
+    textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 12,
   },
@@ -631,13 +819,57 @@ const styles = StyleSheet.create({
   scoreRing: { borderRadius: 40, overflow: 'hidden', borderWidth: 2, borderColor: 'rgba(251,191,36,0.3)' },
   scoreGradient: { paddingHorizontal: 28, paddingVertical: 12, borderRadius: 38, alignItems: 'center' },
   scoreNumber: { fontSize: 32, fontWeight: '800', color: theme.textOnPrimary, letterSpacing: -1 },
-  scoreLabel: { fontSize: 15, fontWeight: '600', color: theme.textSecondary, letterSpacing: 0.3 },
+  scoreLabel: { fontSize: 15, fontWeight: '600', color: 'rgba(255,255,255,0.75)', letterSpacing: 0.3 },
   cardBottom: { alignItems: 'center', gap: 10 },
   dividerLine: { width: 60, height: 1, backgroundColor: 'rgba(251,191,36,0.2)' },
-  attribution: { fontSize: 13, fontWeight: '500', color: theme.textMuted, letterSpacing: 0.3 },
+  attribution: { fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.5)', letterSpacing: 0.3 },
+
+  // Photo badge
+  photoBadge: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+  },
+  photoBadgeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(251,191,36,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(251,191,36,0.25)',
+  },
+  photoBadgeBtnRemove: {
+    backgroundColor: 'rgba(239,68,68,0.08)',
+    borderColor: 'rgba(239,68,68,0.25)',
+  },
+  photoBadgeText: { fontSize: 13, fontWeight: '600', color: theme.primary },
 
   // Action area
   actionArea: { paddingHorizontal: 24, paddingBottom: 16, alignItems: 'center' },
+
+  // Action buttons
+  actionButtons: { width: '100%', gap: 10, alignItems: 'center' },
+
+  // Snap button
+  snapBtn: {
+    width: '100%',
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: 'rgba(251,191,36,0.25)',
+    backgroundColor: 'rgba(251,191,36,0.06)',
+  },
+  snapBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 16,
+  },
+  snapBtnText: { fontSize: 16, fontWeight: '700', color: theme.primary },
 
   // Share button
   shareBtn: { width: '100%', borderRadius: 16, overflow: 'hidden' },
@@ -650,7 +882,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   shareBtnText: { fontSize: 17, fontWeight: '700', color: theme.textOnPrimary },
-  shareHint: { fontSize: 13, color: theme.textMuted, marginTop: 10 },
+  shareHint: { fontSize: 13, color: theme.textMuted, marginTop: 4 },
 
   // After share
   afterShareArea: { width: '100%', alignItems: 'center', gap: 10 },
@@ -688,6 +920,114 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(251,191,36,0.3)',
   },
   rewardDoneText: { fontSize: 15, fontWeight: '700', color: theme.primary },
+
+  // ── Full-screen Camera ──
+  cameraFullScreen: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  cameraOverlay: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  cameraTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  cameraTopBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  cameraTopTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFF',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  cameraGuideArea: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cameraGuideFrame: {
+    width: SCREEN_WIDTH * 0.7,
+    height: SCREEN_WIDTH * 0.7,
+    position: 'relative',
+  },
+  cameraCorner: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderColor: 'rgba(251,191,36,0.6)',
+  },
+  cameraCornerTL: {
+    top: 0,
+    left: 0,
+    borderTopWidth: 3,
+    borderLeftWidth: 3,
+    borderTopLeftRadius: 8,
+  },
+  cameraCornerTR: {
+    top: 0,
+    right: 0,
+    borderTopWidth: 3,
+    borderRightWidth: 3,
+    borderTopRightRadius: 8,
+  },
+  cameraCornerBL: {
+    bottom: 0,
+    left: 0,
+    borderBottomWidth: 3,
+    borderLeftWidth: 3,
+    borderBottomLeftRadius: 8,
+  },
+  cameraCornerBR: {
+    bottom: 0,
+    right: 0,
+    borderBottomWidth: 3,
+    borderRightWidth: 3,
+    borderBottomRightRadius: 8,
+  },
+  cameraBottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 32,
+    paddingHorizontal: 24,
+  },
+  cameraBottomSpacer: { flex: 1 },
+  captureBtn: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    overflow: 'hidden',
+    borderWidth: 4,
+    borderColor: 'rgba(251,191,36,0.5)',
+  },
+  captureBtnGradient: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureBtnInner: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#FFF',
+    borderWidth: 3,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
 
   // ── Login Gate Modal ──
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
