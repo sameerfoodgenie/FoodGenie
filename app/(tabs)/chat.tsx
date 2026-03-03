@@ -18,6 +18,7 @@ import { config } from '../../constants/config';
 import { useApp } from '../../contexts/AppContext';
 import { ChatMessage } from '../../services/mockData';
 import { processUserMessage } from '../../services/chatAI';
+// Chat now passes live dishes to AI
 import { TypingIndicator } from '../../components/TypingIndicator';
 import { DishSuggestionCard } from '../../components/DishSuggestionCard';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -26,7 +27,8 @@ export default function ChatScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
-  const { chatMessages, addChatMessage, addToCart } = useApp();
+  const app = useApp();
+  const { chatMessages, addChatMessage, addToCart } = app;
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [suggestedDishes, setSuggestedDishes] = useState<any[]>([]);
@@ -54,7 +56,7 @@ export default function ChatScreen() {
 
     // Process message with AI
     setTimeout(() => {
-      const aiResponse = processUserMessage(userInput);
+      const aiResponse = processUserMessage(userInput, app.allDishes);
       
       // Add analysis message
       const analysisMessage: ChatMessage = {

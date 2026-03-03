@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { theme } from '../constants/theme';
 import { useApp } from '../contexts/AppContext';
-import { mockRestaurants } from '../services/mockData';
+
 import ClarificationModal from '../components/ClarificationModal';
 import OrderPartnerSheet from '../components/OrderPartnerSheet';
 import { getPartnerById, openPartnerWithSearch, recordPartnerRedirect, PartnerApp } from '../services/partnerApps';
@@ -24,7 +24,7 @@ import { useAuth, useAlert } from '@/template';
 export default function ResultsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { aiResults, recordIgnoredBestMatch, recordSpiceChoice, preferences, updatePreferences, syncPreferencesToDB } = useApp();
+  const { aiResults, recordIgnoredBestMatch, recordSpiceChoice, preferences, updatePreferences, syncPreferencesToDB, allRestaurants } = useApp();
   const { user } = useAuth();
   const { showAlert } = useAlert();
   const [expandedReason, setExpandedReason] = useState<string | null>(null);
@@ -111,7 +111,7 @@ export default function ResultsScreen() {
       >
         {aiResults.map((result, index) => {
           const isBest = result.rank === 'best';
-          const restaurant = mockRestaurants.find(r => r.id === result.dish.restaurantId);
+          const restaurant = allRestaurants.find(r => r.id === result.dish.restaurantId);
           const isExpanded = expandedReason === result.dish.id;
 
           return (

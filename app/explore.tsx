@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   FlatList,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -15,7 +16,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { theme } from '../constants/theme';
-import { mockDishes, mockRestaurants, Dish, Restaurant } from '../services/mockData';
+import { Dish, Restaurant } from '../services/mockData';
 import { useApp } from '../contexts/AppContext';
 import { getPartnerById, openPartnerWithSearch, recordPartnerRedirect } from '../services/partnerApps';
 import { useAuth, useAlert } from '@/template';
@@ -30,7 +31,7 @@ interface DishCategory {
   name: string;
   emoji: string;
   image: string;
-  keywords: string[];
+  keywords: string[]; // matched against _rawTags and dish name
 }
 
 const DISH_CATEGORIES: DishCategory[] = [
@@ -43,128 +44,83 @@ const DISH_CATEGORIES: DishCategory[] = [
   },
   {
     id: 'pizza',
-    name: 'Pizza',
+    name: 'Pizza & Fast Food',
     emoji: '🍕',
     image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&q=80',
-    keywords: ['pizza'],
+    keywords: ['pizza', 'burger', 'fries', 'pasta', 'sandwich', 'momos', 'wrap'],
   },
   {
     id: 'north-indian',
     name: 'North Indian',
     emoji: '🍛',
     image: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&q=80',
-    keywords: ['butter', 'paneer', 'dal', 'roti', 'naan', 'chole', 'rajma', 'paratha', 'tikka'],
+    keywords: ['north-indian', 'punjabi', 'paneer', 'dal', 'naan', 'roti', 'chole', 'rajma', 'paratha'],
   },
   {
     id: 'chinese',
     name: 'Chinese',
     emoji: '🥡',
     image: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?w=400&q=80',
-    keywords: ['manchurian', 'noodle', 'chinese', 'fried rice', 'schezwan'],
+    keywords: ['chinese', 'noodles', 'manchurian', 'schezwan', 'hakka', 'fried rice'],
   },
   {
     id: 'healthy',
     name: 'Healthy',
     emoji: '🥗',
     image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80',
-    keywords: ['healthy', 'salad', 'protein', 'light', 'palak', 'iron'],
+    keywords: ['healthy', 'high-protein', 'salad', 'smoothie', 'protein', 'quinoa', 'millet', 'sprout'],
   },
   {
     id: 'street-food',
     name: 'Street Food',
     emoji: '🌮',
     image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400&q=80',
-    keywords: ['street', 'chaat', 'pav', 'bhature', 'keema pav', 'vada'],
+    keywords: ['street-food', 'chaat', 'pav bhaji', 'samosa', 'pani puri', 'vada pav', 'bhel'],
   },
   {
     id: 'desserts',
     name: 'Desserts',
     emoji: '🍰',
     image: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=400&q=80',
-    keywords: ['dessert', 'sweet', 'gulab', 'cake', 'ice cream', 'kheer'],
+    keywords: ['dessert', 'sweet', 'gulab', 'cake', 'jalebi', 'kheer', 'halwa', 'brownie'],
   },
   {
     id: 'beverages',
     name: 'Beverages',
     emoji: '🥤',
     image: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=80',
-    keywords: ['lassi', 'chai', 'juice', 'shake', 'coffee', 'tea'],
+    keywords: ['beverage', 'juice', 'shake', 'coffee', 'chai', 'lassi', 'smoothie', 'buttermilk'],
   },
   {
     id: 'south-indian',
     name: 'South Indian',
     emoji: '🫓',
     image: 'https://images.unsplash.com/photo-1630383249896-424e482df921?w=400&q=80',
-    keywords: ['dosa', 'idli', 'sambar', 'south', 'uttapam', 'rasam'],
+    keywords: ['south-indian', 'dosa', 'idli', 'sambar', 'uttapam', 'pongal', 'vada'],
   },
   {
     id: 'thalis',
     name: 'Thalis',
     emoji: '🍱',
     image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&q=80',
-    keywords: ['thali', 'combo', 'meal', 'chawal', 'complete'],
+    keywords: ['thali', 'combo', 'unlimited'],
   },
 ];
 
-const EXTENDED_RESTAURANTS: Restaurant[] = [
-  ...mockRestaurants,
-  {
-    id: 'r6',
-    name: 'Kashmir Kitchen',
-    cuisine: 'Kashmiri',
-    image: require('../assets/images/dish-biryani.png'),
-    chefScore: 90,
-    hygieneScore: 92,
-    rating: 4.8,
-    deliveryTime: '35-40 min',
-    priceRange: '₹300-500',
-    lastAudit: '1 week ago',
-    improvements: ['Authentic Kashmiri spice sourcing'],
-    featuredDishes: ['7'],
-  },
-  {
-    id: 'r7',
-    name: 'Coastal Flavors',
-    cuisine: 'Seafood',
-    image: require('../assets/images/dish-butter-chicken.png'),
-    chefScore: 91,
-    hygieneScore: 93,
-    rating: 4.7,
-    deliveryTime: '30-35 min',
-    priceRange: '₹250-500',
-    lastAudit: '5 days ago',
-    improvements: ['Daily fresh catch procurement'],
-    featuredDishes: ['9', '17'],
-  },
-  {
-    id: 'r8',
-    name: 'Home Style Kitchen',
-    cuisine: 'Home Style',
-    image: require('../assets/images/dish-veg-thali.png'),
-    chefScore: 85,
-    hygieneScore: 87,
-    rating: 4.5,
-    deliveryTime: '20-25 min',
-    priceRange: '₹100-250',
-    lastAudit: '2 weeks ago',
-    improvements: ['Home-cooked recipes, no MSG'],
-    featuredDishes: ['11', '18'],
-  },
-];
-
-function getDishesForCategory(category: DishCategory): Dish[] {
-  return mockDishes.filter((dish) => {
+function getDishesForCategory(category: DishCategory, allDishes: Dish[]): Dish[] {
+  return allDishes.filter((dish) => {
+    const extra = dish as any;
+    const rawTags: string[] = extra._rawTags || [];
+    const catLower = (extra._category || '').toLowerCase();
     const nameLower = dish.name.toLowerCase();
-    const tagLower = dish.tags.map((t) => t.toLowerCase()).join(' ');
-    const restLower = dish.restaurant.toLowerCase();
-    const search = `${nameLower} ${tagLower} ${restLower}`;
-    return category.keywords.some((kw) => search.includes(kw));
+    const searchText = `${nameLower} ${rawTags.join(' ')} ${catLower} ${dish.tags.join(' ').toLowerCase()}`;
+    return category.keywords.some((kw) => searchText.includes(kw));
   });
 }
 
 export default function ExploreScreen() {
   const router = useRouter();
-  const { preferences, updatePreferences } = useApp();
+  const { preferences, updatePreferences, allDishes, allRestaurants, dataLoaded } = useApp();
   const { user } = useAuth();
   const { showAlert } = useAlert();
   const [selectedCategory, setSelectedCategory] = useState<DishCategory | null>(null);
@@ -173,6 +129,13 @@ export default function ExploreScreen() {
 
   const preferredPartnerId = preferences.preferredPartnerApp || null;
   const preferredPartner = preferredPartnerId ? getPartnerById(preferredPartnerId) : null;
+
+  const topRestaurants = useMemo(() => {
+    return allRestaurants
+      .filter((r) => r.rating >= 4.0)
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 10);
+  }, [allRestaurants]);
 
   const handleOrderDish = useCallback(
     async (dishName: string, restaurantName: string, price: number) => {
@@ -219,13 +182,21 @@ export default function ExploreScreen() {
     [router],
   );
 
-  const topRestaurants = EXTENDED_RESTAURANTS.filter((r) => r.rating >= 4.5).sort(
-    (a, b) => b.rating - a.rating,
-  );
+  // Loading state while data loads
+  if (!dataLoaded) {
+    return (
+      <SafeAreaView edges={['top']} style={styles.container}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={{ color: theme.textMuted, marginTop: 12, fontSize: 14 }}>Loading restaurants...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // Category detail view
   if (selectedCategory) {
-    const dishes = getDishesForCategory(selectedCategory);
+    const dishes = getDishesForCategory(selectedCategory, allDishes);
     return (
       <SafeAreaView edges={['top']} style={styles.container}>
         <View style={styles.header}>
@@ -329,7 +300,9 @@ export default function ExploreScreen() {
         </Pressable>
         <View style={styles.headerTitleBlock}>
           <Text style={styles.headerTitle}>Explore</Text>
-          <Text style={styles.headerSubtitle}>Browse dishes and restaurants</Text>
+          <Text style={styles.headerSubtitle}>
+            {allRestaurants.length} restaurants · {allDishes.length} dishes
+          </Text>
         </View>
         <View style={{ width: 44 }} />
       </View>
@@ -427,7 +400,6 @@ export default function ExploreScreen() {
                     ]}
                     onPress={() => {
                       Haptics.selectionAsync();
-                      // Navigate to first featured dish as preview
                       const firstDish = rest.featuredDishes[0];
                       if (firstDish) {
                         router.push(`/dish/${firstDish}`);

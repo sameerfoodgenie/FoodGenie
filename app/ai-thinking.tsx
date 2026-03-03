@@ -22,10 +22,14 @@ export default function AIThinkingScreen() {
   // Snapshot values at mount time
   const prefsRef = useRef(appContext.preferences);
   const queryRef = useRef(appContext.currentQuery);
+  const dishesRef = useRef(appContext.allDishes);
+  const restaurantsRef = useRef(appContext.allRestaurants);
 
   // Keep refs updated each render
   prefsRef.current = appContext.preferences;
   queryRef.current = appContext.currentQuery;
+  dishesRef.current = appContext.allDishes;
+  restaurantsRef.current = appContext.allRestaurants;
 
   const displayMessages = useRef<string[]>((() => {
     try {
@@ -59,14 +63,18 @@ export default function AIThinkingScreen() {
       try {
         const snap = prefsRef.current;
         const q = queryRef.current;
-        const results = processAIRequest({
-          query: q || '',
-          diet: snap.diet,
-          budgetMin: snap.budgetMin,
-          budgetMax: snap.budgetMax,
-          spiceLevel: snap.spiceLevel,
-          mode: snap.mode,
-        });
+        const results = processAIRequest(
+          {
+            query: q || '',
+            diet: snap.diet,
+            budgetMin: snap.budgetMin,
+            budgetMax: snap.budgetMax,
+            spiceLevel: snap.spiceLevel,
+            mode: snap.mode,
+          },
+          dishesRef.current,
+          restaurantsRef.current,
+        );
         appContext.setAiResults(results);
       } catch (e) {
         console.log('AI processing error:', e);

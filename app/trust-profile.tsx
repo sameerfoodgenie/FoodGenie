@@ -11,12 +11,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../constants/theme';
-import { mockRestaurants } from '../services/mockData';
+import { useApp } from '../contexts/AppContext';
 
 export default function TrustProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const restaurant = mockRestaurants[0]; // Use first restaurant as example
+  const { allRestaurants } = useApp();
+  const restaurant = allRestaurants[0]; // Use first restaurant as example
 
   const handleClose = () => {
     Haptics.selectionAsync();

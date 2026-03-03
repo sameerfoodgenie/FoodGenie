@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { useAuth } from '@/template';
-import { mockDishes, mockRestaurants, Dish, Restaurant, ChatMessage, initialChatMessages } from '../services/mockData';
+import { Dish, Restaurant, ChatMessage, initialChatMessages } from '../services/mockData';
 import { ConfidenceResult } from '../services/aiEngine';
+import { fetchLiveData } from '../services/dataService';
 import {
   loadPreferences,
   savePreferences,
@@ -60,6 +61,7 @@ interface AppContextType {
   prefsLoaded: boolean;
   allDishes: Dish[];
   allRestaurants: Restaurant[];
+  dataLoaded: boolean;
 }
 
 const defaultPreferences: UserPreferences = {
@@ -87,19 +89,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChatMessages);
   const [isLoading, setIsLoading] = useState(false);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [allDishes, setAllDishes] = useState<Dish[]>([]);
+  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const lastUserId = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
+  const dataLoadedRef = useRef(false);
 
-  // Load from Supabase when user changes or auth finishes loading
+  // Load live data from Supabase (restaurants + dishes + tags)
   useEffect(() => {
-    // If auth is still loading, don't do anything yet
-    if (authLoading) {
-      return;
-    }
+    if (dataLoadedRef.current) return;
+    dataLoadedRef.current = true;
 
-    // Auth finished loading
+    fetchLiveData()
+      .then(({ dishes, restaurants }) => {
+        setAllDishes(dishes);
+        setAllRestaurants(restaurants);
+        setDataLoaded(true);
+      })
+      .catch((e) => {
+        console.log('Error loading live data:', e);
+        setDataLoaded(true); // Mark loaded even on error so app does not hang
+      });
+  }, []);
+
+  // Load user preferences from Supabase when user changes or auth finishes loading
+  useEffect(() => {
+    if (authLoading) return;
+
     if (!user?.id) {
-      // Not logged in: reset and mark loaded immediately
       lastUserId.current = null;
       setPreferences(defaultPreferences);
       setBehavior(null);
@@ -107,7 +125,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // User is logged in - load their data
     if (lastUserId.current === user.id && prefsLoaded) return;
     if (isLoadingRef.current) return;
 
@@ -300,8 +317,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         isLoading,
         setIsLoading,
         prefsLoaded,
-        allDishes: mockDishes,
-        allRestaurants: mockRestaurants,
+        allDishes,
+        allRestaurants,
+        dataLoaded,
       }}
     >
       {children}

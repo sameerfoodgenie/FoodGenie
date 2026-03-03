@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { theme } from '../../constants/theme';
 import { useApp } from '../../contexts/AppContext';
 import { useAuth, useAlert } from '@/template';
-import { mockRestaurants, comboSuggestions, priceComparison } from '../../services/mockData';
+import { comboSuggestions, priceComparison } from '../../services/mockData';
 import {
   getPartnerById,
   openPartnerWithSearch,
@@ -28,13 +28,13 @@ export default function DishDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { allDishes, preferences, updatePreferences } = useApp();
+  const { allDishes, allRestaurants, preferences, updatePreferences } = useApp();
   const { user } = useAuth();
   const { showAlert } = useAlert();
   const [showPartnerSheet, setShowPartnerSheet] = useState(false);
 
   const dish = allDishes.find(d => d.id === id);
-  const restaurant = dish ? mockRestaurants.find(r => r.id === dish.restaurantId) : null;
+  const restaurant = dish ? allRestaurants.find(r => r.id === dish.restaurantId) : null;
 
   const preferredPartnerId = preferences.preferredPartnerApp || null;
   const preferredPartner = preferredPartnerId ? getPartnerById(preferredPartnerId) : null;

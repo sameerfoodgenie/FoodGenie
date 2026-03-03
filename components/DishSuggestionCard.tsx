@@ -7,10 +7,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../constants/theme';
-import { mockDishes } from '../services/mockData';
+import { Dish } from '../services/mockData';
 
 interface DishSuggestionCardProps {
-  dish: typeof mockDishes[0];
+  dish: Dish;
   onAdd: () => void;
 }
 

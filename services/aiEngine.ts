@@ -1,4 +1,4 @@
-import { mockDishes, mockRestaurants, Dish } from './mockData';
+import { Dish, Restaurant } from './mockData';
 
 export interface ConfidenceResult {
   dish: Dish;
@@ -25,7 +25,7 @@ interface ScoredDish {
   isVerified: boolean;
 }
 
-const CONFIDENCE_TIE_MARGIN = 5; // Within 5 points = tie, use verified as tiebreak
+const CONFIDENCE_TIE_MARGIN = 5;
 
 // ---- Keyword extraction ----
 const KEYWORDS: Record<string, string[]> = {
@@ -47,6 +47,11 @@ const KEYWORDS: Record<string, string[]> = {
   light: ['light', 'snack', 'small'],
   veg: ['veg', 'vegetarian', 'no meat'],
   nonveg: ['non veg', 'meat', 'egg'],
+  chinese: ['chinese', 'noodles', 'manchurian', 'schezwan', 'hakka'],
+  pizza: ['pizza', 'burger', 'pasta', 'fries'],
+  thali: ['thali', 'combo meal'],
+  sweet: ['sweet', 'dessert', 'mithai', 'gulab', 'halwa', 'kheer'],
+  under250: ['under 250', 'cheap', 'budget', 'affordable'],
 };
 
 function extractKeywords(query: string): string[] {
@@ -62,9 +67,15 @@ function extractKeywords(query: string): string[] {
 
 // ---- Scoring ----
 
-function scoreDish(dish: Dish, input: AIEngineInput, keywords: string[]): ScoredDish {
-  let score = 50; // Base score
+function scoreDish(
+  dish: Dish,
+  input: AIEngineInput,
+  keywords: string[],
+  restaurants: Restaurant[],
+): ScoredDish {
+  let score = 50;
   const reasons: string[] = [];
+  const extra = dish as any; // Access _rawTags, _category etc.
 
   // 1. Budget band filter (primary filter - massive penalty if outside)
   if (dish.price < input.budgetMin - 50) {
@@ -82,11 +93,7 @@ function scoreDish(dish: Dish, input: AIEngineInput, keywords: string[]): Scored
     return { dish, score: -100, reasons: [], isVerified: false };
   }
   if (input.diet === 'nonveg' && dish.isVeg) {
-    score -= 5; // slight penalty but not exclusion
-  }
-  if (input.diet === 'egg') {
-    // Eggetarian can eat veg + egg dishes
-    // No hard filter needed
+    score -= 5;
   }
 
   // 3. Spice alignment
@@ -100,8 +107,9 @@ function scoreDish(dish: Dish, input: AIEngineInput, keywords: string[]): Scored
     score -= spiceDiff * 4;
   }
 
-  // 4. Keyword relevance
-  const dishText = `${dish.name} ${dish.tags.join(' ')} ${dish.reason}`.toLowerCase();
+  // 4. Keyword relevance - use raw tags + name + category for matching
+  const rawTags: string[] = extra._rawTags || [];
+  const dishText = `${dish.name} ${rawTags.join(' ')} ${dish.tags.join(' ')} ${dish.reason} ${extra._category || ''}`.toLowerCase();
   let keywordHits = 0;
   for (const kw of keywords) {
     const patterns = KEYWORDS[kw] || [kw];
@@ -114,15 +122,21 @@ function scoreDish(dish: Dish, input: AIEngineInput, keywords: string[]): Scored
     reasons.push(`Matches "${keywords.slice(0, 2).join(', ')}" in your request`);
   }
 
-  // 5. Rating quality
-  if (dish.rating >= 4.7) {
+  // 5. Under-250 keyword bonus
+  if (keywords.includes('under250') && dish.price < 250) {
+    score += 12;
+    reasons.push('Under ₹250 as requested');
+  }
+
+  // 6. Rating quality
+  if (dish.rating >= 4.3) {
     score += 8;
-    reasons.push('Highly rated by diners');
-  } else if (dish.rating >= 4.5) {
+    reasons.push('Highly rated on Google');
+  } else if (dish.rating >= 4.0) {
     score += 4;
   }
 
-  // 6. Quick delivery bonus for "quick" keyword
+  // 7. Quick delivery bonus
   if (keywords.includes('quick')) {
     const time = parseInt(dish.deliveryTime);
     if (time <= 25) {
@@ -131,49 +145,74 @@ function scoreDish(dish: Dish, input: AIEngineInput, keywords: string[]): Scored
     }
   }
 
-  // 7. Healthy bonus
-  if (keywords.includes('healthy') && dish.protein >= 20 && dish.calories <= 450) {
+  // 8. Healthy bonus using raw tags
+  if (keywords.includes('healthy') && rawTags.includes('healthy')) {
     score += 12;
-    reasons.push('High protein, moderate calories');
+    reasons.push('Healthy option');
+  }
+  if (keywords.includes('healthy') && rawTags.includes('high-protein')) {
+    score += 8;
+    reasons.push('High protein');
   }
 
-  // 8. Filling bonus
-  if (keywords.includes('filling') && dish.calories >= 500) {
+  // 9. Filling bonus
+  if (keywords.includes('filling') && rawTags.includes('heavy-meal')) {
     score += 8;
     reasons.push('Hearty and filling meal');
   }
 
+  // 10. Light meal bonus
+  if (keywords.includes('light') && rawTags.includes('light-meal')) {
+    score += 8;
+    reasons.push('Light and easy meal');
+  }
+
+  // 11. Sweet cravings
+  if (keywords.includes('sweet') && (extra._category === 'dessert' || rawTags.includes('dessert'))) {
+    score += 15;
+    reasons.push('Sweet treat to satisfy cravings');
+  }
+
   // Restaurant verification check
-  const restaurant = mockRestaurants.find(r => r.id === dish.restaurantId);
-  const isVerified = restaurant ? restaurant.chefScore >= 85 : false;
+  const restaurant = restaurants.find(r => r.id === dish.restaurantId);
+  const isVerified = extra._isVerified || (restaurant ? restaurant.chefScore >= 85 : false);
+
+  // Reliability tier bonus
+  if (extra._reliabilityTier === 'high') {
+    score += 5;
+  }
 
   // Ensure at least one reason
   if (reasons.length === 0) {
-    if (dish.rating >= 4.5) reasons.push('Top-rated dish from trusted kitchen');
+    if (dish.rating >= 4.0) reasons.push('Well-rated dish from trusted kitchen');
     else reasons.push('Good match based on your preferences');
   }
 
   return { dish, score: Math.max(0, score), reasons, isVerified };
 }
 
-// ---- Main engine ----
+// ---- Main engine (now accepts live data) ----
 
-export function processAIRequest(input: AIEngineInput): ConfidenceResult[] {
+export function processAIRequest(
+  input: AIEngineInput,
+  dishesData?: Dish[],
+  restaurantsData?: Restaurant[],
+): ConfidenceResult[] {
+  const dishes = dishesData || [];
+  const restaurants = restaurantsData || [];
   const keywords = extractKeywords(input.query);
   
   // Score all dishes
-  let scored = mockDishes
-    .map(dish => scoreDish(dish, input, keywords))
-    .filter(s => s.score > 0); // Remove hard-filtered items
+  let scored = dishes
+    .map(dish => scoreDish(dish, input, keywords, restaurants))
+    .filter(s => s.score > 0);
 
   // Sort by confidence score (descending)
   scored.sort((a, b) => {
     const diff = b.score - a.score;
-    // If scores are close, use verified badge as tiebreak
     if (Math.abs(diff) <= CONFIDENCE_TIE_MARGIN) {
       if (a.isVerified && !b.isVerified) return -1;
       if (!a.isVerified && b.isVerified) return 1;
-      // If still tied, use rating
       return b.dish.rating - a.dish.rating;
     }
     return diff;
@@ -189,13 +228,17 @@ export function processAIRequest(input: AIEngineInput): ConfidenceResult[] {
     rank: ranks[index] || 'good',
     reasons: item.reasons,
     isVerified: item.isVerified,
-    estimatedTotal: item.dish.price + 30, // delivery estimate
+    estimatedTotal: item.dish.price + 30,
   }));
 }
 
 // Quick mode: instant best match
-export function getQuickRecommendation(input: Omit<AIEngineInput, 'query'>): ConfidenceResult | null {
-  const results = processAIRequest({ ...input, query: '' });
+export function getQuickRecommendation(
+  input: Omit<AIEngineInput, 'query'>,
+  dishes?: Dish[],
+  restaurants?: Restaurant[],
+): ConfidenceResult | null {
+  const results = processAIRequest({ ...input, query: '' }, dishes, restaurants);
   return results[0] || null;
 }
 
@@ -216,6 +259,12 @@ export function getAnalysisText(query: string): string[] {
   }
   if (keywords.includes('quick')) {
     messages.push('Prioritizing fast delivery...');
+  }
+  if (keywords.includes('chinese')) {
+    messages.push('Finding best Chinese options...');
+  }
+  if (keywords.includes('under250')) {
+    messages.push('Filtering budget-friendly picks...');
   }
   
   return messages;

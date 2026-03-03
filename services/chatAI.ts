@@ -1,4 +1,4 @@
-import { mockDishes } from './mockData';
+import { Dish } from './mockData';
 
 export interface KeywordMatch {
   keyword: string;
@@ -9,7 +9,7 @@ export interface KeywordMatch {
 export interface AIResponse {
   analysis: string;
   matches: KeywordMatch[];
-  suggestedDishes: typeof mockDishes;
+  suggestedDishes: Dish[];
   responseText: string;
 }
 
@@ -21,24 +21,25 @@ const keywordPatterns: Record<string, Record<string, string[]>> = {
     thali: ['thali', 'combo', 'variety', 'complete meal'],
     paneer: ['paneer', 'cottage cheese'],
     dal: ['dal', 'lentil'],
-    roti: ['roti', 'chapati', 'bread'],
-    waffle: ['waffle', 'pancake', 'breakfast'],
-    pasta: ['pasta', 'spaghetti', 'italian'],
-    burger: ['burger', 'sandwich'],
+    roti: ['roti', 'chapati', 'bread', 'naan'],
+    noodles: ['noodle', 'hakka', 'chow'],
     pizza: ['pizza'],
+    burger: ['burger', 'sandwich'],
     salad: ['salad', 'fresh', 'greens'],
+    dosa: ['dosa', 'uttapam'],
+    momos: ['momos', 'dumpling'],
   },
   cuisine: {
     indian: ['indian', 'desi', 'curry'],
     north: ['north indian', 'punjabi', 'tandoori'],
     south: ['south indian', 'dosa', 'idli', 'sambar'],
-    chinese: ['chinese', 'noodles', 'manchurian'],
-    italian: ['italian'],
-    continental: ['continental', 'western'],
+    chinese: ['chinese', 'noodles', 'manchurian', 'schezwan'],
+    italian: ['italian', 'pasta', 'pizza'],
+    mughlai: ['mughlai', 'biryani', 'kebab'],
   },
   dietary: {
     veg: ['veg', 'vegetarian', 'no meat', 'plant based'],
-    nonveg: ['non veg', 'chicken', 'meat', 'egg'],
+    nonveg: ['non veg', 'chicken', 'meat', 'egg', 'mutton'],
     healthy: ['healthy', 'nutritious', 'fitness', 'protein', 'low calorie', 'diet'],
     comfort: ['comfort', 'indulgent', 'rich', 'creamy'],
   },
@@ -51,7 +52,7 @@ const keywordPatterns: Record<string, Record<string, string[]>> = {
     mild: ['mild', 'not spicy', 'less spicy', 'bland'],
   },
   budget: {
-    cheap: ['cheap', 'affordable', 'budget', 'under 200', 'low price'],
+    cheap: ['cheap', 'affordable', 'budget', 'under 200', 'under 250', 'low price'],
     premium: ['premium', 'expensive', 'best', 'high end'],
   },
   portion: {
@@ -73,7 +74,7 @@ function analyzeKeywords(message: string): KeywordMatch[] {
             category: category as KeywordMatch['category'],
             confidence: pattern.length / Math.max(lowerMessage.length, 1),
           });
-          break; // Only match once per subcategory
+          break;
         }
       }
     }
@@ -82,14 +83,14 @@ function analyzeKeywords(message: string): KeywordMatch[] {
   return matches;
 }
 
-function filterDishesByKeywords(matches: KeywordMatch[]): typeof mockDishes {
+function filterDishesByKeywords(matches: KeywordMatch[], allDishes: Dish[]): Dish[] {
   if (matches.length === 0) {
-    return [...mockDishes]
+    return [...allDishes]
       .sort((a, b) => b.rating - a.rating)
-      .slice(0, 3);
+      .slice(0, 6);
   }
 
-  let filtered = [...mockDishes];
+  let filtered = [...allDishes];
 
   // Apply dietary filters first
   const dietaryMatches = matches.filter(m => m.category === 'dietary');
@@ -100,22 +101,43 @@ function filterDishesByKeywords(matches: KeywordMatch[]): typeof mockDishes {
     filtered = filtered.filter(d => !d.isVeg);
   }
   if (dietaryMatches.some(m => m.keyword === 'healthy')) {
-    filtered = filtered.filter(d => d.protein >= 20 && d.calories <= 450);
+    const extra = filtered.filter(d => {
+      const raw = (d as any)._rawTags || [];
+      return raw.includes('healthy') || raw.includes('high-protein');
+    });
+    if (extra.length > 0) filtered = extra;
   }
 
   // Apply dish-specific filters
   const dishMatches = matches.filter(m => m.category === 'dish');
   if (dishMatches.length > 0) {
     const dishKeywords = dishMatches.map(m => m.keyword);
-    const dishFiltered = filtered.filter(d =>
-      dishKeywords.some(kw =>
-        d.name.toLowerCase().includes(kw) ||
-        d.tags.some(tag => tag.toLowerCase().includes(kw))
-      )
-    );
+    const dishFiltered = filtered.filter(d => {
+      const raw = (d as any)._rawTags || [];
+      const searchText = `${d.name.toLowerCase()} ${raw.join(' ')} ${d.tags.join(' ').toLowerCase()}`;
+      return dishKeywords.some(kw => searchText.includes(kw));
+    });
     if (dishFiltered.length > 0) {
       filtered = dishFiltered;
     }
+  }
+
+  // Apply cuisine filters
+  const cuisineMatches = matches.filter(m => m.category === 'cuisine');
+  if (cuisineMatches.length > 0) {
+    const cuisineKeys = cuisineMatches.map(m => m.keyword);
+    const cuisineFiltered = filtered.filter(d => {
+      const raw = (d as any)._rawTags || [];
+      const searchText = `${d.restaurant.toLowerCase()} ${raw.join(' ')}`;
+      return cuisineKeys.some(ck => {
+        if (ck === 'north') return searchText.includes('north-indian') || searchText.includes('punjabi');
+        if (ck === 'south') return searchText.includes('south-indian');
+        if (ck === 'chinese') return searchText.includes('chinese');
+        if (ck === 'mughlai') return searchText.includes('mughlai');
+        return searchText.includes(ck);
+      });
+    });
+    if (cuisineFiltered.length > 0) filtered = cuisineFiltered;
   }
 
   // Apply mood filters
@@ -125,15 +147,8 @@ function filterDishesByKeywords(matches: KeywordMatch[]): typeof mockDishes {
     if (spicyFiltered.length > 0) filtered = spicyFiltered;
   }
   if (moodMatches.some(m => m.keyword === 'mild')) {
-    const mildFiltered = filtered.filter(d => d.spiceLevel <= 2);
+    const mildFiltered = filtered.filter(d => d.spiceLevel <= 1);
     if (mildFiltered.length > 0) filtered = mildFiltered;
-  }
-  if (moodMatches.some(m => m.keyword === 'quick')) {
-    const quickFiltered = filtered.filter(d => {
-      const time = parseInt(d.deliveryTime);
-      return !isNaN(time) && time <= 25;
-    });
-    if (quickFiltered.length > 0) filtered = quickFiltered;
   }
 
   // Apply budget filters
@@ -143,7 +158,7 @@ function filterDishesByKeywords(matches: KeywordMatch[]): typeof mockDishes {
     if (cheapFiltered.length > 0) filtered = cheapFiltered;
   }
   if (budgetMatches.some(m => m.keyword === 'premium')) {
-    const premFiltered = filtered.filter(d => d.price >= 300);
+    const premFiltered = filtered.filter(d => d.price >= 250);
     if (premFiltered.length > 0) filtered = premFiltered;
   }
 
@@ -156,7 +171,7 @@ function filterDishesByKeywords(matches: KeywordMatch[]): typeof mockDishes {
 
   // Return minimum 6 dishes
   if (filtered.length < 6) {
-    const remaining = mockDishes
+    const remaining = allDishes
       .filter(d => !filtered.find(f => f.id === d.id))
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 6 - filtered.length);
@@ -166,7 +181,7 @@ function filterDishesByKeywords(matches: KeywordMatch[]): typeof mockDishes {
   return filtered.slice(0, Math.max(6, filtered.length));
 }
 
-function generateResponse(matches: KeywordMatch[], dishes: typeof mockDishes): string {
+function generateResponse(matches: KeywordMatch[]): string {
   const responses: Record<string, string[]> = {
     veg: [
       "Found some delicious vegetarian options for you!",
@@ -185,7 +200,7 @@ function generateResponse(matches: KeywordMatch[], dishes: typeof mockDishes): s
       "For spice lovers - these pack a punch:",
     ],
     quick: [
-      "Need it fast? These deliver in under 25 minutes:",
+      "Need it fast? These deliver quickly:",
       "Quick options that do not compromise on taste:",
     ],
     cheap: [
@@ -215,22 +230,21 @@ function getAnalysisText(matches: KeywordMatch[]): string {
   if (matches.length === 0) {
     return "Understanding your request...";
   }
-
   const keywords = matches.slice(0, 3).map(m => m.keyword);
-
   const analyses = [
     `Looking for ${keywords.join(', ')} options...`,
     `Finding ${keywords.join(' and ')} dishes...`,
     `Checking chef-verified ${keywords[0]} meals...`,
   ];
-
   return analyses[Math.floor(Math.random() * analyses.length)];
 }
 
-export function processUserMessage(message: string): AIResponse {
+// Now accepts allDishes parameter instead of importing mockData
+export function processUserMessage(message: string, allDishes?: Dish[]): AIResponse {
+  const dishes = allDishes || [];
   const matches = analyzeKeywords(message);
-  const suggestedDishes = filterDishesByKeywords(matches);
-  const responseText = generateResponse(matches, suggestedDishes);
+  const suggestedDishes = filterDishesByKeywords(matches, dishes);
+  const responseText = generateResponse(matches);
   const analysis = getAnalysisText(matches);
 
   return {
