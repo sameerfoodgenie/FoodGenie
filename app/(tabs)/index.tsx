@@ -273,6 +273,30 @@ export default function HomeScreen() {
             </Pressable>
           </Animated.View>
 
+          {/* ─── SNAP & SHARE ─── */}
+          <Animated.View entering={FadeInUp.delay(500).duration(400)} style={styles.snapSection}>
+            <Pressable
+              style={({ pressed }) => [styles.snapCard, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
+              onPress={() => router.push('/snap-share')}
+            >
+              <LinearGradient
+                colors={['rgba(251,191,36,0.1)', 'rgba(251,191,36,0.03)']}
+                style={styles.snapCardGradient}
+              >
+                <View style={styles.snapCardLeft}>
+                  <View style={styles.snapIconWrap}>
+                    <MaterialIcons name="camera-alt" size={22} color={theme.primary} />
+                  </View>
+                  <View style={styles.snapCardText}>
+                    <Text style={styles.snapCardTitle}>Snap & Share your vibe</Text>
+                    <Text style={styles.snapCardSub}>Share to Stories & unlock rewards</Text>
+                  </View>
+                </View>
+                <MaterialIcons name="chevron-right" size={22} color={theme.textMuted} />
+              </LinearGradient>
+            </Pressable>
+          </Animated.View>
+
           {/* ─── WHY FOODGENIE ─── */}
           <Animated.View entering={FadeIn.delay(550).duration(400)} style={styles.whySection}>
             <Text style={styles.whySectionTitle}>Why FoodGenie</Text>
@@ -465,6 +489,42 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(63,63,70,0.25)',
   },
   whyPillText: { fontSize: 12, fontWeight: '500', color: theme.textMuted },
+
+  // ── Snap & Share ──
+  snapSection: { paddingHorizontal: 20, marginBottom: 8 },
+  snapCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: 'rgba(251,191,36,0.18)',
+    ...theme.shadows.card,
+  },
+  snapCardGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 18,
+    borderRadius: 20,
+  },
+  snapCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    flex: 1,
+  },
+  snapIconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: 'rgba(251,191,36,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(251,191,36,0.2)',
+  },
+  snapCardText: { flex: 1 },
+  snapCardTitle: { fontSize: 16, fontWeight: '700', color: theme.textPrimary },
+  snapCardSub: { fontSize: 13, color: theme.textSecondary, marginTop: 3 },
 
   // ── Explore Your Way ──
   exploreSection: { paddingHorizontal: 20, marginBottom: 8 },
