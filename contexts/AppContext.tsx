@@ -62,6 +62,8 @@ interface AppContextType {
   allDishes: Dish[];
   allRestaurants: Restaurant[];
   dataLoaded: boolean;
+  shareRewardUnlocked: boolean;
+  unlockShareReward: () => void;
 }
 
 const defaultPreferences: UserPreferences = {
@@ -92,6 +94,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [allDishes, setAllDishes] = useState<Dish[]>([]);
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [shareRewardUnlocked, setShareRewardUnlocked] = useState(false);
   const lastUserId = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
   const dataLoadedRef = useRef(false);
@@ -290,6 +293,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setChatMessages(prev => [...prev, message]);
   }, []);
 
+  const unlockShareReward = useCallback(() => {
+    setShareRewardUnlocked(true);
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -320,6 +327,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         allDishes,
         allRestaurants,
         dataLoaded,
+        shareRewardUnlocked,
+        unlockShareReward,
       }}
     >
       {children}

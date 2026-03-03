@@ -228,9 +228,33 @@ export default function ResultsScreen() {
           </Animated.View>
         ) : null}
 
+        {/* Snap & Share */}
+        {aiResults.length > 0 ? (
+          <Animated.View entering={FadeInDown.delay(520).duration(400)}>
+            <Pressable
+              style={({ pressed }) => [styles.snapShareBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/snap-share'); }}
+            >
+              <LinearGradient
+                colors={['rgba(251,191,36,0.12)', 'rgba(251,191,36,0.04)']}
+                style={styles.snapShareGradient}
+              >
+                <View style={styles.snapShareLeft}>
+                  <MaterialIcons name="camera-alt" size={22} color={theme.primary} />
+                  <View>
+                    <Text style={styles.snapShareTitle}>Snap & Share your vibe</Text>
+                    <Text style={styles.snapShareSub}>Share to Stories and unlock a reward</Text>
+                  </View>
+                </View>
+                <MaterialIcons name="chevron-right" size={22} color={theme.primary} />
+              </LinearGradient>
+            </Pressable>
+          </Animated.View>
+        ) : null}
+
         {/* Manage partner apps link */}
         {aiResults.length > 0 ? (
-          <Animated.View entering={FadeInDown.delay(550).duration(400)}>
+          <Animated.View entering={FadeInDown.delay(580).duration(400)}>
             <Pressable
               style={styles.managePartnersLink}
               onPress={() => { Haptics.selectionAsync(); router.push('/partner-apps'); }}
@@ -340,4 +364,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   managePartnersText: { fontSize: 13, color: theme.textMuted },
+
+  // Snap & Share
+  snapShareBtn: { borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(251,191,36,0.2)' },
+  snapShareGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16, borderRadius: 16 },
+  snapShareLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  snapShareTitle: { fontSize: 15, fontWeight: '700', color: theme.textPrimary },
+  snapShareSub: { fontSize: 12, color: theme.textSecondary, marginTop: 2 },
 });
