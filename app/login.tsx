@@ -43,18 +43,36 @@ export default function LoginScreen() {
       showAlert('Error', 'Please enter your email address');
       return;
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    try {
-      const { error } = await sendOTP(email.trim());
-      if (error) {
-        showAlert('Error', error);
-        return;
-      }
-      showAlert('Code Sent', 'Check your email for the 4-digit verification code');
-      setStage('otp');
-    } catch (e: any) {
-      showAlert('Error', e?.message || 'Failed to send code. Please try again.');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      showAlert('Error', 'Please enter a valid email address');
+      return;
     }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // Retry up to 2 times for transient network failures
+    let lastError = '';
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const { error } = await sendOTP(email.trim());
+        if (!error) {
+          showAlert('Code Sent', 'Check your email for the 4-digit verification code');
+          setStage('otp');
+          return;
+        }
+        lastError = error;
+      } catch (e: any) {
+        lastError = e?.message || 'Network error';
+      }
+      // Wait briefly before retry
+      if (attempt < 1) {
+        await new Promise(r => setTimeout(r, 1500));
+      }
+    }
+    showAlert(
+      'Could not send code',
+      `${lastError}. Please check your internet connection and try again.`,
+    );
   };
 
   const handleVerifyOTP = async () => {
@@ -64,15 +82,15 @@ export default function LoginScreen() {
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      const { error } = await verifyOTPAndLogin(email.trim(), otp.trim());
-      if (error) {
+      const { error, user: verifiedUser } = await verifyOTPAndLogin(email.trim(), otp.trim());
+      if (error && !verifiedUser) {
         showAlert('Verification Failed', error);
         return;
       }
+      // Success — AuthRouter handles navigation automatically
     } catch (e: any) {
       showAlert('Verification Failed', e?.message || 'Something went wrong. Please try again.');
     }
-    // AuthRouter handles navigation automatically
   };
 
   const handleGoogleLogin = async () => {
@@ -85,16 +103,24 @@ export default function LoginScreen() {
 
   const handleResendOTP = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    try {
-      const { error } = await sendOTP(email.trim());
-      if (error) {
-        showAlert('Error', error);
-        return;
+    let lastError = '';
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const { error } = await sendOTP(email.trim());
+        if (!error) {
+          showAlert('Code Resent', 'A new verification code has been sent to your email');
+          setOtp('');
+          return;
+        }
+        lastError = error;
+      } catch (e: any) {
+        lastError = e?.message || 'Network error';
       }
-      showAlert('Code Resent', 'A new verification code has been sent to your email');
-    } catch (e: any) {
-      showAlert('Error', e?.message || 'Failed to resend code.');
+      if (attempt < 1) {
+        await new Promise(r => setTimeout(r, 1500));
+      }
     }
+    showAlert('Could not resend', `${lastError}. Please try again in a moment.`);
   };
 
   // ---- Teaser Screen ----
