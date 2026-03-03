@@ -17,6 +17,16 @@ export interface UserPreferences {
   partner_redirect_count: number;
 }
 
+export interface AdvancedPreferences {
+  health_goal: string | null;
+  delivery_priority: string | null;
+  cuisine_bias: string[];
+  avoid_tags: string[];
+  height_cm: number | null;
+  weight_kg: number | null;
+  bmi: number | null;
+}
+
 export interface UserBehavior {
   ignored_best_match_count: number;
   spice_contradictions: number;
@@ -114,6 +124,40 @@ export async function trackIgnoredBestMatch(userId: string): Promise<number> {
 
 export async function resetIgnoredCount(userId: string): Promise<void> {
   await saveBehavior(userId, { ignored_best_match_count: 0 });
+}
+
+// ---- Advanced Preferences ----
+
+export async function loadAdvancedPreferences(userId: string): Promise<AdvancedPreferences | null> {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from('user_preferences')
+    .select('health_goal, delivery_priority, cuisine_bias, avoid_tags, height_cm, weight_kg, bmi')
+    .eq('user_id', userId)
+    .single();
+
+  if (error || !data) return null;
+  return {
+    health_goal: data.health_goal || 'none',
+    delivery_priority: data.delivery_priority || 'best_rated',
+    cuisine_bias: data.cuisine_bias || [],
+    avoid_tags: data.avoid_tags || [],
+    height_cm: data.height_cm || null,
+    weight_kg: data.weight_kg || null,
+    bmi: data.bmi || null,
+  };
+}
+
+export async function saveAdvancedPreferences(userId: string, prefs: Partial<AdvancedPreferences>): Promise<{ error: string | null }> {
+  const supabase = getClient();
+  const { error: upsertError } = await supabase
+    .from('user_preferences')
+    .upsert(
+      { user_id: userId, ...prefs, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+
+  return { error: upsertError?.message || null };
 }
 
 export async function trackSpiceChoice(userId: string, spiceLevel: number): Promise<{ contradictions: number; choices: number[] }> {

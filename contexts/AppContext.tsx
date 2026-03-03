@@ -13,6 +13,9 @@ import {
   resetIgnoredCount,
   trackSpiceChoice,
   UserBehavior,
+  loadAdvancedPreferences,
+  saveAdvancedPreferences,
+  AdvancedPreferences,
 } from '../services/preferencesService';
 
 interface UserPreferences {
@@ -26,6 +29,16 @@ interface UserPreferences {
   preferredPartnerApp: string | null;
   lastPartnerUsed: string | null;
   partnerRedirectCount: number;
+}
+
+interface AdvancedPrefs {
+  healthGoal: string;
+  deliveryPriority: string;
+  cuisineBias: string[];
+  avoidTags: string[];
+  heightCm: number | null;
+  weightKg: number | null;
+  bmi: number | null;
 }
 
 interface CartItem {
@@ -64,6 +77,9 @@ interface AppContextType {
   dataLoaded: boolean;
   shareRewardUnlocked: boolean;
   unlockShareReward: () => void;
+  advancedPrefs: AdvancedPrefs;
+  updateAdvancedPrefs: (prefs: Partial<AdvancedPrefs>) => void;
+  syncAdvancedPrefsToDB: (dbPrefs: Partial<AdvancedPreferences>) => Promise<void>;
 }
 
 const defaultPreferences: UserPreferences = {
@@ -77,6 +93,16 @@ const defaultPreferences: UserPreferences = {
   preferredPartnerApp: null,
   lastPartnerUsed: null,
   partnerRedirectCount: 0,
+};
+
+const defaultAdvancedPrefs: AdvancedPrefs = {
+  healthGoal: 'none',
+  deliveryPriority: 'best_rated',
+  cuisineBias: [],
+  avoidTags: [],
+  heightCm: null,
+  weightKg: null,
+  bmi: null,
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -95,6 +121,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [shareRewardUnlocked, setShareRewardUnlocked] = useState(false);
+  const [advancedPrefs, setAdvancedPrefs] = useState<AdvancedPrefs>(defaultAdvancedPrefs);
   const lastUserId = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
   const dataLoadedRef = useRef(false);
@@ -155,6 +182,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       const dbPrefs = results[0].status === 'fulfilled' ? results[0].value : null;
       const dbBehavior = results[1].status === 'fulfilled' ? results[1].value : null;
+
+      // Load advanced preferences
+      try {
+        const adv = await loadAdvancedPreferences(userId);
+        if (adv) {
+          setAdvancedPrefs({
+            healthGoal: adv.health_goal || 'none',
+            deliveryPriority: adv.delivery_priority || 'best_rated',
+            cuisineBias: adv.cuisine_bias || [],
+            avoidTags: adv.avoid_tags || [],
+            heightCm: adv.height_cm,
+            weightKg: adv.weight_kg,
+            bmi: adv.bmi,
+          });
+        }
+      } catch (e) {
+        console.log('Error loading advanced prefs:', e);
+      }
 
       if (dbPrefs) {
         setPreferences({
@@ -297,6 +342,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setShareRewardUnlocked(true);
   }, []);
 
+  const updateAdvancedPrefs = useCallback((prefs: Partial<AdvancedPrefs>) => {
+    setAdvancedPrefs(prev => ({ ...prev, ...prefs }));
+  }, []);
+
+  const syncAdvancedPrefsToDB = useCallback(async (dbPrefs: Partial<AdvancedPreferences>) => {
+    if (!user?.id) return;
+    try {
+      await saveAdvancedPreferences(user.id, dbPrefs);
+    } catch (e) {
+      console.log('Error syncing advanced prefs:', e);
+    }
+  }, [user?.id]);
+
   return (
     <AppContext.Provider
       value={{
@@ -329,6 +387,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dataLoaded,
         shareRewardUnlocked,
         unlockShareReward,
+        advancedPrefs,
+        updateAdvancedPrefs,
+        syncAdvancedPrefsToDB,
       }}
     >
       {children}

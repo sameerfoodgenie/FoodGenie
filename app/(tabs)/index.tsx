@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
@@ -252,6 +253,60 @@ export default function HomeScreen() {
             </View>
           </Animated.View>
 
+          {/* ─── PREFERENCE SUMMARY ─── */}
+          {preferences.onboardingComplete ? (
+            <Animated.View entering={FadeInUp.delay(350).duration(400)} style={styles.prefSummarySection}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.prefSummaryContainer}
+              >
+                {preferences.diet ? (
+                  <Pressable style={styles.prefChip} onPress={() => router.push('/(tabs)/preferences')}>
+                    <Text style={styles.prefChipEmoji}>
+                      {preferences.diet === 'veg' ? '🥬' : preferences.diet === 'egg' ? '🥚' : '🍗'}
+                    </Text>
+                    <Text style={styles.prefChipLabel}>
+                      {preferences.diet === 'veg' ? 'Veg Only' : preferences.diet === 'egg' ? 'Egg' : 'Non-Veg'}
+                    </Text>
+                  </Pressable>
+                ) : null}
+                <Pressable style={styles.prefChip} onPress={() => router.push('/(tabs)/preferences')}>
+                  <Text style={styles.prefChipEmoji}>💰</Text>
+                  <Text style={styles.prefChipLabel}>Under ₹{preferences.budgetMax}</Text>
+                </Pressable>
+                <Pressable style={styles.prefChip} onPress={() => router.push('/(tabs)/preferences')}>
+                  <Text style={styles.prefChipEmoji}>
+                    {preferences.spiceLevel === 1 ? '😌' : preferences.spiceLevel === 2 ? '🌶️' : '🔥'}
+                  </Text>
+                  <Text style={styles.prefChipLabel}>
+                    {preferences.spiceLevel === 1 ? 'Mild' : preferences.spiceLevel === 2 ? 'Medium' : 'Spicy'}
+                  </Text>
+                </Pressable>
+                {app.advancedPrefs.healthGoal && app.advancedPrefs.healthGoal !== 'none' ? (
+                  <Pressable style={styles.prefChip} onPress={() => router.push('/(tabs)/preferences')}>
+                    <Text style={styles.prefChipEmoji}>
+                      {app.advancedPrefs.healthGoal === 'weight_loss' ? '⚖️' : app.advancedPrefs.healthGoal === 'muscle_gain' ? '💪' : '🧘'}
+                    </Text>
+                    <Text style={styles.prefChipLabel}>
+                      {app.advancedPrefs.healthGoal === 'weight_loss' ? 'Weight Loss' : app.advancedPrefs.healthGoal === 'muscle_gain' ? 'High Protein' : 'Balanced'}
+                    </Text>
+                  </Pressable>
+                ) : null}
+                {app.advancedPrefs.deliveryPriority && app.advancedPrefs.deliveryPriority !== 'best_rated' ? (
+                  <Pressable style={styles.prefChip} onPress={() => router.push('/(tabs)/preferences')}>
+                    <Text style={styles.prefChipEmoji}>
+                      {app.advancedPrefs.deliveryPriority === 'fastest' ? '⚡' : '✅'}
+                    </Text>
+                    <Text style={styles.prefChipLabel}>
+                      {app.advancedPrefs.deliveryPriority === 'fastest' ? 'Fastest' : 'Reliable First'}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </ScrollView>
+            </Animated.View>
+          ) : null}
+
           {/* ─── EXPLORE YOUR WAY ─── */}
           <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.exploreSection}>
             <Pressable
@@ -465,6 +520,27 @@ const styles = StyleSheet.create({
   chipEmoji: { fontSize: 14 },
   chipLabel: { fontSize: 13, fontWeight: '500', color: theme.textSecondary },
   chipLabelSelected: { color: theme.primary, fontWeight: '600' },
+
+  // ── Preference Summary ──
+  prefSummarySection: { marginBottom: 8 },
+  prefSummaryContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 20,
+  },
+  prefChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(251,191,36,0.06)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(251,191,36,0.18)',
+  },
+  prefChipEmoji: { fontSize: 13 },
+  prefChipLabel: { fontSize: 12, fontWeight: '600', color: theme.primary },
 
   // ── Why FoodGenie ──
   whySection: { marginBottom: 40, paddingHorizontal: 20, marginTop: 8 },

@@ -16,6 +16,10 @@ export interface AIEngineInput {
   budgetMax: number;
   spiceLevel: number;
   mode: 'quick' | 'guided';
+  healthGoal?: string;
+  deliveryPriority?: string;
+  cuisineBias?: string[];
+  avoidTags?: string[];
 }
 
 interface ScoredDish {
@@ -173,6 +177,42 @@ function scoreDish(
     reasons.push('Sweet treat to satisfy cravings');
   }
 
+  // 12. Health goal influence
+  if (input.healthGoal === 'weight_loss' && rawTags.includes('healthy')) {
+    score += 10;
+    reasons.push('Supports your weight loss goal');
+  }
+  if (input.healthGoal === 'muscle_gain' && rawTags.includes('high-protein')) {
+    score += 12;
+    reasons.push('High protein for muscle gain');
+  }
+  if (input.healthGoal === 'balanced' && rawTags.includes('balanced-meal')) {
+    score += 8;
+  }
+
+  // 13. Cuisine bias boost
+  if (input.cuisineBias && input.cuisineBias.length > 0) {
+    const category = (extra._category || '').toLowerCase();
+    const dishCuisines = `${category} ${rawTags.join(' ')} ${dish.name}`.toLowerCase();
+    for (const bias of input.cuisineBias) {
+      if (dishCuisines.includes(bias.toLowerCase())) {
+        score += 7;
+        break;
+      }
+    }
+  }
+
+  // 14. Avoid tags penalty
+  if (input.avoidTags && input.avoidTags.length > 0) {
+    const dishAllText = `${dish.name} ${rawTags.join(' ')} ${dish.tags.join(' ')}`.toLowerCase();
+    for (const avoid of input.avoidTags) {
+      if (dishAllText.includes(avoid.toLowerCase())) {
+        score -= 25;
+        break;
+      }
+    }
+  }
+
   // Restaurant verification check
   const restaurant = restaurants.find(r => r.id === dish.restaurantId);
   const isVerified = extra._isVerified || (restaurant ? restaurant.chefScore >= 85 : false);
@@ -180,6 +220,16 @@ function scoreDish(
   // Reliability tier bonus
   if (extra._reliabilityTier === 'high') {
     score += 5;
+  }
+
+  // 15. Delivery priority influence
+  if (input.deliveryPriority === 'fastest') {
+    const time = parseInt(dish.deliveryTime);
+    if (time <= 25) score += 8;
+    else if (time <= 35) score += 3;
+  }
+  if (input.deliveryPriority === 'most_reliable' && extra._reliabilityTier === 'high') {
+    score += 10;
   }
 
   // Ensure at least one reason
