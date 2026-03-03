@@ -99,12 +99,17 @@ export default function LoginScreen() {
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
-      const { error } = await signInWithPassword(email.trim(), password);
-      if (error) {
-        // On mobile, session may already be set despite error string
-        // Wait briefly and check if user state updated
-        await new Promise(resolve => setTimeout(resolve, 500));
-        showAlert('Sign In Failed', error);
+      const result = await signInWithPassword(email.trim(), password);
+      if (result.error) {
+        // On mobile, session may already be set despite a transient error.
+        // Wait and re-check — if user object came back, login actually succeeded.
+        if (result.user) {
+          // Login succeeded despite error string — let AuthRouter handle it
+          return;
+        }
+        // Give mobile a moment to settle the session before declaring failure
+        await new Promise(resolve => setTimeout(resolve, 800));
+        showAlert('Sign In Failed', 'Invalid email or password. Please try again.');
         return;
       }
     } catch (e: any) {
