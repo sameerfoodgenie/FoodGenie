@@ -23,22 +23,19 @@ import * as Haptics from 'expo-haptics';
 import { useAuth, useAlert } from '@/template';
 import { theme } from '../constants/theme';
 
-type Stage = 'teaser' | 'login' | 'otp' | 'register';
+type Stage = 'teaser' | 'email' | 'otp';
 
 export default function LoginScreen() {
-  const { sendOTP, verifyOTPAndLogin, signInWithPassword, signUpWithPassword, signInWithGoogle, operationLoading } = useAuth();
+  const { sendOTP, verifyOTPAndLogin, signInWithGoogle, operationLoading } = useAuth();
   const { showAlert } = useAlert();
 
   const [stage, setStage] = useState<Stage>('teaser');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [otp, setOtp] = useState('');
-  const [isNewUser, setIsNewUser] = useState(false);
 
   const handleGetStarted = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setStage('login');
+    setStage('email');
   };
 
   const handleSendOTP = async () => {
@@ -53,7 +50,7 @@ export default function LoginScreen() {
         showAlert('Error', error);
         return;
       }
-      showAlert('Code Sent', 'Check your email for the verification code');
+      showAlert('Code Sent', 'Check your email for the 4-digit verification code');
       setStage('otp');
     } catch (e: any) {
       showAlert('Error', e?.message || 'Failed to send code. Please try again.');
@@ -65,55 +62,15 @@ export default function LoginScreen() {
       showAlert('Error', 'Please enter the verification code');
       return;
     }
-    if (isNewUser) {
-      if (!password) {
-        showAlert('Error', 'Please set a password');
-        return;
-      }
-      if (password !== confirmPassword) {
-        showAlert('Error', 'Passwords do not match');
-        return;
-      }
-      if (password.length < 6) {
-        showAlert('Error', 'Password must be at least 6 characters');
-        return;
-      }
-    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      const { error } = await verifyOTPAndLogin(email.trim(), otp.trim(), isNewUser ? { password } : undefined);
+      const { error } = await verifyOTPAndLogin(email.trim(), otp.trim());
       if (error) {
         showAlert('Verification Failed', error);
         return;
       }
     } catch (e: any) {
       showAlert('Verification Failed', e?.message || 'Something went wrong. Please try again.');
-    }
-    // AuthRouter handles navigation automatically
-  };
-
-  const handlePasswordLogin = async () => {
-    if (!email.trim() || !password) {
-      showAlert('Error', 'Please enter email and password');
-      return;
-    }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    try {
-      const result = await signInWithPassword(email.trim(), password);
-      if (result.error) {
-        // On mobile, session may already be set despite a transient error.
-        // Wait and re-check — if user object came back, login actually succeeded.
-        if (result.user) {
-          // Login succeeded despite error string — let AuthRouter handle it
-          return;
-        }
-        // Give mobile a moment to settle the session before declaring failure
-        await new Promise(resolve => setTimeout(resolve, 800));
-        showAlert('Sign In Failed', 'Invalid email or password. Please try again.');
-        return;
-      }
-    } catch (e: any) {
-      showAlert('Sign In Failed', e?.message || 'Something went wrong. Please try again.');
     }
     // AuthRouter handles navigation automatically
   };
@@ -126,16 +83,18 @@ export default function LoginScreen() {
     }
   };
 
-  const handleSwitchToRegister = () => {
-    Haptics.selectionAsync();
-    setIsNewUser(true);
-    setStage('login');
-  };
-
-  const handleSwitchToLogin = () => {
-    Haptics.selectionAsync();
-    setIsNewUser(false);
-    setStage('login');
+  const handleResendOTP = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      const { error } = await sendOTP(email.trim());
+      if (error) {
+        showAlert('Error', error);
+        return;
+      }
+      showAlert('Code Resent', 'A new verification code has been sent to your email');
+    } catch (e: any) {
+      showAlert('Error', e?.message || 'Failed to resend code.');
+    }
   };
 
   // ---- Teaser Screen ----
@@ -199,7 +158,7 @@ export default function LoginScreen() {
     );
   }
 
-  // ---- Login / Register / OTP Screen ----
+  // ---- Email / OTP Screen ----
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
@@ -215,7 +174,7 @@ export default function LoginScreen() {
             {/* Back */}
             <Pressable
               style={styles.backButton}
-              onPress={() => stage === 'otp' ? setStage('login') : setStage('teaser')}
+              onPress={() => stage === 'otp' ? setStage('email') : setStage('teaser')}
             >
               <MaterialIcons name="arrow-back" size={24} color={theme.textPrimary} />
             </Pressable>
@@ -228,14 +187,12 @@ export default function LoginScreen() {
                 contentFit="contain"
               />
               <Text style={styles.loginTitle}>
-                {stage === 'otp' ? 'Enter Verification Code' : isNewUser ? 'Create Account' : 'Welcome Back'}
+                {stage === 'otp' ? 'Enter Verification Code' : 'Sign In'}
               </Text>
               <Text style={styles.loginSubtitle}>
                 {stage === 'otp'
                   ? `We sent a 4-digit code to ${email}`
-                  : isNewUser
-                  ? 'Sign up to unlock AI recommendations'
-                  : 'Sign in to continue your food journey'}
+                  : 'Enter your email to receive a one-time login code'}
               </Text>
             </Animated.View>
 
@@ -246,42 +203,18 @@ export default function LoginScreen() {
                   <View style={styles.inputGroup}>
                     <Text style={styles.inputLabel}>Verification Code</Text>
                     <TextInput
-                      style={styles.input}
+                      style={styles.otpInput}
                       value={otp}
                       onChangeText={setOtp}
-                      placeholder="Enter 4-digit code"
+                      placeholder="0000"
                       placeholderTextColor={theme.textMuted}
                       keyboardType="number-pad"
                       maxLength={4}
                       autoFocus
+                      textAlign="center"
                     />
                   </View>
-                  {isNewUser ? (
-                    <>
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Set Password</Text>
-                        <TextInput
-                          style={styles.input}
-                          value={password}
-                          onChangeText={setPassword}
-                          placeholder="Min 6 characters"
-                          placeholderTextColor={theme.textMuted}
-                          secureTextEntry
-                        />
-                      </View>
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Confirm Password</Text>
-                        <TextInput
-                          style={styles.input}
-                          value={confirmPassword}
-                          onChangeText={setConfirmPassword}
-                          placeholder="Re-enter password"
-                          placeholderTextColor={theme.textMuted}
-                          secureTextEntry
-                        />
-                      </View>
-                    </>
-                  ) : null}
+
                   <Pressable
                     style={[styles.primaryButton, operationLoading && styles.buttonDisabled]}
                     onPress={handleVerifyOTP}
@@ -289,9 +222,19 @@ export default function LoginScreen() {
                   >
                     <LinearGradient colors={theme.gradients.genie} style={styles.primaryButtonGradient}>
                       <Text style={styles.primaryButtonText}>
-                        {operationLoading ? 'Verifying...' : 'Verify & Continue'}
+                        {operationLoading ? 'Verifying...' : 'Verify & Sign In'}
                       </Text>
                     </LinearGradient>
+                  </Pressable>
+
+                  <Pressable
+                    style={styles.resendLink}
+                    onPress={handleResendOTP}
+                    disabled={operationLoading}
+                  >
+                    <Text style={styles.resendText}>
+                      Did not receive the code? <Text style={styles.resendHighlight}>Resend</Text>
+                    </Text>
                   </Pressable>
                 </>
               ) : (
@@ -310,46 +253,17 @@ export default function LoginScreen() {
                     />
                   </View>
 
-                  {!isNewUser ? (
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.inputLabel}>Password</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={password}
-                        onChangeText={setPassword}
-                        placeholder="Enter password"
-                        placeholderTextColor={theme.textMuted}
-                        secureTextEntry
-                      />
-                    </View>
-                  ) : null}
-
-                  {/* Primary action */}
-                  {isNewUser ? (
-                    <Pressable
-                      style={[styles.primaryButton, operationLoading && styles.buttonDisabled]}
-                      onPress={handleSendOTP}
-                      disabled={operationLoading}
-                    >
-                      <LinearGradient colors={theme.gradients.genie} style={styles.primaryButtonGradient}>
-                        <Text style={styles.primaryButtonText}>
-                          {operationLoading ? 'Sending...' : 'Send Verification Code'}
-                        </Text>
-                      </LinearGradient>
-                    </Pressable>
-                  ) : (
-                    <Pressable
-                      style={[styles.primaryButton, operationLoading && styles.buttonDisabled]}
-                      onPress={handlePasswordLogin}
-                      disabled={operationLoading}
-                    >
-                      <LinearGradient colors={theme.gradients.genie} style={styles.primaryButtonGradient}>
-                        <Text style={styles.primaryButtonText}>
-                          {operationLoading ? 'Signing in...' : 'Sign In'}
-                        </Text>
-                      </LinearGradient>
-                    </Pressable>
-                  )}
+                  <Pressable
+                    style={[styles.primaryButton, operationLoading && styles.buttonDisabled]}
+                    onPress={handleSendOTP}
+                    disabled={operationLoading}
+                  >
+                    <LinearGradient colors={theme.gradients.genie} style={styles.primaryButtonGradient}>
+                      <Text style={styles.primaryButtonText}>
+                        {operationLoading ? 'Sending Code...' : 'Send Login Code'}
+                      </Text>
+                    </LinearGradient>
+                  </Pressable>
 
                   {/* Divider */}
                   <View style={styles.divider}>
@@ -368,18 +282,9 @@ export default function LoginScreen() {
                     <Text style={styles.googleButtonText}>Continue with Google</Text>
                   </Pressable>
 
-                  {/* Toggle */}
-                  <Pressable
-                    style={styles.toggleLink}
-                    onPress={isNewUser ? handleSwitchToLogin : handleSwitchToRegister}
-                  >
-                    <Text style={styles.toggleText}>
-                      {isNewUser ? 'Already have an account? ' : 'New here? '}
-                      <Text style={styles.toggleHighlight}>
-                        {isNewUser ? 'Sign In' : 'Create Account'}
-                      </Text>
-                    </Text>
-                  </Pressable>
+                  <Text style={styles.otpNote}>
+                    No password needed. We will send a one-time code to your email.
+                  </Text>
                 </>
               )}
             </Animated.View>
@@ -602,16 +507,35 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: theme.textPrimary,
   },
-  toggleLink: {
+  resendLink: {
     alignItems: 'center',
     paddingVertical: 12,
   },
-  toggleText: {
+  resendText: {
     fontSize: 14,
     color: theme.textSecondary,
   },
-  toggleHighlight: {
+  resendHighlight: {
     color: theme.primary,
     fontWeight: '700',
+  },
+  otpInput: {
+    backgroundColor: theme.backgroundSecondary,
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    fontSize: 28,
+    fontWeight: '700',
+    color: theme.textPrimary,
+    borderWidth: 1,
+    borderColor: theme.border,
+    letterSpacing: 12,
+  },
+  otpNote: {
+    fontSize: 13,
+    color: theme.textMuted,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginTop: 4,
   },
 });
