@@ -356,11 +356,11 @@ const styles = StyleSheet.create({
     width: 152,
     height: 152,
     borderRadius: 76,
-    backgroundColor: theme.background,
+    backgroundColor: theme.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(251, 191, 36, 0.2)',
+    borderColor: 'rgba(200,135,90,0.15)',
   },
   teaserMascot: {
     width: 100,

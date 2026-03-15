@@ -295,8 +295,8 @@ export default function ResultsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.backgroundSecondary },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: theme.background, borderBottomWidth: 1, borderBottomColor: theme.border },
+  container: { flex: 1, backgroundColor: theme.background },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: theme.surface, borderBottomWidth: 1, borderBottomColor: theme.border },
   backButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: theme.backgroundSecondary, alignItems: 'center', justifyContent: 'center' },
   headerCenter: { alignItems: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '700', color: theme.textPrimary },
@@ -304,10 +304,10 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 16, gap: 16 },
 
   // Result card
-  resultCard: { backgroundColor: theme.background, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.1)', ...theme.shadows.card },
-  bestCard: { borderColor: 'rgba(251, 191, 36, 0.35)', ...theme.shadows.cardElevated },
+  resultCard: { backgroundColor: theme.surface, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(200,135,90,0.1)', ...theme.shadows.card },
+  bestCard: { borderColor: 'rgba(200,135,90,0.3)', ...theme.shadows.cardElevated },
   rankBadge: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: theme.backgroundTertiary },
-  rankBadgeBest: { backgroundColor: 'rgba(251, 191, 36, 0.15)' },
+  rankBadgeBest: { backgroundColor: 'rgba(200,135,90,0.1)' },
   rankText: { fontSize: 13, fontWeight: '600', color: theme.textSecondary },
   rankTextBest: { color: theme.primary, fontWeight: '700' },
   imageContainer: { height: 160 },
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   orderBtnText: { fontSize: 13, fontWeight: '700', color: theme.textOnPrimary },
 
   // Total
-  totalCard: { backgroundColor: theme.background, borderRadius: theme.borderRadius.lg, padding: 20, borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.2)' },
+  totalCard: { backgroundColor: theme.surface, borderRadius: theme.borderRadius.lg, padding: 20, borderWidth: 1, borderColor: 'rgba(200,135,90,0.15)' },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   totalLabel: { fontSize: 14, fontWeight: '600', color: theme.textSecondary },
   totalValue: { fontSize: 24, fontWeight: '700', color: theme.primary },
@@ -366,8 +366,8 @@ const styles = StyleSheet.create({
   managePartnersText: { fontSize: 13, color: theme.textMuted },
 
   // Snap & Share
-  snapShareBtn: { borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(251,191,36,0.2)' },
-  snapShareGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16, borderRadius: 16 },
+  snapShareBtn: { borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(200,135,90,0.15)', backgroundColor: theme.surface },
+  snapShareGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16, borderRadius: 16, backgroundColor: theme.surface },
   snapShareLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   snapShareTitle: { fontSize: 15, fontWeight: '700', color: theme.textPrimary },
   snapShareSub: { fontSize: 12, color: theme.textSecondary, marginTop: 2 },

@@ -410,10 +410,7 @@ export default function SnapShareScreen() {
   // ── Main Snap & Share Screen ──
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#0A0A0A', '#1a1400', '#0A0A0A']}
-        style={StyleSheet.absoluteFillObject}
-      />
+
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
         {/* Header */}
         <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
@@ -441,13 +438,13 @@ export default function SnapShareScreen() {
                     contentFit="cover"
                   />
                   <LinearGradient
-                    colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.65)']}
+                    colors={['rgba(0,0,0,0.4)', 'rgba(0,0,0,0.15)', 'rgba(0,0,0,0.5)']}
                     style={StyleSheet.absoluteFillObject}
                   />
                 </>
               ) : (
                 <LinearGradient
-                  colors={['#0D0D0D', '#1A1200', '#0D0D0D']}
+                  colors={['#F5F0EA', '#EDE7DF', '#F5F0EA']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={StyleSheet.absoluteFillObject}
@@ -735,7 +732,7 @@ export default function SnapShareScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0A' },
+  container: { flex: 1, backgroundColor: theme.background },
   safeArea: { flex: 1 },
 
   // Header
@@ -777,7 +774,7 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
     paddingHorizontal: 28,
     borderWidth: 1.5,
-    borderColor: 'rgba(251,191,36,0.2)',
+    borderColor: 'rgba(200,135,90,0.2)',
   },
   cornerGlowTL: {
     position: 'absolute',
@@ -786,7 +783,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(251,191,36,0.06)',
+    backgroundColor: 'rgba(200,135,90,0.06)',
   },
   cornerGlowBR: {
     position: 'absolute',
@@ -795,34 +792,34 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(251,191,36,0.06)',
+    backgroundColor: 'rgba(200,135,90,0.06)',
   },
   cardTop: { alignItems: 'center', gap: 8 },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   logoImage: { width: 36, height: 36 },
   logoText: { fontSize: 20, fontWeight: '700', color: theme.primary, letterSpacing: 0.3 },
-  hashtag: { fontSize: 14, fontWeight: '600', color: 'rgba(251,191,36,0.6)', letterSpacing: 0.5 },
+  hashtag: { fontSize: 14, fontWeight: '600', color: 'rgba(200,135,90,0.6)', letterSpacing: 0.5 },
   cardCenter: { alignItems: 'center', gap: 16 },
   vibeEmoji: { fontSize: 52 },
   vibeHeadline: {
     fontSize: 38,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#2C2520',
     textAlign: 'center',
     lineHeight: 46,
     letterSpacing: -0.5,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 12,
+    textShadowColor: 'rgba(255,255,255,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 8,
   },
   cardScore: { alignItems: 'center', gap: 8 },
-  scoreRing: { borderRadius: 40, overflow: 'hidden', borderWidth: 2, borderColor: 'rgba(251,191,36,0.3)' },
+  scoreRing: { borderRadius: 40, overflow: 'hidden', borderWidth: 2, borderColor: 'rgba(200,135,90,0.3)' },
   scoreGradient: { paddingHorizontal: 28, paddingVertical: 12, borderRadius: 38, alignItems: 'center' },
   scoreNumber: { fontSize: 32, fontWeight: '800', color: theme.textOnPrimary, letterSpacing: -1 },
-  scoreLabel: { fontSize: 15, fontWeight: '600', color: 'rgba(255,255,255,0.75)', letterSpacing: 0.3 },
+  scoreLabel: { fontSize: 15, fontWeight: '600', color: 'rgba(44,37,32,0.65)', letterSpacing: 0.3 },
   cardBottom: { alignItems: 'center', gap: 10 },
-  dividerLine: { width: 60, height: 1, backgroundColor: 'rgba(251,191,36,0.2)' },
-  attribution: { fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.5)', letterSpacing: 0.3 },
+  dividerLine: { width: 60, height: 1, backgroundColor: 'rgba(200,135,90,0.2)' },
+  attribution: { fontSize: 13, fontWeight: '500', color: 'rgba(44,37,32,0.45)', letterSpacing: 0.3 },
 
   // Photo badge
   photoBadge: {
@@ -837,13 +834,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: 'rgba(251,191,36,0.1)',
+    backgroundColor: 'rgba(200,135,90,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.25)',
+    borderColor: 'rgba(200,135,90,0.2)',
   },
   photoBadgeBtnRemove: {
-    backgroundColor: 'rgba(239,68,68,0.08)',
-    borderColor: 'rgba(239,68,68,0.25)',
+    backgroundColor: 'rgba(209,114,114,0.08)',
+    borderColor: 'rgba(209,114,114,0.2)',
   },
   photoBadgeText: { fontSize: 13, fontWeight: '600', color: theme.primary },
 
@@ -859,8 +856,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1.5,
-    borderColor: 'rgba(251,191,36,0.25)',
-    backgroundColor: 'rgba(251,191,36,0.06)',
+    borderColor: 'rgba(200,135,90,0.2)',
+    backgroundColor: 'rgba(200,135,90,0.04)',
   },
   snapBtnInner: {
     flexDirection: 'row',
@@ -905,7 +902,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.25)',
+    borderColor: 'rgba(200,135,90,0.2)',
+    backgroundColor: theme.surface,
   },
   rewardGradient: { alignItems: 'center', padding: 28, gap: 10 },
   rewardEmoji: { fontSize: 44 },
@@ -915,9 +913,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: 'rgba(251,191,36,0.12)',
+    backgroundColor: 'rgba(200,135,90,0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.3)',
+    borderColor: 'rgba(200,135,90,0.25)',
   },
   rewardDoneText: { fontSize: 15, fontWeight: '700', color: theme.primary },
 
@@ -941,11 +939,11 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   cameraTopTitle: {
     fontSize: 17,
@@ -970,7 +968,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 32,
     height: 32,
-    borderColor: 'rgba(251,191,36,0.65)',
+    borderColor: 'rgba(200,135,90,0.6)',
   },
   cameraCornerTL: {
     top: 0,
@@ -1014,7 +1012,7 @@ const styles = StyleSheet.create({
     borderRadius: 41,
     overflow: 'hidden',
     borderWidth: 4,
-    borderColor: 'rgba(251,191,36,0.55)',
+    borderColor: 'rgba(200,135,90,0.5)',
     alignSelf: 'center',
   },
   captureBtnGradient: {
@@ -1035,12 +1033,12 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
   modalSheet: {
-    backgroundColor: theme.background,
+    backgroundColor: theme.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.15)',
+    borderColor: 'rgba(200,135,90,0.12)',
     borderBottomWidth: 0,
     ...theme.shadows.cardElevated,
   },
@@ -1060,12 +1058,12 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: 'rgba(251,191,36,0.1)',
+    backgroundColor: 'rgba(200,135,90,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: 'rgba(251,191,36,0.25)',
+    borderColor: 'rgba(200,135,90,0.18)',
   },
   modalRewardEmoji: { fontSize: 36 },
   modalTitle: {
@@ -1104,7 +1102,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: theme.backgroundSecondary,
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.2)',
+    borderColor: 'rgba(200,135,90,0.18)',
   },
   modalSecondaryText: { fontSize: 16, fontWeight: '600', color: theme.primary },
 
@@ -1118,7 +1116,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.backgroundSecondary,
+    backgroundColor: theme.background,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,

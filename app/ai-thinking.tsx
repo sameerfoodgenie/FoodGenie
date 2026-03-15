@@ -19,13 +19,11 @@ export default function AIThinkingScreen() {
   const [messageIndex, setMessageIndex] = useState(0);
   const hasNavigated = useRef(false);
 
-  // Snapshot values at mount time
   const prefsRef = useRef(appContext.preferences);
   const queryRef = useRef(appContext.currentQuery);
   const dishesRef = useRef(appContext.allDishes);
   const restaurantsRef = useRef(appContext.allRestaurants);
 
-  // Keep refs updated each render
   prefsRef.current = appContext.preferences;
   queryRef.current = appContext.currentQuery;
   dishesRef.current = appContext.allDishes;
@@ -51,12 +49,10 @@ export default function AIThinkingScreen() {
   };
 
   useEffect(() => {
-    // Cycle messages
     const messageInterval = setInterval(() => {
       setMessageIndex(prev => prev + 1);
     }, 1800);
 
-    // Process AI request after a short delay
     const processTimer = setTimeout(() => {
       if (hasNavigated.current) return;
 
@@ -81,13 +77,10 @@ export default function AIThinkingScreen() {
         appContext.setAiResults([]);
       }
 
-      // Non-blocking session increment
       appContext.incrementSession().catch(() => {});
-
       navigateToResults();
     }, 2500);
 
-    // Failsafe: always navigate after 4 seconds
     const failsafe = setTimeout(() => {
       navigateToResults();
     }, 4000);
@@ -102,7 +95,7 @@ export default function AIThinkingScreen() {
   const currentMessage = displayMessages[messageIndex % displayMessages.length] || DEFAULT_MESSAGES[0];
 
   return (
-    <LinearGradient colors={['#1a1400', '#0A0A0A', '#1a1400']} style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.mascotContainer}>
           <Image
@@ -117,23 +110,24 @@ export default function AIThinkingScreen() {
         <Text style={styles.message}>{currentMessage}</Text>
         <Text style={styles.trustNote}>Finding chef-verified, fairly priced Top 3 matches</Text>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background },
   content: { alignItems: 'center', paddingHorizontal: 40 },
   mascotContainer: {
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: 'rgba(251, 191, 36, 0.1)',
+    backgroundColor: 'rgba(200,135,90,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 32,
     borderWidth: 2,
-    borderColor: 'rgba(251, 191, 36, 0.2)',
+    borderColor: 'rgba(200,135,90,0.18)',
+    ...theme.shadows.genie,
   },
   mascot: { width: 90, height: 90 },
   spinner: { marginBottom: 24 },

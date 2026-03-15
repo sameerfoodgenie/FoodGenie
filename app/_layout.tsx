@@ -11,7 +11,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AuthProvider>
           <AppProvider>
-            <StatusBar style="light" />
+            <StatusBar style="dark" />
             <View style={styles.root}>
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -45,5 +45,5 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0A0A0A' },
+  root: { flex: 1, backgroundColor: '#FAF7F3' },
 });

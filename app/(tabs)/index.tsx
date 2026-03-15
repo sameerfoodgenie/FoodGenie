@@ -48,7 +48,6 @@ export default function HomeScreen() {
   const hasRedirected = useRef(false);
   const isNavigating = useRef(false);
 
-  // Shimmer animation for Get Matches button
   const shimmerOpacity = useSharedValue(1);
   const shimmerStyle = useAnimatedStyle(() => ({
     opacity: shimmerOpacity.value,
@@ -164,13 +163,6 @@ export default function HomeScreen() {
           {/* ─── HERO: Ask FoodGenie ─── */}
           <Animated.View entering={FadeInUp.delay(200).duration(500)}>
             <View style={styles.heroOuter}>
-              {/* Radial glow background */}
-              <LinearGradient
-                colors={['rgba(251,191,36,0.12)', 'rgba(251,191,36,0.04)', 'rgba(10,10,10,0)']}
-                style={styles.heroGlow}
-                start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }}
-              />
               <View style={styles.heroCard}>
                 {/* Title row */}
                 <View style={styles.heroHeader}>
@@ -334,10 +326,7 @@ export default function HomeScreen() {
               style={({ pressed }) => [styles.snapCard, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
               onPress={() => router.push('/snap-share')}
             >
-              <LinearGradient
-                colors={['rgba(251,191,36,0.1)', 'rgba(251,191,36,0.03)']}
-                style={styles.snapCardGradient}
-              >
+              <View style={styles.snapCardInner}>
                 <View style={styles.snapCardLeft}>
                   <View style={styles.snapIconWrap}>
                     <MaterialIcons name="camera-alt" size={22} color={theme.primary} />
@@ -348,7 +337,7 @@ export default function HomeScreen() {
                   </View>
                 </View>
                 <MaterialIcons name="chevron-right" size={22} color={theme.textMuted} />
-              </LinearGradient>
+              </View>
             </Pressable>
           </Animated.View>
 
@@ -366,7 +355,7 @@ export default function HomeScreen() {
                   entering={FadeInRight.delay(600 + i * 80).duration(350)}
                 >
                   <View style={styles.whyPill}>
-                    <MaterialIcons name={badge.icon} size={14} color={theme.textMuted} />
+                    <MaterialIcons name={badge.icon} size={14} color={theme.textSecondary} />
                     <Text style={styles.whyPillText}>{badge.text}</Text>
                   </View>
                 </Animated.View>
@@ -407,32 +396,24 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: theme.backgroundTertiary,
+    backgroundColor: theme.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.2)',
+    borderColor: 'rgba(200,135,90,0.2)',
+    ...theme.shadows.card,
   },
 
   // ── Hero ──
   heroOuter: {
     marginHorizontal: 16,
     marginBottom: 32,
-    position: 'relative',
-  },
-  heroGlow: {
-    position: 'absolute',
-    top: -20,
-    left: -20,
-    right: -20,
-    bottom: -20,
-    borderRadius: 40,
   },
   heroCard: {
-    backgroundColor: 'rgba(20,20,20,0.85)',
+    backgroundColor: theme.surface,
     borderRadius: 24,
-    borderWidth: 1.5,
-    borderColor: 'rgba(251,191,36,0.22)',
+    borderWidth: 1,
+    borderColor: 'rgba(200,135,90,0.15)',
     padding: 24,
     ...theme.shadows.cardElevated,
   },
@@ -446,11 +427,11 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(251,191,36,0.1)',
+    backgroundColor: 'rgba(200,135,90,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(251,191,36,0.35)',
+    borderColor: 'rgba(200,135,90,0.2)',
   },
   genieMascot: { width: 38, height: 38 },
   heroTitleBlock: { flex: 1 },
@@ -460,7 +441,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: 'rgba(251,191,36,0.15)',
+    backgroundColor: 'rgba(200,135,90,0.1)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: theme.borderRadius.full,
@@ -473,10 +454,10 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(39,39,42,0.7)',
+    backgroundColor: theme.backgroundSecondary,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(63,63,70,0.6)',
+    borderColor: theme.border,
     paddingHorizontal: 14,
   },
   heroInputIcon: { marginRight: 8 },
@@ -506,16 +487,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(31,31,31,0.9)',
+    backgroundColor: theme.backgroundSecondary,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: 'rgba(63,63,70,0.5)',
+    borderColor: theme.border,
   },
   chipSelected: {
-    backgroundColor: 'rgba(251,191,36,0.12)',
-    borderColor: 'rgba(251,191,36,0.5)',
+    backgroundColor: 'rgba(200,135,90,0.1)',
+    borderColor: 'rgba(200,135,90,0.35)',
   },
   chipEmoji: { fontSize: 14 },
   chipLabel: { fontSize: 13, fontWeight: '500', color: theme.textSecondary },
@@ -532,12 +513,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(251,191,36,0.06)',
+    backgroundColor: 'rgba(200,135,90,0.06)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.18)',
+    borderColor: 'rgba(200,135,90,0.15)',
   },
   prefChipEmoji: { fontSize: 13 },
   prefChipLabel: { fontSize: 12, fontWeight: '600', color: theme.primary },
@@ -557,30 +538,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
-    backgroundColor: 'rgba(31,31,31,0.45)',
+    backgroundColor: theme.backgroundSecondary,
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: 'rgba(63,63,70,0.25)',
+    borderColor: theme.border,
   },
-  whyPillText: { fontSize: 12, fontWeight: '500', color: theme.textMuted },
+  whyPillText: { fontSize: 12, fontWeight: '500', color: theme.textSecondary },
 
   // ── Snap & Share ──
   snapSection: { paddingHorizontal: 20, marginBottom: 8 },
   snapCard: {
     borderRadius: 20,
     overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(251,191,36,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(200,135,90,0.15)',
+    backgroundColor: theme.surface,
     ...theme.shadows.card,
   },
-  snapCardGradient: {
+  snapCardInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 18,
-    borderRadius: 20,
   },
   snapCardLeft: {
     flexDirection: 'row',
@@ -592,11 +573,11 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 14,
-    backgroundColor: 'rgba(251,191,36,0.12)',
+    backgroundColor: 'rgba(200,135,90,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.2)',
+    borderColor: 'rgba(200,135,90,0.15)',
   },
   snapCardText: { flex: 1 },
   snapCardTitle: { fontSize: 16, fontWeight: '700', color: theme.textPrimary },
@@ -608,16 +589,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(18,18,18,0.95)',
+    backgroundColor: theme.surface,
     borderRadius: 20,
     padding: 20,
-    borderWidth: 1.5,
-    borderColor: 'rgba(251,191,36,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(200,135,90,0.15)',
     ...theme.shadows.card,
   },
   exploreCardPressed: {
-    backgroundColor: 'rgba(28,28,28,1)',
-    borderColor: 'rgba(251,191,36,0.4)',
+    backgroundColor: theme.backgroundSecondary,
+    borderColor: 'rgba(200,135,90,0.3)',
     transform: [{ scale: 0.98 }],
   },
   exploreCardLeft: {
@@ -630,17 +611,17 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 16,
-    backgroundColor: 'rgba(251,191,36,0.1)',
+    backgroundColor: 'rgba(200,135,90,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.18)',
+    borderColor: 'rgba(200,135,90,0.15)',
   },
   exploreArrowWrap: {
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: 'rgba(63,63,70,0.15)',
+    backgroundColor: theme.backgroundSecondary,
     alignItems: 'center',
     justifyContent: 'center',
   },

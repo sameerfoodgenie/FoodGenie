@@ -199,9 +199,9 @@ export default function OnboardingScreen() {
                 { icon: 'trending-up', text: 'Learns your taste over time' },
               ].map((feature, index) => (
                 <Animated.View key={feature.icon} entering={SlideInRight.delay(600 + index * 150).duration(400)} style={styles.featureItem}>
-                  <LinearGradient colors={['rgba(251, 191, 36, 0.2)', 'rgba(251, 191, 36, 0.05)']} style={styles.featureIcon}>
+                  <View style={styles.featureIcon}>
                     <MaterialIcons name={feature.icon as any} size={20} color={theme.primary} />
-                  </LinearGradient>
+                  </View>
                   <Text style={styles.featureText}>{feature.text}</Text>
                 </Animated.View>
               ))}
@@ -394,10 +394,10 @@ const styles = StyleSheet.create({
   sparkle: { position: 'absolute', fontSize: 20 },
   genieContainer: { marginBottom: 16 },
   genieRing: { width: 120, height: 120, borderRadius: 60, padding: 4, alignItems: 'center', justifyContent: 'center', ...theme.shadows.genie },
-  genieInner: { width: 112, height: 112, borderRadius: 56, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.2)' },
+  genieInner: { width: 112, height: 112, borderRadius: 56, backgroundColor: theme.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(200,135,90,0.15)' },
   genieMascot: { width: 72, height: 72 },
-  speechBubble: { backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 16, paddingHorizontal: 20, borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.15)', position: 'relative' },
-  speechBubbleArrow: { position: 'absolute', top: -10, alignSelf: 'center', width: 0, height: 0, borderLeftWidth: 10, borderRightWidth: 10, borderBottomWidth: 10, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: theme.backgroundSecondary },
+  speechBubble: { backgroundColor: theme.surface, borderRadius: 20, padding: 16, paddingHorizontal: 20, borderWidth: 1, borderColor: 'rgba(200,135,90,0.12)', position: 'relative', ...theme.shadows.card },
+  speechBubbleArrow: { position: 'absolute', top: -10, alignSelf: 'center', width: 0, height: 0, borderLeftWidth: 10, borderRightWidth: 10, borderBottomWidth: 10, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: theme.surface },
   speechText: { fontSize: 15, color: theme.textPrimary, lineHeight: 22, textAlign: 'center' },
   typingCursor: { color: theme.primary, fontWeight: '700' },
 
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
   welcomeSubtitle: { fontSize: 15, color: theme.textSecondary, marginBottom: 32 },
   featureList: { gap: 12, width: '100%' },
   featureItem: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: theme.backgroundSecondary, padding: 16, borderRadius: theme.borderRadius.lg },
-  featureIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  featureIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(200,135,90,0.08)' },
   featureText: { fontSize: 15, color: theme.textPrimary, fontWeight: '500' },
 
   // Diet
@@ -430,14 +430,14 @@ const styles = StyleSheet.create({
   slider: { width: '100%', height: 44 },
   budgetTips: { flexDirection: 'row', gap: 8 },
   budgetTip: { flex: 1, alignItems: 'center', padding: 12, borderRadius: theme.borderRadius.md, backgroundColor: theme.backgroundTertiary, opacity: 0.5 },
-  budgetTipActive: { opacity: 1, backgroundColor: 'rgba(251, 191, 36, 0.15)' },
+  budgetTipActive: { opacity: 1, backgroundColor: 'rgba(200,135,90,0.12)' },
   budgetTipEmoji: { fontSize: 20, marginBottom: 4 },
   budgetTipText: { fontSize: 11, color: theme.textSecondary, fontWeight: '500' },
 
   // Spice
   spiceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   spiceCard: { backgroundColor: theme.backgroundSecondary, borderRadius: theme.borderRadius.lg, padding: 20, alignItems: 'center', position: 'relative', overflow: 'hidden' },
-  spiceCardActive: { backgroundColor: 'rgba(251, 191, 36, 0.1)' },
+  spiceCardActive: { backgroundColor: 'rgba(200,135,90,0.1)' },
   spiceEmoji: { fontSize: 32, marginBottom: 8 },
   spiceLabel: { fontSize: 15, fontWeight: '600', color: theme.textPrimary },
   spiceIndicator: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, overflow: 'hidden' },

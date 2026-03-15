@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { theme } from '../constants/theme';
@@ -12,7 +12,6 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const called = useRef(false);
 
   useEffect(() => {
-    // Simple timer-based splash — no Reanimated dependency
     const timer = setTimeout(() => {
       if (!called.current) {
         called.current = true;
@@ -25,7 +24,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#0A0A0A', '#141414', '#0A0A0A']} style={styles.gradient}>
+      <View style={styles.inner}>
         <View style={styles.logoContainer}>
           <LinearGradient colors={theme.gradients.goldShine} style={styles.outerRing}>
             <View style={styles.logoInner}>
@@ -40,14 +39,14 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
 
         <Text style={styles.appName}>FoodGenie</Text>
         <Text style={styles.tagline}>Right food. Right price. Delivered right.</Text>
-      </LinearGradient>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  gradient: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  container: { flex: 1, backgroundColor: theme.background },
+  inner: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   logoContainer: { alignItems: 'center', justifyContent: 'center', marginBottom: 32 },
   outerRing: {
     width: 160,
@@ -56,16 +55,17 @@ const styles = StyleSheet.create({
     padding: 4,
     alignItems: 'center',
     justifyContent: 'center',
+    ...theme.shadows.genie,
   },
   logoInner: {
     width: 152,
     height: 152,
     borderRadius: 76,
-    backgroundColor: theme.background,
+    backgroundColor: theme.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(251, 191, 36, 0.2)',
+    borderColor: 'rgba(200,135,90,0.15)',
   },
   mascot: { width: 100, height: 100 },
   appName: {
