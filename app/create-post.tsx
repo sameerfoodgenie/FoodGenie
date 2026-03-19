@@ -19,6 +19,7 @@ import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated'
 import { theme } from '../constants/theme';
 import { usePosts } from '../contexts/PostContext';
 import { useApp } from '../contexts/AppContext';
+import { useCreator } from '../contexts/CreatorContext';
 import { useAuth, useAlert } from '@/template';
 import { POPULAR_DISHES, ORDER_PLATFORMS } from '../services/mealInsights';
 
@@ -46,6 +47,7 @@ export default function CreatePostScreen() {
   const params = useLocalSearchParams<{ imageUri?: string }>();
   const { addPost } = usePosts();
   const { allRestaurants } = useApp();
+  const { isCreatorUnlocked, postsNeeded } = useCreator();
   const { user } = useAuth();
   const { showAlert } = useAlert();
 
@@ -104,7 +106,11 @@ export default function CreatePostScreen() {
       timestamp: Date.now(),
     });
 
-    showAlert('Posted!', 'Your meal has been shared');
+    if (!isCreatorUnlocked && postsNeeded > 0) {
+      showAlert('Posted! 🎉', `+1 step closer to Creator Mode! ${postsNeeded - 1} post${postsNeeded - 1 !== 1 ? 's' : ''} to go`);
+    } else {
+      showAlert('Posted!', 'Your meal has been shared');
+    }
     router.back();
   }, [canPost, user, dishName, caption, location, source, mealType, restaurantName, platform, taggedFriends, params.imageUri, addPost, router, showAlert]);
 
