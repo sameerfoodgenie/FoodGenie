@@ -30,21 +30,6 @@ export default function CameraScreen() {
   const [isCapturing, setIsCapturing] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
 
-  // Scan line animation
-  const scanY = useSharedValue(0);
-  const scanStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: scanY.value }],
-  }));
-
-  useEffect(() => {
-    scanY.value = withRepeat(
-      withTiming(200, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true,
-    );
-  }, []);
-
-  // Request permission on mount
   useEffect(() => {
     if (!IS_WEB && !permission?.granted) {
       requestPermission().then((result) => {
@@ -61,7 +46,7 @@ export default function CameraScreen() {
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.85 });
       if (photo?.uri) {
-        router.push({ pathname: '/edit-meal', params: { imageUri: photo.uri } });
+        router.push({ pathname: '/create-post', params: { imageUri: photo.uri } });
       }
     } catch (e) {
       console.log('Capture error:', e);
@@ -77,10 +62,10 @@ export default function CameraScreen() {
         mediaTypes: ['images'],
         quality: 0.85,
         allowsEditing: true,
-        aspect: [1, 1],
+        aspect: [4, 5],
       });
       if (!result.canceled && result.assets[0]?.uri) {
-        router.push({ pathname: '/edit-meal', params: { imageUri: result.assets[0].uri } });
+        router.push({ pathname: '/create-post', params: { imageUri: result.assets[0].uri } });
       }
     } catch (e) {
       console.log('Gallery error:', e);
@@ -106,9 +91,9 @@ export default function CameraScreen() {
             <View style={styles.webIconWrap}>
               <MaterialIcons name="camera-alt" size={48} color={theme.primary} />
             </View>
-            <Text style={styles.webTitle}>Camera Scan</Text>
+            <Text style={styles.webTitle}>Take a Photo</Text>
             <Text style={styles.webDesc}>
-              Camera works on mobile only. Use the OnSpace app or download the APK to scan meals.
+              Camera works on mobile. Use gallery to upload a photo of your meal.
             </Text>
             <Pressable
               style={({ pressed }) => [styles.webGalleryBtn, pressed && { opacity: 0.8 }]}
@@ -133,9 +118,7 @@ export default function CameraScreen() {
               <MaterialIcons name="no-photography" size={48} color={theme.error} />
             </View>
             <Text style={styles.webTitle}>Camera Access Required</Text>
-            <Text style={styles.webDesc}>
-              Enable camera in your device settings to scan meals.
-            </Text>
+            <Text style={styles.webDesc}>Enable camera in your device settings to post meals.</Text>
             <Pressable
               style={({ pressed }) => [styles.webGalleryBtn, pressed && { opacity: 0.8 }]}
               onPress={() => requestPermission()}
@@ -150,7 +133,6 @@ export default function CameraScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Camera View */}
       {permission?.granted ? (
         <CameraView
           ref={cameraRef}
@@ -164,17 +146,13 @@ export default function CameraScreen() {
         </View>
       )}
 
-      {/* Overlay UI */}
+      {/* Overlay */}
       <SafeAreaView edges={['top', 'bottom']} style={styles.overlay}>
         {/* Top bar */}
         <View style={styles.topBar}>
           <Animated.View entering={FadeInDown.duration(400)}>
-            <View style={styles.topLabelRow}>
-              <Text style={styles.topLabel}>Scan your meal</Text>
-              <Text style={styles.topEmoji}> 🍽</Text>
-            </View>
+            <Text style={styles.topLabel}>New Post</Text>
           </Animated.View>
-
           <View style={styles.topActions}>
             <Pressable
               style={({ pressed }) => [styles.topBtn, flash && styles.topBtnActive, pressed && { opacity: 0.7 }]}
@@ -185,31 +163,18 @@ export default function CameraScreen() {
           </View>
         </View>
 
-        {/* Center scan frame */}
-        <View style={styles.scanArea}>
-          <View style={styles.scanFrame}>
-            <View style={[styles.corner, styles.cornerTL]} />
-            <View style={[styles.corner, styles.cornerTR]} />
-            <View style={[styles.corner, styles.cornerBL]} />
-            <View style={[styles.corner, styles.cornerBR]} />
-            {/* Animated scan line */}
-            <Animated.View style={[styles.scanLine, scanStyle]} />
-          </View>
-          <Text style={styles.scanHint}>Point at your food</Text>
-        </View>
+        <View style={{ flex: 1 }} />
 
         {/* Bottom controls */}
         <View style={styles.bottomBar}>
-          {/* Gallery */}
           <Pressable
             style={({ pressed }) => [styles.sideBtn, pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] }]}
             onPress={handlePickImage}
           >
-            <MaterialIcons name="photo-library" size={24} color="#FFF" />
+            <MaterialIcons name="photo-library" size={26} color="#FFF" />
             <Text style={styles.sideBtnLabel}>Gallery</Text>
           </Pressable>
 
-          {/* Capture */}
           <Pressable
             style={({ pressed }) => [
               styles.captureOuter,
@@ -219,21 +184,18 @@ export default function CameraScreen() {
             onPress={handleCapture}
             disabled={isCapturing}
           >
-            <LinearGradient colors={theme.gradients.cameraBtn} style={styles.captureGradient}>
+            <View style={styles.captureInner}>
               {isCapturing ? (
-                <ActivityIndicator size="small" color={theme.textOnPrimary} />
-              ) : (
-                <View style={styles.captureInner} />
-              )}
-            </LinearGradient>
+                <ActivityIndicator size="small" color={theme.primary} />
+              ) : null}
+            </View>
           </Pressable>
 
-          {/* Flip */}
           <Pressable
             style={({ pressed }) => [styles.sideBtn, pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] }]}
             onPress={handleFlip}
           >
-            <MaterialIcons name="flip-camera-ios" size={24} color="#FFF" />
+            <MaterialIcons name="flip-camera-ios" size={26} color="#FFF" />
             <Text style={styles.sideBtnLabel}>Flip</Text>
           </Pressable>
         </View>
@@ -244,11 +206,8 @@ export default function CameraScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-
-  // Overlay
   overlay: { flex: 1, justifyContent: 'space-between' },
 
-  // Top bar
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -257,7 +216,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 8,
   },
-  topLabelRow: { flexDirection: 'row', alignItems: 'center' },
   topLabel: {
     fontSize: 20,
     fontWeight: '700',
@@ -266,7 +224,6 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 8,
   },
-  topEmoji: { fontSize: 20 },
   topActions: { flexDirection: 'row', gap: 12 },
   topBtn: {
     width: 44,
@@ -283,94 +240,33 @@ const styles = StyleSheet.create({
     borderColor: theme.primary,
   },
 
-  // Scan area
-  scanArea: { alignItems: 'center', gap: 16 },
-  scanFrame: {
-    width: SCREEN_WIDTH * 0.7,
-    height: SCREEN_WIDTH * 0.7,
-    position: 'relative',
-  },
-  corner: {
-    position: 'absolute',
-    width: 36,
-    height: 36,
-    borderColor: theme.primary,
-  },
-  cornerTL: { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 12 },
-  cornerTR: { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: 12 },
-  cornerBL: { bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: 12 },
-  cornerBR: { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 12 },
-  scanLine: {
-    position: 'absolute',
-    left: 12,
-    right: 12,
-    height: 2,
-    backgroundColor: theme.primary,
-    opacity: 0.6,
-    borderRadius: 1,
-    ...theme.shadows.neonGreen,
-  },
-  scanHint: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.7)',
-    fontWeight: '500',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-
-  // Bottom bar
   bottomBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingBottom: 24,
-    paddingHorizontal: 32,
+    paddingBottom: 28,
+    paddingHorizontal: 40,
   },
-  sideBtn: {
-    alignItems: 'center',
-    gap: 6,
-    width: 60,
-  },
-  sideBtnLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.8)',
-  },
+  sideBtn: { alignItems: 'center', gap: 6, width: 60 },
+  sideBtnLabel: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.8)' },
   captureOuter: {
     width: 80,
     height: 80,
     borderRadius: 40,
     borderWidth: 4,
-    borderColor: 'rgba(74,222,128,0.5)',
-    overflow: 'hidden',
-    ...theme.shadows.neonGreen,
-  },
-  captureGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: 'rgba(255,255,255,0.9)',
+    padding: 4,
   },
   captureInner: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    flex: 1,
+    borderRadius: 36,
     backgroundColor: '#FFF',
-    borderWidth: 3,
-    borderColor: 'rgba(0,0,0,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
-  // Web / Permission fallback
-  webFallback: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  webContent: {
-    alignItems: 'center',
-    paddingHorizontal: 40,
-    gap: 16,
-  },
+  webFallback: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  webContent: { alignItems: 'center', paddingHorizontal: 40, gap: 16 },
   webIconWrap: {
     width: 96,
     height: 96,
@@ -382,18 +278,8 @@ const styles = StyleSheet.create({
     borderColor: theme.border,
     marginBottom: 8,
   },
-  webTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: theme.textPrimary,
-    textAlign: 'center',
-  },
-  webDesc: {
-    fontSize: 15,
-    color: theme.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
+  webTitle: { fontSize: 22, fontWeight: '700', color: theme.textPrimary, textAlign: 'center' },
+  webDesc: { fontSize: 15, color: theme.textSecondary, textAlign: 'center', lineHeight: 22 },
   webGalleryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -406,9 +292,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(74,222,128,0.2)',
   },
-  webGalleryText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: theme.primary,
-  },
+  webGalleryText: { fontSize: 15, fontWeight: '600', color: theme.primary },
 });

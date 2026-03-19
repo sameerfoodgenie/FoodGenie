@@ -1,33 +1,45 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   Pressable,
+  FlatList,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { theme } from '../../constants/theme';
-import { useApp } from '../../contexts/AppContext';
+import { usePosts } from '../../contexts/PostContext';
 import { useMeals } from '../../hooks/useMeals';
 import { useAlert, useAuth } from '@/template';
 import { useRouter } from 'expo-router';
 import { config } from '../../constants/config';
 
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const GRID_GAP = 2;
+const GRID_COLS = 3;
+const GRID_SIZE = (SCREEN_WIDTH - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS;
+
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { preferences } = useApp();
-  const { todayMeals, dailyScore, streak, totalCalories } = useMeals();
+  const { myPosts, posts, streak, totalPosts } = usePosts();
+  const { todayMeals } = useMeals();
   const { showAlert } = useAlert();
   const { user, logout } = useAuth();
 
   const name = user?.username || 'Food Lover';
   const email = user?.email || '';
+  const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+
+  // Use all posts for the grid display (in a real app, filter by user)
+  const gridPosts = posts;
 
   const handleLogout = () => {
     Haptics.selectionAsync();
@@ -44,221 +56,239 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const renderGridItem = ({ item, index }: { item: typeof posts[0]; index: number }) => (
+    <Pressable
+      style={[
+        styles.gridItem,
+        { marginRight: (index + 1) % GRID_COLS === 0 ? 0 : GRID_GAP },
+      ]}
+      onPress={() => { Haptics.selectionAsync(); }}
+    >
+      {item.imageUri ? (
+        <Image source={{ uri: item.imageUri }} style={styles.gridImage} contentFit="cover" transition={150} />
+      ) : (
+        <View style={styles.gridNoImage}>
+          <Text style={{ fontSize: 28 }}>🍽</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+
   return (
     <SafeAreaView edges={['top']} style={styles.container}>
-      <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+      <FlatList
+        data={gridPosts}
+        keyExtractor={item => item.id}
+        numColumns={3}
+        renderItem={renderGridItem}
         showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Profile</Text>
-        </View>
-
-        {/* Avatar + Info */}
-        <Animated.View entering={FadeInDown.duration(400)}>
-          <View style={styles.profileCard}>
-            <LinearGradient colors={theme.gradients.cameraBtn} style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-              </Text>
-            </LinearGradient>
-            <Text style={styles.profileName}>{name}</Text>
-            {email ? <Text style={styles.profileEmail}>{email}</Text> : null}
-
-            {/* Quick stats */}
-            <View style={styles.quickStats}>
-              <View style={styles.quickStat}>
-                <Text style={styles.quickStatValue}>{todayMeals.length}</Text>
-                <Text style={styles.quickStatLabel}>Today</Text>
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        columnWrapperStyle={{ marginBottom: GRID_GAP }}
+        ListHeaderComponent={
+          <View>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.title}>{name}</Text>
+              <View style={styles.headerActions}>
+                <Pressable
+                  style={styles.headerIconBtn}
+                  onPress={() => router.push('/(tabs)/camera')}
+                >
+                  <MaterialIcons name="add-box" size={26} color={theme.textPrimary} />
+                </Pressable>
+                <Pressable
+                  style={styles.headerIconBtn}
+                  onPress={() => router.push('/explore')}
+                >
+                  <MaterialIcons name="menu" size={26} color={theme.textPrimary} />
+                </Pressable>
               </View>
-              <View style={styles.quickStatDivider} />
-              <View style={styles.quickStat}>
-                <Text style={styles.quickStatValue}>{streak}</Text>
-                <Text style={styles.quickStatLabel}>Streak</Text>
+            </View>
+
+            {/* Profile info */}
+            <Animated.View entering={FadeIn.duration(400)} style={styles.profileSection}>
+              <LinearGradient colors={['#4ADE80', '#22C55E']} style={styles.avatar}>
+                <Text style={styles.avatarText}>{initials}</Text>
+              </LinearGradient>
+
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{gridPosts.length}</Text>
+                  <Text style={styles.statLabel}>Posts</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{todayMeals.length}</Text>
+                  <Text style={styles.statLabel}>Today</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statValue, { color: '#FB923C' }]}>🔥 {streak}</Text>
+                  <Text style={styles.statLabel}>Streak</Text>
+                </View>
               </View>
-              <View style={styles.quickStatDivider} />
-              <View style={styles.quickStat}>
-                <Text style={[styles.quickStatValue, { color: theme.primary }]}>
-                  {dailyScore > 0 ? `${dailyScore}%` : '—'}
-                </Text>
-                <Text style={styles.quickStatLabel}>Score</Text>
+            </Animated.View>
+
+            {/* Bio */}
+            <View style={styles.bioSection}>
+              <Text style={styles.bioName}>{name}</Text>
+              {email ? <Text style={styles.bioEmail}>{email}</Text> : null}
+              <Text style={styles.bioText}>Food lover sharing my meals on FoodGenie 🍽✨</Text>
+            </View>
+
+            {/* Action buttons */}
+            <Animated.View entering={FadeInDown.delay(100).duration(300)} style={styles.actionRow}>
+              <Pressable
+                style={({ pressed }) => [styles.editProfileBtn, pressed && { opacity: 0.8 }]}
+                onPress={() => router.push('/(tabs)/preferences')}
+              >
+                <Text style={styles.editProfileText}>Edit Profile</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.editProfileBtn, pressed && { opacity: 0.8 }]}
+                onPress={() => router.push('/snap-share')}
+              >
+                <Text style={styles.editProfileText}>Share</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.settingsBtn, pressed && { opacity: 0.8 }]}
+                onPress={handleLogout}
+              >
+                <MaterialIcons name="logout" size={18} color={theme.textSecondary} />
+              </Pressable>
+            </Animated.View>
+
+            {/* Grid header */}
+            <View style={styles.gridHeader}>
+              <View style={styles.gridTab}>
+                <MaterialIcons name="grid-on" size={22} color={theme.textPrimary} />
               </View>
             </View>
           </View>
-        </Animated.View>
-
-        {/* Preferences snapshot */}
-        <Animated.View entering={FadeInDown.delay(100).duration(400)}>
-          <Text style={styles.sectionTitle}>Food Preferences</Text>
-          <View style={styles.card}>
-            <View style={styles.prefRow}>
-              <View style={styles.prefItem}>
-                <Text style={styles.prefLabel}>Diet</Text>
-                <Text style={styles.prefValue}>
-                  {preferences.diet === 'veg' ? '🥬 Veg' : preferences.diet === 'egg' ? '🥚 Egg' : preferences.diet === 'nonveg' ? '🍗 Non-Veg' : 'Not set'}
-                </Text>
-              </View>
-              <View style={styles.prefItem}>
-                <Text style={styles.prefLabel}>Budget</Text>
-                <Text style={styles.prefValue}>₹{preferences.budgetMin}–₹{preferences.budgetMax}</Text>
-              </View>
-            </View>
-            <View style={styles.prefRow}>
-              <View style={styles.prefItem}>
-                <Text style={styles.prefLabel}>Spice</Text>
-                <Text style={styles.prefValue}>
-                  {preferences.spiceLevel === 1 ? '😌 Mild' : preferences.spiceLevel === 2 ? '🌶️ Medium' : '🔥 Spicy'}
-                </Text>
-              </View>
-              <View style={styles.prefItem}>
-                <Text style={styles.prefLabel}>Mode</Text>
-                <Text style={styles.prefValue}>
-                  {preferences.mode === 'quick' ? '⚡ Quick' : '💬 Guided'}
-                </Text>
-              </View>
-            </View>
-            <Pressable
-              style={({ pressed }) => [styles.editPrefsBtn, pressed && { opacity: 0.8 }]}
-              onPress={() => router.push('/(tabs)/preferences')}
-            >
-              <MaterialIcons name="tune" size={16} color={theme.primary} />
-              <Text style={styles.editPrefsBtnText}>Edit Preferences</Text>
-            </Pressable>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyGrid}>
+            <MaterialIcons name="camera-alt" size={48} color={theme.textMuted} />
+            <Text style={styles.emptyGridTitle}>No Posts Yet</Text>
+            <Text style={styles.emptyGridSub}>Share your first meal!</Text>
           </View>
-        </Animated.View>
-
-        {/* Settings */}
-        <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-          <Text style={styles.sectionTitle}>Settings</Text>
-
-          <Pressable style={styles.settingsItem} onPress={() => router.push('/explore')}>
-            <MaterialIcons name="explore" size={22} color={theme.primary} />
-            <Text style={styles.settingsItemText}>Explore Dishes</Text>
-            <MaterialIcons name="chevron-right" size={20} color={theme.textMuted} />
-          </Pressable>
-
-          <Pressable style={styles.settingsItem} onPress={() => router.push('/partner-apps')}>
-            <MaterialIcons name="storefront" size={22} color={theme.textSecondary} />
-            <Text style={styles.settingsItemText}>Partner Apps</Text>
-            <MaterialIcons name="chevron-right" size={20} color={theme.textMuted} />
-          </Pressable>
-
-          <Pressable style={styles.settingsItem} onPress={() => router.push('/snap-share')}>
-            <MaterialIcons name="share" size={22} color={theme.textSecondary} />
-            <Text style={styles.settingsItemText}>Snap & Share</Text>
-            <MaterialIcons name="chevron-right" size={20} color={theme.textMuted} />
-          </Pressable>
-
-          <Pressable style={styles.settingsItem} onPress={() => router.push('/ops' as any)}>
-            <MaterialIcons name="admin-panel-settings" size={22} color={theme.textSecondary} />
-            <Text style={styles.settingsItemText}>Ops Panel</Text>
-            <MaterialIcons name="chevron-right" size={20} color={theme.textMuted} />
-          </Pressable>
-
-          <Pressable style={[styles.settingsItem, styles.logoutItem]} onPress={handleLogout}>
-            <MaterialIcons name="logout" size={22} color={theme.error} />
-            <Text style={[styles.settingsItemText, styles.logoutText]}>Logout</Text>
-          </Pressable>
-        </Animated.View>
-
-        {/* Version */}
-        <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>FoodGenie v{config.app.version}</Text>
-          <Text style={styles.versionSub}>Camera-first nutrition tracking</Text>
-        </View>
-      </ScrollView>
+        }
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
-  scrollContent: { paddingHorizontal: 20 },
 
-  header: { paddingTop: 16, paddingBottom: 20 },
-  title: { fontSize: 26, fontWeight: '700', color: theme.textPrimary },
-
-  // Profile card
-  profileCard: {
+  // Header
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.surface,
-    borderRadius: 24,
-    padding: 24,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: theme.border,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  title: { fontSize: 22, fontWeight: '800', color: theme.textPrimary },
+  headerActions: { flexDirection: 'row', gap: 16 },
+  headerIconBtn: { padding: 4 },
+
+  // Profile
+  profileSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 24,
   },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
-    ...theme.shadows.neonGreen,
+    shadowColor: '#4ADE80',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  avatarText: { fontSize: 28, fontWeight: '700', color: theme.textOnPrimary },
-  profileName: { fontSize: 22, fontWeight: '700', color: theme.textPrimary },
-  profileEmail: { fontSize: 14, color: theme.textMuted, marginTop: 4 },
-  quickStats: {
+  avatarText: { fontSize: 28, fontWeight: '800', color: theme.textOnPrimary },
+  statsRow: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
+  statItem: { alignItems: 'center', gap: 2 },
+  statValue: { fontSize: 20, fontWeight: '800', color: theme.textPrimary },
+  statLabel: { fontSize: 12, fontWeight: '500', color: theme.textMuted },
+
+  // Bio
+  bioSection: { paddingHorizontal: 20, paddingBottom: 12, gap: 2 },
+  bioName: { fontSize: 15, fontWeight: '700', color: theme.textPrimary },
+  bioEmail: { fontSize: 13, color: theme.textMuted },
+  bioText: { fontSize: 14, color: theme.textSecondary, marginTop: 4 },
+
+  // Actions
+  actionRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 20,
-    width: '100%',
+    paddingHorizontal: 20,
+    gap: 8,
+    paddingBottom: 16,
   },
-  quickStat: { flex: 1, alignItems: 'center' },
-  quickStatDivider: { width: 1, height: 32, backgroundColor: theme.border },
-  quickStatValue: { fontSize: 22, fontWeight: '800', color: theme.textPrimary },
-  quickStatLabel: { fontSize: 11, fontWeight: '600', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 },
-
-  // Sections
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: theme.textPrimary, marginBottom: 12 },
-
-  card: {
-    backgroundColor: theme.surface,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 24,
+  editProfileBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: theme.backgroundTertiary,
     borderWidth: 1,
     borderColor: theme.border,
   },
-  prefRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  prefItem: { flex: 1 },
-  prefLabel: { fontSize: 11, fontWeight: '600', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
-  prefValue: { fontSize: 15, fontWeight: '600', color: theme.textPrimary },
-  editPrefsBtn: {
-    flexDirection: 'row',
+  editProfileText: { fontSize: 14, fontWeight: '700', color: theme.textPrimary },
+  settingsBtn: {
+    width: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: theme.backgroundTertiary,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+
+  // Grid header
+  gridHeader: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    borderTopWidth: 1,
+    borderTopColor: theme.border,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
+  },
+  gridTab: {
     paddingVertical: 12,
-    marginTop: 4,
-    borderRadius: 12,
-    backgroundColor: 'rgba(74,222,128,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.15)',
+    paddingHorizontal: 32,
+    borderBottomWidth: 2,
+    borderBottomColor: theme.textPrimary,
   },
-  editPrefsBtnText: { fontSize: 14, fontWeight: '600', color: theme.primary },
 
-  // Settings
-  settingsItem: {
-    flexDirection: 'row',
+  // Grid
+  gridItem: {
+    width: GRID_SIZE,
+    height: GRID_SIZE,
+    overflow: 'hidden',
+  },
+  gridImage: { width: '100%', height: '100%' },
+  gridNoImage: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: theme.backgroundTertiary,
     alignItems: 'center',
-    gap: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    backgroundColor: theme.surface,
-    borderRadius: 14,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: theme.border,
+    justifyContent: 'center',
   },
-  settingsItemText: { flex: 1, fontSize: 15, fontWeight: '500', color: theme.textPrimary },
-  logoutItem: { marginTop: 8, borderColor: 'rgba(248,113,113,0.15)', backgroundColor: 'rgba(248,113,113,0.04)' },
-  logoutText: { color: theme.error, fontWeight: '600' },
 
-  versionContainer: { alignItems: 'center', paddingVertical: 24 },
-  versionText: { fontSize: 13, color: theme.textMuted, fontWeight: '600' },
-  versionSub: { fontSize: 11, color: theme.textMuted, marginTop: 4 },
+  // Empty
+  emptyGrid: {
+    alignItems: 'center',
+    paddingTop: 60,
+    gap: 8,
+  },
+  emptyGridTitle: { fontSize: 18, fontWeight: '700', color: theme.textPrimary },
+  emptyGridSub: { fontSize: 14, color: theme.textMuted },
 });
