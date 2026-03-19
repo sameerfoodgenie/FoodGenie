@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider } from '../contexts/AppContext';
 import { MealProvider } from '../contexts/MealContext';
 import { PostProvider } from '../contexts/PostContext';
+import { CreatorProvider } from '../contexts/CreatorContext';
 import { AlertProvider, AuthProvider } from '@/template';
 
 export default function RootLayout() {
@@ -15,6 +16,7 @@ export default function RootLayout() {
           <AppProvider>
             <MealProvider>
               <PostProvider>
+                <CreatorProvider>
                 <StatusBar style="light" />
                 <View style={styles.root}>
                   <Stack screenOptions={{ headerShown: false }}>
@@ -43,8 +45,12 @@ export default function RootLayout() {
                     <Stack.Screen name="ops/restaurant-detail" options={{ headerShown: false, animation: 'slide_from_right' }} />
                     <Stack.Screen name="ops/add-dish" options={{ headerShown: false, animation: 'slide_from_right' }} />
                     <Stack.Screen name="ops/add-dish-tags" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                    <Stack.Screen name="creator-unlock" options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />
+                    <Stack.Screen name="creator-studio" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                    <Stack.Screen name="create-show" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
                   </Stack>
                 </View>
+                </CreatorProvider>
               </PostProvider>
             </MealProvider>
           </AppProvider>

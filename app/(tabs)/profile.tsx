@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   Pressable,
   FlatList,
   Dimensions,
@@ -17,9 +16,9 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { theme } from '../../constants/theme';
 import { usePosts } from '../../contexts/PostContext';
 import { useMeals } from '../../hooks/useMeals';
+import { useCreator } from '../../contexts/CreatorContext';
 import { useAlert, useAuth } from '@/template';
 import { useRouter } from 'expo-router';
-import { config } from '../../constants/config';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_GAP = 2;
@@ -29,16 +28,26 @@ const GRID_SIZE = (SCREEN_WIDTH - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS;
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { myPosts, posts, streak, totalPosts } = usePosts();
+  const { posts, streak, totalPosts } = usePosts();
   const { todayMeals } = useMeals();
   const { showAlert } = useAlert();
   const { user, logout } = useAuth();
+  const {
+    isCreatorUnlocked,
+    postCount,
+    streakCount,
+    postsNeeded,
+    streakNeeded,
+    postProgress,
+    streakProgress,
+    shows,
+    hasSeenUnlock,
+  } = useCreator();
 
   const name = user?.username || 'Food Lover';
   const email = user?.email || '';
   const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
-  // Use all posts for the grid display (in a real app, filter by user)
   const gridPosts = posts;
 
   const handleLogout = () => {
@@ -56,13 +65,25 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const handleShowsTap = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (isCreatorUnlocked) {
+      if (!hasSeenUnlock) {
+        router.push('/creator-unlock');
+      } else {
+        router.push('/creator-studio');
+      }
+    }
+    // Locked state shows inline progress — no navigation
+  }, [isCreatorUnlocked, hasSeenUnlock, router]);
+
   const renderGridItem = ({ item, index }: { item: typeof posts[0]; index: number }) => (
     <Pressable
       style={[
         styles.gridItem,
         { marginRight: (index + 1) % GRID_COLS === 0 ? 0 : GRID_GAP },
       ]}
-      onPress={() => { Haptics.selectionAsync(); }}
+      onPress={() => Haptics.selectionAsync()}
     >
       {item.imageUri ? (
         <Image source={{ uri: item.imageUri }} style={styles.gridImage} contentFit="cover" transition={150} />
@@ -90,16 +111,10 @@ export default function ProfileScreen() {
             <View style={styles.header}>
               <Text style={styles.title}>{name}</Text>
               <View style={styles.headerActions}>
-                <Pressable
-                  style={styles.headerIconBtn}
-                  onPress={() => router.push('/(tabs)/camera')}
-                >
+                <Pressable style={styles.headerIconBtn} onPress={() => router.push('/(tabs)/camera')}>
                   <MaterialIcons name="add-box" size={26} color={theme.textPrimary} />
                 </Pressable>
-                <Pressable
-                  style={styles.headerIconBtn}
-                  onPress={() => router.push('/explore')}
-                >
+                <Pressable style={styles.headerIconBtn} onPress={() => router.push('/explore')}>
                   <MaterialIcons name="menu" size={26} color={theme.textPrimary} />
                 </Pressable>
               </View>
@@ -110,7 +125,6 @@ export default function ProfileScreen() {
               <LinearGradient colors={['#4ADE80', '#22C55E']} style={styles.avatar}>
                 <Text style={styles.avatarText}>{initials}</Text>
               </LinearGradient>
-
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                   <Text style={styles.statValue}>{gridPosts.length}</Text>
@@ -156,6 +170,103 @@ export default function ProfileScreen() {
               </Pressable>
             </Animated.View>
 
+            {/* ─── Creator Shows Section ─── */}
+            <Animated.View entering={FadeInDown.delay(200).duration(350)} style={styles.creatorSection}>
+              {isCreatorUnlocked ? (
+                /* Unlocked state */
+                <Pressable
+                  style={({ pressed }) => [styles.creatorCardUnlocked, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
+                  onPress={handleShowsTap}
+                >
+                  <LinearGradient
+                    colors={['rgba(74,222,128,0.08)', 'rgba(74,222,128,0.02)']}
+                    style={styles.creatorCardInner}
+                  >
+                    <View style={styles.creatorHeader}>
+                      <View style={styles.creatorTitleRow}>
+                        <MaterialIcons name="auto-awesome" size={20} color={theme.primary} />
+                        <Text style={styles.creatorTitle}>Creator Studio</Text>
+                      </View>
+                      <View style={styles.creatorBadge}>
+                        <Text style={styles.creatorBadgeText}>Unlocked</Text>
+                      </View>
+                    </View>
+                    <View style={styles.creatorStats}>
+                      <View style={styles.creatorStatItem}>
+                        <Text style={styles.creatorStatVal}>{shows.length}</Text>
+                        <Text style={styles.creatorStatLbl}>Shows</Text>
+                      </View>
+                      <View style={styles.creatorStatItem}>
+                        <Text style={styles.creatorStatVal}>
+                          {shows.reduce((s, sh) => s + sh.episodes.length, 0)}
+                        </Text>
+                        <Text style={styles.creatorStatLbl}>Episodes</Text>
+                      </View>
+                    </View>
+                    <View style={styles.creatorCta}>
+                      <Text style={styles.creatorCtaText}>Open Studio</Text>
+                      <MaterialIcons name="arrow-forward" size={16} color={theme.primary} />
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+              ) : (
+                /* Locked state */
+                <View style={styles.creatorCardLocked}>
+                  <View style={styles.lockHeader}>
+                    <View style={styles.lockIconWrap}>
+                      <MaterialIcons name="lock" size={22} color={theme.textMuted} />
+                    </View>
+                    <View style={styles.lockTitleBlock}>
+                      <Text style={styles.lockTitle}>Creator Mode</Text>
+                      <Text style={styles.lockSubtitle}>Unlock to create shows</Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.lockDesc}>
+                    Post 5 meals or maintain a 7-day streak to unlock Creator Mode
+                  </Text>
+
+                  {/* Progress bars */}
+                  <View style={styles.progressSection}>
+                    <View style={styles.progressItem}>
+                      <View style={styles.progressLabel}>
+                        <Text style={styles.progressText}>Posts</Text>
+                        <Text style={styles.progressCount}>{postCount}/5</Text>
+                      </View>
+                      <View style={styles.progressBarBg}>
+                        <Animated.View
+                          style={[
+                            styles.progressBarFill,
+                            { width: `${postProgress * 100}%`, backgroundColor: theme.primary },
+                          ]}
+                        />
+                      </View>
+                    </View>
+                    <View style={styles.progressItem}>
+                      <View style={styles.progressLabel}>
+                        <Text style={styles.progressText}>Streak</Text>
+                        <Text style={styles.progressCount}>{streakCount}/7 days</Text>
+                      </View>
+                      <View style={styles.progressBarBg}>
+                        <Animated.View
+                          style={[
+                            styles.progressBarFill,
+                            { width: `${streakProgress * 100}%`, backgroundColor: theme.accent },
+                          ]}
+                        />
+                      </View>
+                    </View>
+                  </View>
+
+                  {postsNeeded > 0 && streakNeeded > 0 ? (
+                    <Text style={styles.lockHint}>
+                      {postsNeeded} more post{postsNeeded !== 1 ? 's' : ''} or {streakNeeded} more day{streakNeeded !== 1 ? 's' : ''} to go!
+                    </Text>
+                  ) : null}
+                </View>
+              )}
+            </Animated.View>
+
             {/* Grid header */}
             <View style={styles.gridHeader}>
               <View style={styles.gridTab}>
@@ -179,7 +290,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
 
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -192,7 +302,6 @@ const styles = StyleSheet.create({
   headerActions: { flexDirection: 'row', gap: 16 },
   headerIconBtn: { padding: 4 },
 
-  // Profile
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -206,11 +315,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#4ADE80',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    ...theme.shadows.neonGreen,
   },
   avatarText: { fontSize: 28, fontWeight: '800', color: theme.textOnPrimary },
   statsRow: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
@@ -218,13 +323,11 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 20, fontWeight: '800', color: theme.textPrimary },
   statLabel: { fontSize: 12, fontWeight: '500', color: theme.textMuted },
 
-  // Bio
   bioSection: { paddingHorizontal: 20, paddingBottom: 12, gap: 2 },
   bioName: { fontSize: 15, fontWeight: '700', color: theme.textPrimary },
   bioEmail: { fontSize: 13, color: theme.textMuted },
   bioText: { fontSize: 14, color: theme.textSecondary, marginTop: 4 },
 
-  // Actions
   actionRow: {
     flexDirection: 'row',
     paddingHorizontal: 20,
@@ -252,7 +355,94 @@ const styles = StyleSheet.create({
     borderColor: theme.border,
   },
 
-  // Grid header
+  /* ─── Creator Section ─── */
+  creatorSection: { paddingHorizontal: 20, paddingBottom: 16 },
+
+  /* Unlocked */
+  creatorCardUnlocked: { borderRadius: 16, overflow: 'hidden' },
+  creatorCardInner: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(74,222,128,0.2)',
+    gap: 14,
+  },
+  creatorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  creatorTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  creatorTitle: { fontSize: 16, fontWeight: '700', color: theme.textPrimary },
+  creatorBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: 'rgba(74,222,128,0.15)',
+  },
+  creatorBadgeText: { fontSize: 12, fontWeight: '700', color: theme.primary },
+  creatorStats: { flexDirection: 'row', gap: 24 },
+  creatorStatItem: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
+  creatorStatVal: { fontSize: 20, fontWeight: '800', color: theme.textPrimary },
+  creatorStatLbl: { fontSize: 13, color: theme.textMuted, fontWeight: '500' },
+  creatorCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-end',
+  },
+  creatorCtaText: { fontSize: 14, fontWeight: '600', color: theme.primary },
+
+  /* Locked */
+  creatorCardLocked: {
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: theme.border,
+    gap: 14,
+  },
+  lockHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  lockIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: theme.backgroundTertiary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  lockTitleBlock: { flex: 1, gap: 2 },
+  lockTitle: { fontSize: 16, fontWeight: '700', color: theme.textPrimary },
+  lockSubtitle: { fontSize: 12, color: theme.textMuted, fontWeight: '500' },
+  lockDesc: {
+    fontSize: 13,
+    color: theme.textSecondary,
+    lineHeight: 18,
+  },
+
+  progressSection: { gap: 10 },
+  progressItem: { gap: 6 },
+  progressLabel: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  progressText: { fontSize: 13, fontWeight: '600', color: theme.textSecondary },
+  progressCount: { fontSize: 13, fontWeight: '700', color: theme.textPrimary },
+  progressBarBg: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: theme.backgroundTertiary,
+    overflow: 'hidden',
+  },
+  progressBarFill: { height: '100%', borderRadius: 3 },
+
+  lockHint: {
+    fontSize: 12,
+    color: theme.textMuted,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
+  /* Grid */
   gridHeader: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -267,13 +457,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: theme.textPrimary,
   },
-
-  // Grid
-  gridItem: {
-    width: GRID_SIZE,
-    height: GRID_SIZE,
-    overflow: 'hidden',
-  },
+  gridItem: { width: GRID_SIZE, height: GRID_SIZE, overflow: 'hidden' },
   gridImage: { width: '100%', height: '100%' },
   gridNoImage: {
     width: '100%',
@@ -282,13 +466,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  // Empty
-  emptyGrid: {
-    alignItems: 'center',
-    paddingTop: 60,
-    gap: 8,
-  },
+  emptyGrid: { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyGridTitle: { fontSize: 18, fontWeight: '700', color: theme.textPrimary },
   emptyGridSub: { fontSize: 14, color: theme.textMuted },
 });
