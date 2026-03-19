@@ -6,6 +6,7 @@ import {
   Pressable,
   FlatList,
   Dimensions,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -33,6 +34,7 @@ export default function ProfileScreen() {
   const { showAlert } = useAlert();
   const { user, logout } = useAuth();
   const {
+    currentLevel,
     isCreatorUnlocked,
     postCount,
     streakCount,
@@ -42,6 +44,8 @@ export default function ProfileScreen() {
     streakProgress,
     shows,
     hasSeenUnlock,
+    unlockedBadges,
+    badges,
   } = useCreator();
 
   const name = user?.username || 'Food Lover';
@@ -74,7 +78,6 @@ export default function ProfileScreen() {
         router.push('/creator-studio');
       }
     }
-    // Locked state shows inline progress — no navigation
   }, [isCreatorUnlocked, hasSeenUnlock, router]);
 
   const renderGridItem = ({ item, index }: { item: typeof posts[0]; index: number }) => (
@@ -122,9 +125,15 @@ export default function ProfileScreen() {
 
             {/* Profile info */}
             <Animated.View entering={FadeIn.duration(400)} style={styles.profileSection}>
-              <LinearGradient colors={['#4ADE80', '#22C55E']} style={styles.avatar}>
-                <Text style={styles.avatarText}>{initials}</Text>
-              </LinearGradient>
+              <View style={styles.avatarWrap}>
+                <LinearGradient colors={[currentLevel.color, `${currentLevel.color}CC`]} style={styles.avatar}>
+                  <Text style={styles.avatarText}>{initials}</Text>
+                </LinearGradient>
+                {/* Level badge on avatar */}
+                <View style={[styles.levelBadge, { backgroundColor: currentLevel.color }]}>
+                  <Text style={styles.levelBadgeEmoji}>{currentLevel.emoji}</Text>
+                </View>
+              </View>
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                   <Text style={styles.statValue}>{gridPosts.length}</Text>
@@ -141,12 +150,49 @@ export default function ProfileScreen() {
               </View>
             </Animated.View>
 
-            {/* Bio */}
+            {/* Bio + Level */}
             <View style={styles.bioSection}>
-              <Text style={styles.bioName}>{name}</Text>
+              <View style={styles.bioNameRow}>
+                <Text style={styles.bioName}>{name}</Text>
+                <View style={[styles.levelTag, { backgroundColor: `${currentLevel.color}18`, borderColor: `${currentLevel.color}40` }]}>
+                  <Text style={styles.levelTagEmoji}>{currentLevel.emoji}</Text>
+                  <Text style={[styles.levelTagText, { color: currentLevel.color }]}>{currentLevel.name}</Text>
+                </View>
+              </View>
               {email ? <Text style={styles.bioEmail}>{email}</Text> : null}
               <Text style={styles.bioText}>Food lover sharing my meals on FoodGenie 🍽✨</Text>
             </View>
+
+            {/* ─── Badges Row ─── */}
+            {unlockedBadges.length > 0 ? (
+              <Animated.View entering={FadeInDown.delay(50).duration(300)}>
+                <Pressable
+                  style={styles.badgesSection}
+                  onPress={() => { Haptics.selectionAsync(); router.push('/creator-dashboard'); }}
+                >
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.badgesScroll}
+                  >
+                    {unlockedBadges.map(badge => (
+                      <View
+                        key={badge.id}
+                        style={[styles.profileBadge, { backgroundColor: `${badge.color}12`, borderColor: `${badge.color}30` }]}
+                      >
+                        <Text style={styles.profileBadgeEmoji}>{badge.emoji}</Text>
+                        <Text style={[styles.profileBadgeName, { color: badge.color }]}>{badge.name}</Text>
+                      </View>
+                    ))}
+                    {unlockedBadges.length < badges.length ? (
+                      <View style={styles.moreBadges}>
+                        <Text style={styles.moreBadgesText}>+{badges.length - unlockedBadges.length}</Text>
+                      </View>
+                    ) : null}
+                  </ScrollView>
+                </Pressable>
+              </Animated.View>
+            ) : null}
 
             {/* Action buttons */}
             <Animated.View entering={FadeInDown.delay(100).duration(300)} style={styles.actionRow}>
@@ -158,9 +204,9 @@ export default function ProfileScreen() {
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.editProfileBtn, pressed && { opacity: 0.8 }]}
-                onPress={() => router.push('/snap-share')}
+                onPress={() => { Haptics.selectionAsync(); router.push('/creator-dashboard'); }}
               >
-                <Text style={styles.editProfileText}>Share</Text>
+                <Text style={styles.editProfileText}>Dashboard</Text>
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.settingsBtn, pressed && { opacity: 0.8 }]}
@@ -173,7 +219,6 @@ export default function ProfileScreen() {
             {/* ─── Creator Shows Section ─── */}
             <Animated.View entering={FadeInDown.delay(200).duration(350)} style={styles.creatorSection}>
               {isCreatorUnlocked ? (
-                /* Unlocked state */
                 <Pressable
                   style={({ pressed }) => [styles.creatorCardUnlocked, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
                   onPress={handleShowsTap}
@@ -210,7 +255,6 @@ export default function ProfileScreen() {
                   </LinearGradient>
                 </Pressable>
               ) : (
-                /* Locked state */
                 <View style={styles.creatorCardLocked}>
                   <View style={styles.lockHeader}>
                     <View style={styles.lockIconWrap}>
@@ -221,12 +265,9 @@ export default function ProfileScreen() {
                       <Text style={styles.lockSubtitle}>Unlock to create shows</Text>
                     </View>
                   </View>
-
                   <Text style={styles.lockDesc}>
                     Post 5 meals or maintain a 7-day streak to unlock Creator Mode
                   </Text>
-
-                  {/* Progress bars */}
                   <View style={styles.progressSection}>
                     <View style={styles.progressItem}>
                       <View style={styles.progressLabel}>
@@ -234,12 +275,7 @@ export default function ProfileScreen() {
                         <Text style={styles.progressCount}>{postCount}/5</Text>
                       </View>
                       <View style={styles.progressBarBg}>
-                        <Animated.View
-                          style={[
-                            styles.progressBarFill,
-                            { width: `${postProgress * 100}%`, backgroundColor: theme.primary },
-                          ]}
-                        />
+                        <View style={[styles.progressBarFill, { width: `${postProgress * 100}%`, backgroundColor: theme.primary }]} />
                       </View>
                     </View>
                     <View style={styles.progressItem}>
@@ -248,16 +284,10 @@ export default function ProfileScreen() {
                         <Text style={styles.progressCount}>{streakCount}/7 days</Text>
                       </View>
                       <View style={styles.progressBarBg}>
-                        <Animated.View
-                          style={[
-                            styles.progressBarFill,
-                            { width: `${streakProgress * 100}%`, backgroundColor: theme.accent },
-                          ]}
-                        />
+                        <View style={[styles.progressBarFill, { width: `${streakProgress * 100}%`, backgroundColor: theme.accent }]} />
                       </View>
                     </View>
                   </View>
-
                   {postsNeeded > 0 && streakNeeded > 0 ? (
                     <Text style={styles.lockHint}>
                       {postsNeeded} more post{postsNeeded !== 1 ? 's' : ''} or {streakNeeded} more day{streakNeeded !== 1 ? 's' : ''} to go!
@@ -309,30 +339,81 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     gap: 24,
   },
+  avatarWrap: { position: 'relative' },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    ...theme.shadows.neonGreen,
   },
   avatarText: { fontSize: 28, fontWeight: '800', color: theme.textOnPrimary },
+  levelBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: theme.background,
+  },
+  levelBadgeEmoji: { fontSize: 12 },
   statsRow: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
   statItem: { alignItems: 'center', gap: 2 },
   statValue: { fontSize: 20, fontWeight: '800', color: theme.textPrimary },
   statLabel: { fontSize: 12, fontWeight: '500', color: theme.textMuted },
 
-  bioSection: { paddingHorizontal: 20, paddingBottom: 12, gap: 2 },
+  bioSection: { paddingHorizontal: 20, paddingBottom: 8, gap: 4 },
+  bioNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   bioName: { fontSize: 15, fontWeight: '700', color: theme.textPrimary },
+  levelTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  levelTagEmoji: { fontSize: 12 },
+  levelTagText: { fontSize: 11, fontWeight: '700' },
   bioEmail: { fontSize: 13, color: theme.textMuted },
   bioText: { fontSize: 14, color: theme.textSecondary, marginTop: 4 },
+
+  // Badges
+  badgesSection: { paddingBottom: 4 },
+  badgesScroll: { paddingHorizontal: 20, gap: 8, paddingVertical: 6 },
+  profileBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  profileBadgeEmoji: { fontSize: 14 },
+  profileBadgeName: { fontSize: 12, fontWeight: '600' },
+  moreBadges: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: theme.backgroundTertiary,
+    borderWidth: 1,
+    borderColor: theme.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  moreBadgesText: { fontSize: 12, fontWeight: '700', color: theme.textMuted },
 
   actionRow: {
     flexDirection: 'row',
     paddingHorizontal: 20,
     gap: 8,
-    paddingBottom: 16,
+    paddingVertical: 10,
   },
   editProfileBtn: {
     flex: 1,
@@ -355,10 +436,8 @@ const styles = StyleSheet.create({
     borderColor: theme.border,
   },
 
-  /* ─── Creator Section ─── */
+  /* Creator Section */
   creatorSection: { paddingHorizontal: 20, paddingBottom: 16 },
-
-  /* Unlocked */
   creatorCardUnlocked: { borderRadius: 16, overflow: 'hidden' },
   creatorCardInner: {
     padding: 16,
@@ -416,11 +495,7 @@ const styles = StyleSheet.create({
   lockTitleBlock: { flex: 1, gap: 2 },
   lockTitle: { fontSize: 16, fontWeight: '700', color: theme.textPrimary },
   lockSubtitle: { fontSize: 12, color: theme.textMuted, fontWeight: '500' },
-  lockDesc: {
-    fontSize: 13,
-    color: theme.textSecondary,
-    lineHeight: 18,
-  },
+  lockDesc: { fontSize: 13, color: theme.textSecondary, lineHeight: 18 },
 
   progressSection: { gap: 10 },
   progressItem: { gap: 6 },
