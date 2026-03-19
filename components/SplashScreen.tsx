@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
@@ -18,7 +18,6 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         onFinish();
       }
     }, 2000);
-
     return () => clearTimeout(timer);
   }, []);
 
@@ -26,19 +25,21 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     <View style={styles.container}>
       <View style={styles.inner}>
         <View style={styles.logoContainer}>
-          <LinearGradient colors={theme.gradients.goldShine} style={styles.outerRing}>
-            <View style={styles.logoInner}>
-              <Image
-                source={require('../assets/images/genie-mascot.png')}
-                style={styles.mascot}
-                contentFit="contain"
-              />
-            </View>
-          </LinearGradient>
+          <View style={styles.glowRing}>
+            <LinearGradient colors={theme.gradients.cameraBtn} style={styles.outerRing}>
+              <View style={styles.logoInner}>
+                <Image
+                  source={require('../assets/images/genie-mascot.png')}
+                  style={styles.mascot}
+                  contentFit="contain"
+                />
+              </View>
+            </LinearGradient>
+          </View>
         </View>
 
         <Text style={styles.appName}>FoodGenie</Text>
-        <Text style={styles.tagline}>Right food. Right price. Delivered right.</Text>
+        <Text style={styles.tagline}>Scan. Track. Eat better.</Text>
       </View>
     </View>
   );
@@ -48,36 +49,38 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
   inner: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   logoContainer: { alignItems: 'center', justifyContent: 'center', marginBottom: 32 },
+  glowRing: {
+    ...theme.shadows.neonGreen,
+  },
   outerRing: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     padding: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    ...theme.shadows.genie,
   },
   logoInner: {
-    width: 152,
-    height: 152,
-    borderRadius: 76,
+    width: 132,
+    height: 132,
+    borderRadius: 66,
     backgroundColor: theme.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(200,135,90,0.15)',
+    borderColor: 'rgba(74,222,128,0.15)',
   },
-  mascot: { width: 100, height: 100 },
+  mascot: { width: 90, height: 90 },
   appName: {
-    fontSize: 38,
+    fontSize: 36,
     fontWeight: '700',
     color: theme.primary,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   tagline: {
     fontSize: 15,
     color: theme.textSecondary,
-    marginTop: 12,
-    letterSpacing: 0.5,
+    marginTop: 10,
+    letterSpacing: 0.3,
   },
 });

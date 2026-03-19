@@ -1,96 +1,105 @@
 // FoodGenie Design System
-// Soft, warm, inviting theme (cafe-style, approachable)
+// Dark premium, camera-first, Gen-Z inspired
 
 export const theme = {
-  // Primary - Warm Caramel / Amber
-  primary: '#C8875A',
-  primaryLight: '#DCAB82',
-  primaryDark: '#A86F42',
+  // Primary - Vibrant Green (health/freshness)
+  primary: '#4ADE80',
+  primaryLight: '#86EFAC',
+  primaryDark: '#22C55E',
 
-  // Accent - Warm Terracotta
-  accent: '#D4915E',
-  accentLight: '#E8C4A0',
-  accentDark: '#B07540',
+  // Accent - Warm Gold (scores, streaks)
+  accent: '#FBBF24',
+  accentLight: '#FDE68A',
+  accentDark: '#F59E0B',
 
   // Trust Colors
-  success: '#5DAE7E',
-  warning: '#D4A055',
-  error: '#D17272',
+  success: '#4ADE80',
+  warning: '#FBBF24',
+  error: '#F87171',
 
-  // Backgrounds - Soft warm light theme
-  background: '#FAF7F3',
-  backgroundSecondary: '#F2EDE7',
-  backgroundTertiary: '#E8E2DA',
-  surface: '#FFFFFF',
+  // Backgrounds - Deep dark
+  background: '#0A0A0F',
+  backgroundSecondary: '#141419',
+  backgroundTertiary: '#1E1E26',
+  surface: '#1A1A22',
 
   // Text
-  textPrimary: '#2C2520',
-  textSecondary: '#7A706A',
-  textMuted: '#A89E96',
-  textOnPrimary: '#FFFFFF',
+  textPrimary: '#F5F5F7',
+  textSecondary: '#9CA3AF',
+  textMuted: '#6B7280',
+  textOnPrimary: '#0A0A0F',
 
   // Borders
-  border: '#E4DED6',
-  borderLight: '#D6CFC6',
+  border: 'rgba(255,255,255,0.08)',
+  borderLight: 'rgba(255,255,255,0.05)',
 
   // Gradients
   gradients: {
-    genie: ['#D4915E', '#C8875A', '#A86F42'],
-    genieReverse: ['#A86F42', '#C8875A', '#D4915E'],
-    gold: ['#E8C4A0', '#DCAB82', '#C8875A'],
-    accent: ['#DCAB82', '#C8875A'],
-    trust: ['#5DAE7E', '#4A9568'],
-    background: ['#F2EDE7', '#FAF7F3'],
-    vibrant: ['#D4915E', '#C8875A', '#E8C4A0'],
-    sunset: ['#D4915E', '#E0976A', '#DCAB82'],
-    card: ['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.98)'],
-    premium: ['#F2EDE7', '#FAF7F3'],
-    goldShine: ['#E8C4A0', '#DCAB82', '#C8875A', '#A86F42'],
+    genie: ['#4ADE80', '#22C55E', '#16A34A'],
+    genieReverse: ['#16A34A', '#22C55E', '#4ADE80'],
+    gold: ['#FDE68A', '#FBBF24', '#F59E0B'],
+    accent: ['#FBBF24', '#F59E0B'],
+    trust: ['#4ADE80', '#22C55E'],
+    background: ['#0A0A0F', '#141419'],
+    vibrant: ['#4ADE80', '#22C55E', '#86EFAC'],
+    sunset: ['#F87171', '#FB923C', '#FBBF24'],
+    card: ['rgba(26,26,34,0.95)', 'rgba(26,26,34,0.98)'],
+    premium: ['#141419', '#1A1A22'],
+    goldShine: ['#FDE68A', '#FBBF24', '#F59E0B', '#D97706'],
+    glass: ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)'],
+    cameraBtn: ['#4ADE80', '#22C55E'],
   },
 
-  // Shadows - Soft warm tint
+  // Shadows
   shadows: {
     card: {
-      shadowColor: '#B09080',
+      shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
+      shadowOpacity: 0.3,
       shadowRadius: 12,
       elevation: 3,
     },
     cardElevated: {
-      shadowColor: '#B09080',
+      shadowColor: '#000',
       shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.12,
+      shadowOpacity: 0.4,
       shadowRadius: 20,
       elevation: 6,
     },
     genie: {
-      shadowColor: '#C8875A',
-      shadowOffset: { width: 0, height: 12 },
-      shadowOpacity: 0.2,
-      shadowRadius: 28,
+      shadowColor: '#4ADE80',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.3,
+      shadowRadius: 20,
       elevation: 10,
     },
     heavy: {
-      shadowColor: '#C8875A',
+      shadowColor: '#000',
       shadowOffset: { width: 0, height: 16 },
-      shadowOpacity: 0.25,
+      shadowOpacity: 0.5,
       shadowRadius: 32,
       elevation: 14,
     },
     colored: {
-      shadowColor: '#C8875A',
+      shadowColor: '#4ADE80',
       shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.15,
+      shadowOpacity: 0.2,
       shadowRadius: 14,
       elevation: 5,
     },
     goldGlow: {
-      shadowColor: '#C8875A',
+      shadowColor: '#FBBF24',
       shadowOffset: { width: 0, height: 0 },
       shadowOpacity: 0.3,
-      shadowRadius: 30,
+      shadowRadius: 20,
       elevation: 12,
+    },
+    neonGreen: {
+      shadowColor: '#4ADE80',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.4,
+      shadowRadius: 24,
+      elevation: 8,
     },
   },
 
@@ -115,47 +124,14 @@ export const theme = {
 
   // Typography
   typography: {
-    hero: {
-      fontSize: 32,
-      fontWeight: '700' as const,
-      lineHeight: 40,
-    },
-    title: {
-      fontSize: 24,
-      fontWeight: '700' as const,
-      lineHeight: 32,
-    },
-    subtitle: {
-      fontSize: 18,
-      fontWeight: '600' as const,
-      lineHeight: 24,
-    },
-    body: {
-      fontSize: 16,
-      fontWeight: '400' as const,
-      lineHeight: 24,
-    },
-    bodyBold: {
-      fontSize: 16,
-      fontWeight: '600' as const,
-      lineHeight: 24,
-    },
-    caption: {
-      fontSize: 14,
-      fontWeight: '400' as const,
-      lineHeight: 20,
-    },
-    small: {
-      fontSize: 12,
-      fontWeight: '500' as const,
-      lineHeight: 16,
-    },
-    micro: {
-      fontSize: 11,
-      fontWeight: '600' as const,
-      textTransform: 'uppercase' as const,
-      letterSpacing: 0.5,
-    },
+    hero: { fontSize: 32, fontWeight: '700' as const, lineHeight: 40 },
+    title: { fontSize: 24, fontWeight: '700' as const, lineHeight: 32 },
+    subtitle: { fontSize: 18, fontWeight: '600' as const, lineHeight: 24 },
+    body: { fontSize: 16, fontWeight: '400' as const, lineHeight: 24 },
+    bodyBold: { fontSize: 16, fontWeight: '600' as const, lineHeight: 24 },
+    caption: { fontSize: 14, fontWeight: '400' as const, lineHeight: 20 },
+    small: { fontSize: 12, fontWeight: '500' as const, lineHeight: 16 },
+    micro: { fontSize: 11, fontWeight: '600' as const, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
   },
 };
 

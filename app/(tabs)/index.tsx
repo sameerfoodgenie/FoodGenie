@@ -1,34 +1,34 @@
-
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
-  TextInput,
   ScrollView,
+  FlatList,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  TextInput,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeInUp, FadeInRight, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import Animated, { FadeIn, FadeInDown, FadeInRight, FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
 import { theme } from '../../constants/theme';
+import { useMeals } from '../../hooks/useMeals';
 import { useApp } from '../../contexts/AppContext';
-import ModePromptModal from '../../components/ModePromptModal';
+import { useState } from 'react';
 
-const SMART_CHIPS = [
-  { label: 'High protein', emoji: '💪' },
-  { label: 'Light & healthy', emoji: '🥗' },
-  { label: 'Comfort food', emoji: '🍛' },
-  { label: 'Spicy', emoji: '🌶️' },
-  { label: 'Under ₹250', emoji: '💰' },
-  { label: 'Sweet cravings', emoji: '🍰' },
-];
+function getScoreColor(score: number): string {
+  if (score >= 80) return '#4ADE80';
+  if (score >= 60) return '#FBBF24';
+  if (score >= 40) return '#FB923C';
+  return '#F87171';
+}
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -37,30 +37,23 @@ function getGreeting() {
   return 'Good Evening';
 }
 
+function getTimeLabel(timestamp: number): string {
+  const d = new Date(timestamp);
+  const h = d.getHours();
+  if (h < 11) return 'Breakfast';
+  if (h < 15) return 'Lunch';
+  if (h < 18) return 'Snack';
+  return 'Dinner';
+}
+
 export default function HomeScreen() {
   const router = useRouter();
-  const app = useApp();
-  
-  const [showModePrompt, setShowModePrompt] = useState(false);
+  const insets = useSafeAreaInsets();
+  const { todayMeals, dailyScore, streak, totalCalories, totalProtein, totalCarbs, totalFat } = useMeals();
+  const { preferences, prefsLoaded } = useApp();
   const [query, setQuery] = useState('');
-  const [selectedChip, setSelectedChip] = useState<string | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
+
   const hasRedirected = useRef(false);
-  const isNavigating = useRef(false);
-
-  const shimmerOpacity = useSharedValue(1);
-  const shimmerStyle = useAnimatedStyle(() => ({
-    opacity: shimmerOpacity.value,
-  }));
-
-  const { preferences, prefsLoaded, updatePreferences, updateMode, setCurrentQuery } = app;
-
-  useEffect(() => {
-    if (prefsLoaded && preferences.sessionCount === 5 && preferences.mode === 'guided') {
-      const timer = setTimeout(() => setShowModePrompt(true), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [prefsLoaded, preferences.sessionCount, preferences.mode]);
 
   useEffect(() => {
     if (!prefsLoaded) return;
@@ -71,60 +64,10 @@ export default function HomeScreen() {
     if (hasRedirected.current) return;
     hasRedirected.current = true;
     const timer = setTimeout(() => {
-      try { router.push('/onboarding'); } catch (e) { /* ignore */ }
+      try { router.push('/onboarding'); } catch { /* ignore */ }
     }, 500);
     return () => clearTimeout(timer);
   }, [prefsLoaded, preferences.onboardingComplete]);
-
-  const handleAskGenie = useCallback(
-    (text?: string) => {
-      if (isNavigating.current) return;
-      isNavigating.current = true;
-
-      if (!preferences.onboardingComplete) {
-        try { router.push('/onboarding'); } catch (e) { /* ignore */ }
-        setTimeout(() => { isNavigating.current = false; }, 2000);
-        return;
-      }
-
-      const finalQuery = text || query.trim();
-      setCurrentQuery(finalQuery);
-      setSelectedChip(null);
-      setIsSearching(true);
-      shimmerOpacity.value = withRepeat(
-        withSequence(
-          withTiming(0.4, { duration: 600 }),
-          withTiming(1, { duration: 600 }),
-        ),
-        -1,
-        false,
-      );
-
-      setTimeout(() => {
-        setIsSearching(false);
-        setQuery('');
-        shimmerOpacity.value = 1;
-        try { router.push('/ai-thinking'); } catch (e) { /* ignore */ }
-        setTimeout(() => { isNavigating.current = false; }, 2000);
-      }, 1200);
-    },
-    [preferences.onboardingComplete, query, setCurrentQuery, router],
-  );
-
-  const handleChipPress = useCallback(
-    (label: string) => {
-      setSelectedChip(label);
-      handleAskGenie(label);
-    },
-    [handleAskGenie],
-  );
-
-  const handleModeSelect = useCallback(
-    async (mode: 'quick' | 'guided') => {
-      try { await updateMode(mode); } catch { /* ignore */ }
-    },
-    [updateMode],
-  );
 
   if (!prefsLoaded) {
     return (
@@ -134,250 +77,200 @@ export default function HomeScreen() {
     );
   }
 
+  const scoreColor = getScoreColor(dailyScore);
+  const hasMeals = todayMeals.length > 0;
+
+  // Suggestion based on meals
+  const suggestion = (() => {
+    if (!hasMeals) return 'Scan your first meal to start tracking!';
+    if (totalProtein < 50) return 'Add more protein to hit your daily goal.';
+    if (totalCalories > 1800) return 'You are close to your calorie target. Go lighter on dinner.';
+    if (dailyScore >= 80) return 'Great eating today! Keep it up.';
+    return 'Improve your next meal for better balance.';
+  })();
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
         >
           {/* Header */}
-          <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.header}>
+          <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
             <View style={styles.greetingBlock}>
               <Text style={styles.greeting}>{getGreeting()}</Text>
-              <Text style={styles.subGreeting}>Hungry? Let the Genie decide.</Text>
+              <Text style={styles.subGreeting}>Track your nutrition with AI</Text>
             </View>
             <Pressable
-              style={styles.profileButton}
-              onPress={() => router.push('/(tabs)/account')}
+              style={styles.profileBtn}
+              onPress={() => router.push('/(tabs)/profile')}
             >
               <MaterialIcons name="person" size={22} color={theme.primary} />
             </Pressable>
           </Animated.View>
 
-          {/* ─── HERO: Ask FoodGenie ─── */}
-          <Animated.View entering={FadeInUp.delay(200).duration(500)}>
-            <View style={styles.heroOuter}>
-              <View style={styles.heroCard}>
-                {/* Title row */}
-                <View style={styles.heroHeader}>
-                  <View style={styles.genieAvatar}>
-                    <Image
-                      source={require('../../assets/images/genie-mascot.png')}
-                      style={styles.genieMascot}
-                      contentFit="contain"
-                    />
-                  </View>
-                  <View style={styles.heroTitleBlock}>
-                    <Text style={styles.heroTitle}>Ask FoodGenie</Text>
-                    <Text style={styles.heroSubtitle}>Describe your craving. I will find your best match.</Text>
-                  </View>
-                  {preferences.mode === 'quick' ? (
-                    <View style={styles.modeBadge}>
-                      <MaterialIcons name="flash-on" size={12} color={theme.primary} />
-                      <Text style={styles.modeBadgeText}>Quick</Text>
-                    </View>
-                  ) : null}
-                </View>
+          {/* ─── DAILY STATS ─── */}
+          <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.statsSection}>
+            <View style={styles.statsGrid}>
+              {/* Score */}
+              <View style={styles.statCard}>
+                <LinearGradient
+                  colors={[`${scoreColor}15`, `${scoreColor}05`]}
+                  style={styles.statCardInner}
+                >
+                  <Text style={styles.statEmoji}>{hasMeals ? '🎯' : '—'}</Text>
+                  <Text style={[styles.statValue, { color: hasMeals ? scoreColor : theme.textMuted }]}>
+                    {hasMeals ? `${dailyScore}%` : '—'}
+                  </Text>
+                  <Text style={styles.statLabel}>Health Score</Text>
+                </LinearGradient>
+              </View>
 
-                {/* Input + CTA */}
-                <View style={styles.heroInputRow}>
-                  <View style={styles.heroInputWrapper}>
-                    <MaterialIcons name="search" size={20} color={theme.textMuted} style={styles.heroInputIcon} />
-                    <TextInput
-                      style={styles.heroInput}
-                      value={query}
-                      onChangeText={setQuery}
-                      placeholder="What are you in the mood for?"
-                      placeholderTextColor={theme.textMuted}
-                      returnKeyType="search"
-                      onSubmitEditing={() => handleAskGenie()}
-                    />
-                  </View>
-                  <Pressable
-                    style={({ pressed }) => [styles.heroCTA, pressed && !isSearching && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
-                    onPress={() => handleAskGenie()}
-                    disabled={isSearching}
-                  >
-                    <Animated.View style={shimmerStyle}>
-                      <LinearGradient
-                        colors={theme.gradients.goldShine}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.heroCTAGradient}
-                      >
-                        <MaterialIcons name={isSearching ? 'hourglass-top' : 'auto-awesome'} size={18} color={theme.textOnPrimary} />
-                        <Text style={styles.heroCTAText}>{isSearching ? 'Finding...' : 'Get Matches'}</Text>
-                      </LinearGradient>
-                    </Animated.View>
-                  </Pressable>
-                </View>
-                <Text style={styles.heroHint}>Example: "high protein dinner under ₹300"</Text>
+              {/* Meals logged */}
+              <View style={styles.statCard}>
+                <LinearGradient
+                  colors={['rgba(251,191,36,0.1)', 'rgba(251,191,36,0.03)']}
+                  style={styles.statCardInner}
+                >
+                  <Text style={styles.statEmoji}>🍽</Text>
+                  <Text style={[styles.statValue, { color: theme.accent }]}>
+                    {todayMeals.length}
+                  </Text>
+                  <Text style={styles.statLabel}>Meals Today</Text>
+                </LinearGradient>
+              </View>
 
-                {/* Smart Chips */}
-                <View style={styles.chipsOuter}>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.chipsContainer}
-                  >
-                    {SMART_CHIPS.map((chip) => {
-                      const isSelected = selectedChip === chip.label;
-                      return (
-                        <Pressable
-                          key={chip.label}
-                          style={[styles.chip, isSelected && styles.chipSelected]}
-                          onPress={() => handleChipPress(chip.label)}
-                        >
-                          <Text style={styles.chipEmoji}>{chip.emoji}</Text>
-                          <Text style={[styles.chipLabel, isSelected && styles.chipLabelSelected]}>{chip.label}</Text>
-                        </Pressable>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
+              {/* Streak */}
+              <View style={styles.statCard}>
+                <LinearGradient
+                  colors={['rgba(251,146,60,0.1)', 'rgba(251,146,60,0.03)']}
+                  style={styles.statCardInner}
+                >
+                  <Text style={styles.statEmoji}>🔥</Text>
+                  <Text style={[styles.statValue, { color: '#FB923C' }]}>
+                    {streak}
+                  </Text>
+                  <Text style={styles.statLabel}>Day Streak</Text>
+                </LinearGradient>
               </View>
             </View>
           </Animated.View>
 
-          {/* ─── PREFERENCE SUMMARY ─── */}
-          {preferences.onboardingComplete ? (
-            <Animated.View entering={FadeInUp.delay(350).duration(400)} style={styles.prefSummarySection}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.prefSummaryContainer}
+          {/* ─── AI SUGGESTION ─── */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.suggestCard}>
+            <View style={styles.suggestIcon}>
+              <MaterialIcons name="auto-awesome" size={18} color={theme.primary} />
+            </View>
+            <Text style={styles.suggestText}>{suggestion}</Text>
+          </Animated.View>
+
+          {/* ─── QUICK SCAN CTA ─── */}
+          <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.ctaSection}>
+            <Pressable
+              style={({ pressed }) => [styles.scanCTA, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/(tabs)/camera'); }}
+            >
+              <LinearGradient
+                colors={theme.gradients.cameraBtn}
+                style={styles.scanCTAGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
               >
-                {preferences.diet ? (
-                  <Pressable style={styles.prefChip} onPress={() => router.push('/(tabs)/preferences')}>
-                    <Text style={styles.prefChipEmoji}>
-                      {preferences.diet === 'veg' ? '🥬' : preferences.diet === 'egg' ? '🥚' : '🍗'}
-                    </Text>
-                    <Text style={styles.prefChipLabel}>
-                      {preferences.diet === 'veg' ? 'Veg Only' : preferences.diet === 'egg' ? 'Egg' : 'Non-Veg'}
-                    </Text>
-                  </Pressable>
-                ) : null}
-                <Pressable style={styles.prefChip} onPress={() => router.push('/(tabs)/preferences')}>
-                  <Text style={styles.prefChipEmoji}>💰</Text>
-                  <Text style={styles.prefChipLabel}>Under ₹{preferences.budgetMax}</Text>
-                </Pressable>
-                <Pressable style={styles.prefChip} onPress={() => router.push('/(tabs)/preferences')}>
-                  <Text style={styles.prefChipEmoji}>
-                    {preferences.spiceLevel === 1 ? '😌' : preferences.spiceLevel === 2 ? '🌶️' : '🔥'}
-                  </Text>
-                  <Text style={styles.prefChipLabel}>
-                    {preferences.spiceLevel === 1 ? 'Mild' : preferences.spiceLevel === 2 ? 'Medium' : 'Spicy'}
-                  </Text>
-                </Pressable>
-                {app.advancedPrefs.healthGoal && app.advancedPrefs.healthGoal !== 'none' ? (
-                  <Pressable style={styles.prefChip} onPress={() => router.push('/(tabs)/preferences')}>
-                    <Text style={styles.prefChipEmoji}>
-                      {app.advancedPrefs.healthGoal === 'weight_loss' ? '⚖️' : app.advancedPrefs.healthGoal === 'muscle_gain' ? '💪' : '🧘'}
-                    </Text>
-                    <Text style={styles.prefChipLabel}>
-                      {app.advancedPrefs.healthGoal === 'weight_loss' ? 'Weight Loss' : app.advancedPrefs.healthGoal === 'muscle_gain' ? 'High Protein' : 'Balanced'}
-                    </Text>
-                  </Pressable>
-                ) : null}
-                {app.advancedPrefs.deliveryPriority && app.advancedPrefs.deliveryPriority !== 'best_rated' ? (
-                  <Pressable style={styles.prefChip} onPress={() => router.push('/(tabs)/preferences')}>
-                    <Text style={styles.prefChipEmoji}>
-                      {app.advancedPrefs.deliveryPriority === 'fastest' ? '⚡' : '✅'}
-                    </Text>
-                    <Text style={styles.prefChipLabel}>
-                      {app.advancedPrefs.deliveryPriority === 'fastest' ? 'Fastest' : 'Reliable First'}
-                    </Text>
-                  </Pressable>
-                ) : null}
-              </ScrollView>
+                <MaterialIcons name="camera-alt" size={24} color={theme.textOnPrimary} />
+                <View style={styles.scanCTAText}>
+                  <Text style={styles.scanCTATitle}>Scan your meal</Text>
+                  <Text style={styles.scanCTASub}>AI-powered nutrition tracking</Text>
+                </View>
+                <MaterialIcons name="arrow-forward" size={20} color={theme.textOnPrimary} />
+              </LinearGradient>
+            </Pressable>
+          </Animated.View>
+
+          {/* ─── NUTRITION SUMMARY ─── */}
+          {hasMeals ? (
+            <Animated.View entering={FadeInDown.delay(350).duration(400)}>
+              <Text style={styles.sectionTitle}>Today's Nutrition</Text>
+              <View style={styles.nutritionCard}>
+                <View style={styles.nutritionRow}>
+                  <View style={styles.nutritionItem}>
+                    <Text style={styles.nutritionEmoji}>🔥</Text>
+                    <Text style={styles.nutritionValue}>{totalCalories}</Text>
+                    <Text style={styles.nutritionLabel}>kcal</Text>
+                  </View>
+                  <View style={styles.nutritionDivider} />
+                  <View style={styles.nutritionItem}>
+                    <Text style={styles.nutritionEmoji}>💪</Text>
+                    <Text style={styles.nutritionValue}>{totalProtein}g</Text>
+                    <Text style={styles.nutritionLabel}>Protein</Text>
+                  </View>
+                  <View style={styles.nutritionDivider} />
+                  <View style={styles.nutritionItem}>
+                    <Text style={styles.nutritionEmoji}>🍚</Text>
+                    <Text style={styles.nutritionValue}>{totalCarbs}g</Text>
+                    <Text style={styles.nutritionLabel}>Carbs</Text>
+                  </View>
+                  <View style={styles.nutritionDivider} />
+                  <View style={styles.nutritionItem}>
+                    <Text style={styles.nutritionEmoji}>🥑</Text>
+                    <Text style={styles.nutritionValue}>{totalFat}g</Text>
+                    <Text style={styles.nutritionLabel}>Fat</Text>
+                  </View>
+                </View>
+              </View>
             </Animated.View>
           ) : null}
 
-          {/* ─── EXPLORE YOUR WAY ─── */}
-          <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.exploreSection}>
-            <Pressable
-              style={({ pressed }) => [styles.exploreCard, pressed && styles.exploreCardPressed]}
-              onPress={() => router.push('/explore')}
-            >
-              <View style={styles.exploreCardLeft}>
-                <View style={styles.exploreCardIconWrap}>
-                  <MaterialIcons name="explore" size={26} color={theme.primary} />
-                </View>
-                <View style={styles.exploreCardText}>
-                  <Text style={styles.exploreCardTitle}>Explore your way</Text>
-                  <Text style={styles.exploreCardSub}>Browse dishes & restaurants</Text>
-                </View>
+          {/* ─── MEAL LOG ─── */}
+          {hasMeals ? (
+            <Animated.View entering={FadeInDown.delay(400).duration(400)}>
+              <Text style={styles.sectionTitle}>Meal Log</Text>
+              <View style={styles.mealList}>
+                {todayMeals.map((meal, index) => (
+                  <Animated.View key={meal.id} entering={FadeInRight.delay(index * 80).duration(300)}>
+                    <View style={styles.mealCard}>
+                      {meal.imageUri ? (
+                        <Image source={{ uri: meal.imageUri }} style={styles.mealImage} contentFit="cover" />
+                      ) : (
+                        <View style={styles.mealImageFallback}>
+                          <Text style={{ fontSize: 24 }}>🍽</Text>
+                        </View>
+                      )}
+                      <View style={styles.mealInfo}>
+                        <Text style={styles.mealName} numberOfLines={1}>{meal.name}</Text>
+                        <Text style={styles.mealTime}>{getTimeLabel(meal.timestamp)}</Text>
+                        <View style={styles.mealMeta}>
+                          <Text style={styles.mealCalories}>{meal.calories} kcal</Text>
+                          <View style={[styles.mealScoreDot, { backgroundColor: getScoreColor(meal.healthScore) }]} />
+                          <Text style={[styles.mealScore, { color: getScoreColor(meal.healthScore) }]}>{meal.healthScore}%</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </Animated.View>
+                ))}
               </View>
-              <View style={styles.exploreArrowWrap}>
-                <MaterialIcons name="chevron-right" size={24} color={theme.textMuted} />
+            </Animated.View>
+          ) : (
+            /* Empty state */
+            <Animated.View entering={FadeInUp.delay(350).duration(400)} style={styles.emptyState}>
+              <View style={styles.emptyIconWrap}>
+                <Text style={{ fontSize: 48 }}>📷</Text>
               </View>
-            </Pressable>
-          </Animated.View>
-
-          {/* ─── SNAP & SHARE ─── */}
-          <Animated.View entering={FadeInUp.delay(500).duration(400)} style={styles.snapSection}>
-            <Pressable
-              style={({ pressed }) => [styles.snapCard, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
-              onPress={() => router.push('/snap-share')}
-            >
-              <View style={styles.snapCardInner}>
-                <View style={styles.snapCardLeft}>
-                  <View style={styles.snapIconWrap}>
-                    <MaterialIcons name="camera-alt" size={22} color={theme.primary} />
-                  </View>
-                  <View style={styles.snapCardText}>
-                    <Text style={styles.snapCardTitle}>Snap & Share your vibe</Text>
-                    <Text style={styles.snapCardSub}>Share to Stories & unlock rewards</Text>
-                  </View>
-                </View>
-                <MaterialIcons name="chevron-right" size={22} color={theme.textMuted} />
-              </View>
-            </Pressable>
-          </Animated.View>
-
-          {/* ─── WHY FOODGENIE ─── */}
-          <Animated.View entering={FadeIn.delay(550).duration(400)} style={styles.whySection}>
-            <Text style={styles.whySectionTitle}>Why FoodGenie</Text>
-            <View style={styles.whyBadges}>
-              {[
-                { icon: 'verified' as const, text: 'Chef-verified kitchens' },
-                { icon: 'shield' as const, text: 'Bias-free recommendations' },
-                { icon: 'local-shipping' as const, text: 'Order via partners' },
-              ].map((badge, i) => (
-                <Animated.View
-                  key={badge.text}
-                  entering={FadeInRight.delay(600 + i * 80).duration(350)}
-                >
-                  <View style={styles.whyPill}>
-                    <MaterialIcons name={badge.icon} size={14} color={theme.textSecondary} />
-                    <Text style={styles.whyPillText}>{badge.text}</Text>
-                  </View>
-                </Animated.View>
-              ))}
-            </View>
-          </Animated.View>
+              <Text style={styles.emptyTitle}>No meals logged today</Text>
+              <Text style={styles.emptySub}>
+                Tap the camera button to scan your first meal and start tracking.
+              </Text>
+            </Animated.View>
+          )}
         </ScrollView>
       </SafeAreaView>
-
-      <ModePromptModal
-        visible={showModePrompt}
-        onClose={() => setShowModePrompt(false)}
-        onSelectMode={handleModeSelect}
-      />
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
   safeArea: { flex: 1 },
-  scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 40 },
 
   // Header
@@ -386,13 +279,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: 16,
-    paddingBottom: 20,
+    paddingBottom: 16,
     paddingHorizontal: 20,
   },
   greetingBlock: { flex: 1 },
   greeting: { fontSize: 26, fontWeight: '700', color: theme.textPrimary },
-  subGreeting: { fontSize: 15, color: theme.textSecondary, marginTop: 4 },
-  profileButton: {
+  subGreeting: { fontSize: 14, color: theme.textSecondary, marginTop: 4 },
+  profileBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -400,232 +293,134 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(200,135,90,0.2)',
-    ...theme.shadows.card,
+    borderColor: theme.border,
   },
 
-  // ── Hero ──
-  heroOuter: {
-    marginHorizontal: 16,
-    marginBottom: 32,
-  },
-  heroCard: {
-    backgroundColor: theme.surface,
-    borderRadius: 24,
+  // Stats
+  statsSection: { paddingHorizontal: 20, marginBottom: 16 },
+  statsGrid: { flexDirection: 'row', gap: 10 },
+  statCard: { flex: 1, borderRadius: 20, overflow: 'hidden' },
+  statCardInner: {
+    padding: 16,
+    alignItems: 'center',
+    gap: 4,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(200,135,90,0.15)',
-    padding: 24,
-    ...theme.shadows.cardElevated,
+    borderColor: theme.border,
   },
-  heroHeader: {
+  statEmoji: { fontSize: 24, marginBottom: 2 },
+  statValue: { fontSize: 26, fontWeight: '800', letterSpacing: -1 },
+  statLabel: { fontSize: 11, fontWeight: '600', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
+
+  // Suggestion
+  suggestCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: 'rgba(74,222,128,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(74,222,128,0.12)',
+  },
+  suggestIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(74,222,128,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  suggestText: { flex: 1, fontSize: 14, color: theme.textSecondary, lineHeight: 20, fontWeight: '500' },
+
+  // Scan CTA
+  ctaSection: { paddingHorizontal: 20, marginBottom: 24 },
+  scanCTA: { borderRadius: 20, overflow: 'hidden', ...theme.shadows.neonGreen },
+  scanCTAGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    gap: 12,
+    gap: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    borderRadius: 20,
   },
-  genieAvatar: {
+  scanCTAText: { flex: 1 },
+  scanCTATitle: { fontSize: 17, fontWeight: '700', color: theme.textOnPrimary },
+  scanCTASub: { fontSize: 13, color: 'rgba(0,0,0,0.6)', marginTop: 2, fontWeight: '500' },
+
+  // Nutrition summary
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: theme.textPrimary,
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  nutritionCard: {
+    marginHorizontal: 20,
+    marginBottom: 24,
+    padding: 20,
+    borderRadius: 20,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  nutritionRow: { flexDirection: 'row', alignItems: 'center' },
+  nutritionItem: { flex: 1, alignItems: 'center', gap: 2 },
+  nutritionDivider: { width: 1, height: 36, backgroundColor: theme.border },
+  nutritionEmoji: { fontSize: 18 },
+  nutritionValue: { fontSize: 20, fontWeight: '800', color: theme.textPrimary },
+  nutritionLabel: { fontSize: 11, fontWeight: '600', color: theme.textMuted },
+
+  // Meal log
+  mealList: { paddingHorizontal: 20, gap: 10 },
+  mealCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  mealImage: { width: 56, height: 56, borderRadius: 14 },
+  mealImageFallback: {
     width: 56,
     height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(200,135,90,0.08)',
+    borderRadius: 14,
+    backgroundColor: theme.backgroundTertiary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mealInfo: { flex: 1 },
+  mealName: { fontSize: 16, fontWeight: '700', color: theme.textPrimary },
+  mealTime: { fontSize: 12, color: theme.textMuted, marginTop: 2, fontWeight: '500' },
+  mealMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
+  mealCalories: { fontSize: 13, fontWeight: '600', color: theme.textSecondary },
+  mealScoreDot: { width: 6, height: 6, borderRadius: 3 },
+  mealScore: { fontSize: 13, fontWeight: '700' },
+
+  // Empty state
+  emptyState: {
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingTop: 20,
+    gap: 12,
+  },
+  emptyIconWrap: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: theme.backgroundTertiary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(200,135,90,0.2)',
-  },
-  genieMascot: { width: 38, height: 38 },
-  heroTitleBlock: { flex: 1 },
-  heroTitle: { fontSize: 24, fontWeight: '700', color: theme.primary, letterSpacing: -0.3 },
-  heroSubtitle: { fontSize: 14, color: theme.textSecondary, marginTop: 3 },
-  modeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: 'rgba(200,135,90,0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: theme.borderRadius.full,
-  },
-  modeBadgeText: { fontSize: 11, fontWeight: '700', color: theme.primary },
-
-  // Input row
-  heroInputRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
-  heroInputWrapper: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.backgroundSecondary,
-    borderRadius: 14,
-    borderWidth: 1,
     borderColor: theme.border,
-    paddingHorizontal: 14,
+    marginBottom: 4,
   },
-  heroInputIcon: { marginRight: 8 },
-  heroInput: { flex: 1, fontSize: 15, color: theme.textPrimary, paddingVertical: 14 },
-  heroCTA: { borderRadius: 14, overflow: 'hidden' },
-  heroCTAGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderRadius: 14,
-  },
-  heroCTAText: { fontSize: 14, fontWeight: '700', color: theme.textOnPrimary },
-  heroHint: {
-    fontSize: 12,
-    color: theme.textMuted,
-    marginBottom: 18,
-    paddingLeft: 2,
-    fontStyle: 'italic',
-  },
-
-  // Chips
-  chipsOuter: { marginHorizontal: -24 },
-  chipsContainer: { flexDirection: 'row', gap: 8, paddingHorizontal: 24 },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: theme.backgroundSecondary,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: theme.borderRadius.full,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  chipSelected: {
-    backgroundColor: 'rgba(200,135,90,0.1)',
-    borderColor: 'rgba(200,135,90,0.35)',
-  },
-  chipEmoji: { fontSize: 14 },
-  chipLabel: { fontSize: 13, fontWeight: '500', color: theme.textSecondary },
-  chipLabelSelected: { color: theme.primary, fontWeight: '600' },
-
-  // ── Preference Summary ──
-  prefSummarySection: { marginBottom: 8 },
-  prefSummaryContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 20,
-  },
-  prefChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(200,135,90,0.06)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(200,135,90,0.15)',
-  },
-  prefChipEmoji: { fontSize: 13 },
-  prefChipLabel: { fontSize: 12, fontWeight: '600', color: theme.primary },
-
-  // ── Why FoodGenie ──
-  whySection: { marginBottom: 40, paddingHorizontal: 20, marginTop: 8 },
-  whySectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.textMuted,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    marginBottom: 12,
-  },
-  whyBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  whyPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    backgroundColor: theme.backgroundSecondary,
-    paddingHorizontal: 13,
-    paddingVertical: 8,
-    borderRadius: theme.borderRadius.full,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  whyPillText: { fontSize: 12, fontWeight: '500', color: theme.textSecondary },
-
-  // ── Snap & Share ──
-  snapSection: { paddingHorizontal: 20, marginBottom: 8 },
-  snapCard: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(200,135,90,0.15)',
-    backgroundColor: theme.surface,
-    ...theme.shadows.card,
-  },
-  snapCardInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 18,
-  },
-  snapCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    flex: 1,
-  },
-  snapIconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    backgroundColor: 'rgba(200,135,90,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(200,135,90,0.15)',
-  },
-  snapCardText: { flex: 1 },
-  snapCardTitle: { fontSize: 16, fontWeight: '700', color: theme.textPrimary },
-  snapCardSub: { fontSize: 13, color: theme.textSecondary, marginTop: 3 },
-
-  // ── Explore Your Way ──
-  exploreSection: { paddingHorizontal: 20, marginBottom: 8 },
-  exploreCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: theme.surface,
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(200,135,90,0.15)',
-    ...theme.shadows.card,
-  },
-  exploreCardPressed: {
-    backgroundColor: theme.backgroundSecondary,
-    borderColor: 'rgba(200,135,90,0.3)',
-    transform: [{ scale: 0.98 }],
-  },
-  exploreCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    flex: 1,
-  },
-  exploreCardIconWrap: {
-    width: 50,
-    height: 50,
-    borderRadius: 16,
-    backgroundColor: 'rgba(200,135,90,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(200,135,90,0.15)',
-  },
-  exploreArrowWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: theme.backgroundSecondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  exploreCardText: { flex: 1 },
-  exploreCardTitle: { fontSize: 17, fontWeight: '700', color: theme.textPrimary },
-  exploreCardSub: { fontSize: 13, color: theme.textSecondary, marginTop: 4 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: theme.textPrimary },
+  emptySub: { fontSize: 14, color: theme.textMuted, textAlign: 'center', lineHeight: 20 },
 });

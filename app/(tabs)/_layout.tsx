@@ -1,27 +1,26 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Platform, View, Text } from 'react-native';
+import { Platform, View, Pressable, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../constants/theme';
-import { useApp } from '../../contexts/AppContext';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const { cart } = useApp();
 
   const tabBarStyle = {
     height: Platform.select({
-      ios: insets.bottom + 60,
-      android: insets.bottom + 60,
-      default: 70,
+      ios: insets.bottom + 64,
+      android: insets.bottom + 64,
+      default: 72,
     }),
-    paddingTop: 8,
+    paddingTop: 6,
     paddingBottom: Platform.select({
-      ios: insets.bottom + 8,
-      android: insets.bottom + 8,
-      default: 8,
+      ios: insets.bottom + 6,
+      android: insets.bottom + 6,
+      default: 6,
     }),
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     backgroundColor: theme.background,
     borderTopWidth: 1,
     borderTopColor: theme.border,
@@ -33,10 +32,11 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle,
         tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: theme.textSecondary,
+        tabBarInactiveTintColor: theme.textMuted,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
+          marginTop: 2,
         },
       }}
     >
@@ -45,46 +45,66 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="home" size={size} color={color} />
+            <MaterialIcons name="home-filled" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="preferences"
+        name="camera"
         options={{
-          title: 'Preferences',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="psychology" size={size} color={color} />
+          title: 'Scan',
+          tabBarIcon: ({ focused }) => (
+            <View style={styles.cameraTabIcon}>
+              <LinearGradient
+                colors={focused ? theme.gradients.cameraBtn : ['#2A2A35', '#2A2A35']}
+                style={styles.cameraTabGradient}
+              >
+                <MaterialIcons
+                  name="camera-alt"
+                  size={28}
+                  color={focused ? theme.textOnPrimary : theme.textMuted}
+                />
+              </LinearGradient>
+            </View>
           ),
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '700',
+            marginTop: -4,
+          },
         }}
       />
       <Tabs.Screen
-        name="chat"
+        name="profile"
         options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="plans"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="cart"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="account"
-        options={{
-          title: 'Account',
+          title: 'Profile',
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="person" size={size} color={color} />
           ),
         }}
       />
+      {/* Hide unused tabs */}
+      <Tabs.Screen name="preferences" options={{ href: null }} />
+      <Tabs.Screen name="account" options={{ href: null }} />
+      <Tabs.Screen name="chat" options={{ href: null }} />
+      <Tabs.Screen name="plans" options={{ href: null }} />
+      <Tabs.Screen name="cart" options={{ href: null }} />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  cameraTabIcon: {
+    marginTop: -16,
+    ...theme.shadows.neonGreen,
+  },
+  cameraTabGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(74,222,128,0.3)',
+  },
+});

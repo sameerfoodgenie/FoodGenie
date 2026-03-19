@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { theme } from '../constants/theme';
@@ -118,18 +117,18 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background },
   content: { alignItems: 'center', paddingHorizontal: 40 },
   mascotContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(200,135,90,0.08)',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(74,222,128,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 32,
     borderWidth: 2,
-    borderColor: 'rgba(200,135,90,0.18)',
-    ...theme.shadows.genie,
+    borderColor: 'rgba(74,222,128,0.18)',
+    ...theme.shadows.neonGreen,
   },
-  mascot: { width: 90, height: 90 },
+  mascot: { width: 80, height: 80 },
   spinner: { marginBottom: 24 },
   message: {
     fontSize: 18,

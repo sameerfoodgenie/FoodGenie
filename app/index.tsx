@@ -5,7 +5,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 function LoadingScreen() {
   return (
     <View style={styles.loading}>
-      <ActivityIndicator size="large" color="#F59E0B" />
+      <ActivityIndicator size="large" color="#4ADE80" />
     </View>
   );
 }
@@ -21,7 +21,7 @@ export default function RootScreen() {
 const styles = StyleSheet.create({
   loading: {
     flex: 1,
-    backgroundColor: '#0A0A0A',
+    backgroundColor: '#0A0A0F',
     justifyContent: 'center',
     alignItems: 'center',
   },
