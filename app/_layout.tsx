@@ -20,6 +20,7 @@ export default function RootLayout() {
                   <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                   <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
                   <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
+                  <Stack.Screen name="edit-meal" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
                   <Stack.Screen name="meal-analysis" options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />
                   <Stack.Screen name="food-insight" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
                   <Stack.Screen name="ai-thinking" options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />

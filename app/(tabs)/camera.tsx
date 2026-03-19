@@ -61,7 +61,7 @@ export default function CameraScreen() {
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.85 });
       if (photo?.uri) {
-        router.push({ pathname: '/meal-analysis', params: { imageUri: photo.uri } });
+        router.push({ pathname: '/edit-meal', params: { imageUri: photo.uri } });
       }
     } catch (e) {
       console.log('Capture error:', e);
@@ -80,7 +80,7 @@ export default function CameraScreen() {
         aspect: [1, 1],
       });
       if (!result.canceled && result.assets[0]?.uri) {
-        router.push({ pathname: '/meal-analysis', params: { imageUri: result.assets[0].uri } });
+        router.push({ pathname: '/edit-meal', params: { imageUri: result.assets[0].uri } });
       }
     } catch (e) {
       console.log('Gallery error:', e);

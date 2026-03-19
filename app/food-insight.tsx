@@ -45,13 +45,14 @@ export default function FoodInsightScreen() {
     carbs?: string;
     fat?: string;
     insight?: string;
+    alreadyAdded?: string;
   }>();
   const { addMeal } = useMeals();
   const { showAlert } = useAlert();
 
   const [foodName, setFoodName] = useState(params.name || 'Unknown Food');
   const [isEditing, setIsEditing] = useState(false);
-  const [added, setAdded] = useState(false);
+  const [added, setAdded] = useState(params.alreadyAdded === 'true');
 
   const healthScore = parseInt(params.healthScore || '0', 10);
   const calories = parseInt(params.calories || '0', 10);
@@ -75,6 +76,10 @@ export default function FoodInsightScreen() {
   }, []);
 
   const handleAddToday = useCallback(() => {
+    if (added) {
+      router.back();
+      return;
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const meal: MealEntry = {
       id: Date.now().toString(),
@@ -92,7 +97,7 @@ export default function FoodInsightScreen() {
     setAdded(true);
     showAlert('Added', `${foodName} added to today's log`);
     setTimeout(() => router.back(), 800);
-  }, [foodName, healthScore, calories, protein, carbs, fat, insight, params.imageUri, addMeal, router, showAlert]);
+  }, [added, foodName, healthScore, calories, protein, carbs, fat, insight, params.imageUri, addMeal, router, showAlert]);
 
   const handleEdit = useCallback(() => {
     Haptics.selectionAsync();
@@ -248,7 +253,7 @@ export default function FoodInsightScreen() {
               style={styles.addBtnGradient}
             >
               <MaterialIcons name={added ? 'check' : 'add'} size={22} color={theme.textOnPrimary} />
-              <Text style={styles.addBtnText}>{added ? 'Added!' : 'Add to Today'}</Text>
+              <Text style={styles.addBtnText}>{added ? 'Done' : 'Add to Today'}</Text>
             </LinearGradient>
           </Pressable>
         </Animated.View>

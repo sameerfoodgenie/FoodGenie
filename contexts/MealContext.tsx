@@ -1,5 +1,8 @@
 import React, { createContext, useState, useCallback, ReactNode } from 'react';
 
+export type MealSource = 'home_cooked' | 'restaurant' | 'online_order';
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
 export interface MealEntry {
   id: string;
   name: string;
@@ -11,6 +14,11 @@ export interface MealEntry {
   insight: string;
   imageUri: string | null;
   timestamp: number;
+  source?: MealSource;
+  mealType?: MealType;
+  restaurantName?: string;
+  platform?: string;
+  tags?: string[];
 }
 
 interface MealContextType {
