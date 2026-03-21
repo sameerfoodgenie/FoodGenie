@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
-import { usePosts } from './PostContext';
+import { usePosts, CreatorType } from './PostContext';
 
 // ─── Types ───
 
@@ -18,6 +18,87 @@ export interface CreatorShow {
   coverUri: string | null;
   episodes: ShowEpisode[];
   createdAt: number;
+  isPaid?: boolean;
+  price?: number;
+}
+
+// ─── Creator Tiers ───
+
+export interface CreatorTierInfo {
+  id: CreatorType;
+  name: string;
+  emoji: string;
+  color: string;
+  description: string;
+  perks: string[];
+}
+
+export const CREATOR_TIERS: CreatorTierInfo[] = [
+  {
+    id: 'home_master_chef',
+    name: 'Home Master Chef',
+    emoji: '👨‍🍳',
+    color: '#F97316',
+    description: 'Master of home cooking',
+    perks: ['Create cooking shows', 'Upload recipe videos', 'Schedule live sessions', 'Paid live sessions'],
+  },
+  {
+    id: 'verified_chef',
+    name: 'Chef (Verified)',
+    emoji: '✅',
+    color: '#3B82F6',
+    description: 'Verified professional chef',
+    perks: ['Verified badge', 'Highlighted in feed', 'Featured section', 'Priority visibility'],
+  },
+  {
+    id: 'food_blogger',
+    name: 'Food Blogger',
+    emoji: '📝',
+    color: '#A855F7',
+    description: 'Food content creator',
+    perks: ['Restaurant tagging', 'Grow via followers', 'Engagement boosts', 'Brand collaborations'],
+  },
+];
+
+// ─── Live Sessions ───
+
+export interface LiveSession {
+  id: string;
+  hostUserId: string;
+  hostUsername: string;
+  hostAvatarInitials: string;
+  hostCreatorType: CreatorType;
+  title: string;
+  description: string;
+  coverUri: string | null;
+  scheduledAt: number;
+  isLive: boolean;
+  isPaid: boolean;
+  price: number;
+  attendeeCount: number;
+  maxAttendees: number;
+}
+
+export interface TrendingShow {
+  id: string;
+  title: string;
+  hostUsername: string;
+  hostAvatarInitials: string;
+  hostCreatorType: CreatorType;
+  coverUri: string | null;
+  episodeCount: number;
+  viewCount: number;
+  rating: number;
+}
+
+export interface TopCreator {
+  id: string;
+  username: string;
+  avatarInitials: string;
+  creatorType: CreatorType;
+  followers: number;
+  showCount: number;
+  isVerified: boolean;
 }
 
 export type CreatorLevel = 'new_creator' | 'rising_creator' | 'food_influencer' | 'genie_creator' | 'elite_chef';
@@ -56,6 +137,21 @@ export interface Badge {
 }
 
 interface CreatorContextType {
+  // Creator Tier
+  myCreatorType: CreatorType;
+  setMyCreatorType: (type: CreatorType) => void;
+  creatorTiers: CreatorTierInfo[];
+  getCreatorTier: (type: CreatorType) => CreatorTierInfo | null;
+
+  // Live Sessions
+  liveSessions: LiveSession[];
+  scheduleLiveSession: (session: Omit<LiveSession, 'id' | 'isLive' | 'attendeeCount'>) => string;
+  joinLiveSession: (sessionId: string) => void;
+
+  // Trending & Top
+  trendingShows: TrendingShow[];
+  topCreators: TopCreator[];
+
   // Levels
   currentLevel: CreatorLevelInfo;
   nextLevel: CreatorLevelInfo | null;
@@ -133,10 +229,120 @@ function getLevelProgress(postCount: number): number {
 
 // ─── Provider ───
 
+// ─── Sample Data ───
+
+const SAMPLE_LIVE_SESSIONS: LiveSession[] = [
+  {
+    id: 'live_1',
+    hostUserId: 'user_ananya',
+    hostUsername: 'ananya.foodie',
+    hostAvatarInitials: 'AF',
+    hostCreatorType: 'home_master_chef',
+    title: 'Butter Chicken Masterclass',
+    description: 'Learn my secret recipe for the creamiest butter chicken ever',
+    coverUri: 'https://images.unsplash.com/photo-1631515243349-e0cb75fb8d4a?w=800&q=80',
+    scheduledAt: Date.now() + 3600000 * 2,
+    isLive: false,
+    isPaid: true,
+    price: 99,
+    attendeeCount: 45,
+    maxAttendees: 100,
+  },
+  {
+    id: 'live_2',
+    hostUserId: 'user_rahul',
+    hostUsername: 'rahul.eats',
+    hostAvatarInitials: 'RE',
+    hostCreatorType: 'verified_chef',
+    title: 'Street Food Secrets',
+    description: 'Mumbai street food at home - chaat, pav bhaji, vada pav',
+    coverUri: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=800&q=80',
+    scheduledAt: Date.now() + 3600000 * 5,
+    isLive: false,
+    isPaid: false,
+    price: 0,
+    attendeeCount: 128,
+    maxAttendees: 200,
+  },
+  {
+    id: 'live_3',
+    hostUserId: 'user_priya',
+    hostUsername: 'priya.cooks',
+    hostAvatarInitials: 'PC',
+    hostCreatorType: 'home_master_chef',
+    title: 'Healthy Meal Prep Sunday',
+    description: 'Prep 5 days of clean meals in 2 hours',
+    coverUri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80',
+    scheduledAt: Date.now() - 600000,
+    isLive: true,
+    isPaid: true,
+    price: 149,
+    attendeeCount: 67,
+    maxAttendees: 80,
+  },
+];
+
+const SAMPLE_TRENDING_SHOWS: TrendingShow[] = [
+  {
+    id: 'ts_1',
+    title: 'Midnight Cravings',
+    hostUsername: 'ananya.foodie',
+    hostAvatarInitials: 'AF',
+    hostCreatorType: 'home_master_chef',
+    coverUri: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80',
+    episodeCount: 12,
+    viewCount: 45200,
+    rating: 4.8,
+  },
+  {
+    id: 'ts_2',
+    title: 'Chef Rahul Specials',
+    hostUsername: 'rahul.eats',
+    hostAvatarInitials: 'RE',
+    hostCreatorType: 'verified_chef',
+    coverUri: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80',
+    episodeCount: 8,
+    viewCount: 32100,
+    rating: 4.9,
+  },
+  {
+    id: 'ts_3',
+    title: 'Clean Eating 101',
+    hostUsername: 'priya.cooks',
+    hostAvatarInitials: 'PC',
+    hostCreatorType: 'food_blogger',
+    coverUri: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&q=80',
+    episodeCount: 15,
+    viewCount: 28700,
+    rating: 4.7,
+  },
+  {
+    id: 'ts_4',
+    title: 'Biryani Chronicles',
+    hostUsername: 'dev.bites',
+    hostAvatarInitials: 'DB',
+    hostCreatorType: 'verified_chef',
+    coverUri: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&q=80',
+    episodeCount: 6,
+    viewCount: 19500,
+    rating: 4.6,
+  },
+];
+
+const SAMPLE_TOP_CREATORS: TopCreator[] = [
+  { id: 'tc_1', username: 'ananya.foodie', avatarInitials: 'AF', creatorType: 'home_master_chef', followers: 12400, showCount: 3, isVerified: false },
+  { id: 'tc_2', username: 'rahul.eats', avatarInitials: 'RE', creatorType: 'verified_chef', followers: 34200, showCount: 5, isVerified: true },
+  { id: 'tc_3', username: 'priya.cooks', avatarInitials: 'PC', creatorType: 'food_blogger', followers: 8900, showCount: 2, isVerified: false },
+  { id: 'tc_4', username: 'dev.bites', avatarInitials: 'DB', creatorType: 'verified_chef', followers: 21600, showCount: 4, isVerified: true },
+  { id: 'tc_5', username: 'meera.meals', avatarInitials: 'MM', creatorType: 'food_blogger', followers: 5700, showCount: 1, isVerified: false },
+];
+
 export function CreatorProvider({ children }: { children: ReactNode }) {
   const { posts, streak, myPosts } = usePosts();
   const [shows, setShows] = useState<CreatorShow[]>([]);
   const [hasSeenUnlock, setHasSeenUnlock] = useState(false);
+  const [myCreatorType, setMyCreatorType] = useState<CreatorType>(null);
+  const [liveSessions, setLiveSessions] = useState<LiveSession[]>(SAMPLE_LIVE_SESSIONS);
 
   const postCount = myPosts.length;
   const streakCount = streak;
@@ -187,6 +393,25 @@ export function CreatorProvider({ children }: { children: ReactNode }) {
 
   const unlockedBadges = useMemo(() => badges.filter(b => b.isUnlocked), [badges]);
 
+  // Creator tier helpers
+  const getCreatorTier = useCallback((type: CreatorType): CreatorTierInfo | null => {
+    if (!type) return null;
+    return CREATOR_TIERS.find(t => t.id === type) || null;
+  }, []);
+
+  // Live sessions
+  const scheduleLiveSession = useCallback((session: Omit<LiveSession, 'id' | 'isLive' | 'attendeeCount'>): string => {
+    const id = `live_${Date.now()}`;
+    setLiveSessions(prev => [{ ...session, id, isLive: false, attendeeCount: 0 }, ...prev]);
+    return id;
+  }, []);
+
+  const joinLiveSession = useCallback((sessionId: string) => {
+    setLiveSessions(prev => prev.map(s =>
+      s.id === sessionId ? { ...s, attendeeCount: s.attendeeCount + 1 } : s
+    ));
+  }, []);
+
   // Shows
   const addShow = useCallback((show: Omit<CreatorShow, 'id' | 'episodes' | 'createdAt'>): string => {
     const id = `show_${Date.now()}`;
@@ -216,6 +441,9 @@ export function CreatorProvider({ children }: { children: ReactNode }) {
 
   return (
     <CreatorContext.Provider value={{
+      myCreatorType, setMyCreatorType, creatorTiers: CREATOR_TIERS, getCreatorTier,
+      liveSessions, scheduleLiveSession, joinLiveSession,
+      trendingShows: SAMPLE_TRENDING_SHOWS, topCreators: SAMPLE_TOP_CREATORS,
       currentLevel, nextLevel, levelProgress, allLevels: CREATOR_LEVELS,
       milestones, unlockedMilestones, nextMilestone,
       badges, unlockedBadges,

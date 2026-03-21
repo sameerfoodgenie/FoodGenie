@@ -23,6 +23,8 @@ export interface PostComment {
   timestamp: number;
 }
 
+export type CreatorType = 'home_master_chef' | 'verified_chef' | 'food_blogger' | null;
+
 export interface FoodPost {
   id: string;
   userId: string;
@@ -43,6 +45,8 @@ export interface FoodPost {
   isSaved: boolean;
   comments: PostComment[];
   timestamp: number;
+  creatorType?: CreatorType;
+  isVerified?: boolean;
 }
 
 interface PostContextType {
@@ -67,6 +71,8 @@ const SAMPLE_POSTS: FoodPost[] = [
     userId: 'user_ananya',
     username: 'ananya.foodie',
     avatarInitials: 'AF',
+    creatorType: 'home_master_chef',
+    isVerified: false,
     imageUri: 'https://images.unsplash.com/photo-1631515243349-e0cb75fb8d4a?w=800&q=80',
     dishName: 'Butter Chicken',
     caption: 'Sunday special at home! Nothing beats homemade butter chicken with garlic naan 🔥',
@@ -88,6 +94,8 @@ const SAMPLE_POSTS: FoodPost[] = [
     userId: 'user_rahul',
     username: 'rahul.eats',
     avatarInitials: 'RE',
+    creatorType: 'verified_chef',
+    isVerified: true,
     imageUri: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800&q=80',
     dishName: 'Masala Dosa',
     caption: 'Crispy dosa mornings are the best mornings. This place never disappoints! 💯',
@@ -111,6 +119,8 @@ const SAMPLE_POSTS: FoodPost[] = [
     userId: 'user_priya',
     username: 'priya.cooks',
     avatarInitials: 'PC',
+    creatorType: 'food_blogger',
+    isVerified: false,
     imageUri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80',
     dishName: 'Quinoa Salad Bowl',
     caption: 'Trying to eat clean this week. Loaded with veggies and a lemon tahini dressing ✨',
@@ -130,6 +140,8 @@ const SAMPLE_POSTS: FoodPost[] = [
     userId: 'user_dev',
     username: 'dev.bites',
     avatarInitials: 'DB',
+    creatorType: 'verified_chef',
+    isVerified: true,
     imageUri: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&q=80',
     dishName: 'Chicken Biryani',
     caption: 'Friday biryani ritual. Ordered from the OG biryani spot. Worth every rupee 🍚',
@@ -153,6 +165,8 @@ const SAMPLE_POSTS: FoodPost[] = [
     userId: 'user_meera',
     username: 'meera.meals',
     avatarInitials: 'MM',
+    creatorType: 'food_blogger',
+    isVerified: false,
     imageUri: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800&q=80',
     dishName: 'Pancake Stack',
     caption: 'Fluffy pancakes with maple syrup and fresh berries. Brunch done right! 🥞',

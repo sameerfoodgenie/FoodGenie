@@ -19,7 +19,8 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInRight, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../constants/theme';
-import { usePosts, FoodPost } from '../../contexts/PostContext';
+import { usePosts, FoodPost, CreatorType } from '../../contexts/PostContext';
+import { CREATOR_TIERS } from '../../contexts/CreatorContext';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -48,6 +49,11 @@ const SOURCE_LABEL: Record<string, string> = {
   restaurant: 'Restaurant',
   online_order: 'Online',
 };
+
+function getCreatorBadge(type?: CreatorType | null) {
+  if (!type) return null;
+  return CREATOR_TIERS.find(t => t.id === type) || null;
+}
 
 function formatCount(n: number): string {
   if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
@@ -192,9 +198,21 @@ function ReelCard({
 
       {/* ─── Bottom Info ─── */}
       <View style={styles.bottomInfo} pointerEvents="box-none">
-        {/* Username */}
-        <Pressable onPress={onProfile} hitSlop={8}>
+        {/* Username + Creator badge */}
+        <Pressable onPress={onProfile} hitSlop={8} style={styles.usernameRow}>
           <Text style={styles.reelUsername}>@{post.username}</Text>
+          {post.isVerified ? (
+            <MaterialIcons name="verified" size={16} color="#3B82F6" />
+          ) : null}
+          {(() => {
+            const badge = getCreatorBadge(post.creatorType);
+            return badge ? (
+              <View style={[styles.creatorBadge, { backgroundColor: `${badge.color}20`, borderColor: `${badge.color}40` }]}>
+                <Text style={styles.creatorBadgeEmoji}>{badge.emoji}</Text>
+                <Text style={[styles.creatorBadgeText, { color: badge.color }]}>{badge.name}</Text>
+              </View>
+            ) : null;
+          })()}
         </Pressable>
 
         {/* Dish name */}
@@ -520,6 +538,12 @@ const styles = StyleSheet.create({
     zIndex: 20,
     gap: 6,
   },
+  usernameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
   reelUsername: {
     fontSize: 15,
     fontWeight: '800',
@@ -528,6 +552,17 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 6,
   },
+  creatorBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  creatorBadgeEmoji: { fontSize: 10 },
+  creatorBadgeText: { fontSize: 10, fontWeight: '700' },
   reelDishName: {
     fontSize: 22,
     fontWeight: '900',

@@ -51,6 +51,9 @@ export default function RootLayout() {
                     <Stack.Screen name="creator-dashboard" options={{ headerShown: false, animation: 'slide_from_right' }} />
                     <Stack.Screen name="story-viewer" options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />
                     <Stack.Screen name="food-detail" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
+                    <Stack.Screen name="shows" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                    <Stack.Screen name="live-session" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
+                    <Stack.Screen name="schedule-live" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
                   </Stack>
                 </View>
                 </CreatorProvider>

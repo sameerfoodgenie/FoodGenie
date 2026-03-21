@@ -19,7 +19,8 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../constants/theme';
-import { usePosts, FoodPost } from '../contexts/PostContext';
+import { usePosts, FoodPost, CreatorType } from '../contexts/PostContext';
+import { CREATOR_TIERS } from '../contexts/CreatorContext';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const IMAGE_HEIGHT = SCREEN_W * 1.1;
@@ -150,6 +151,7 @@ export default function FoodDetailScreen() {
   const insight = getInsight(breakdown, post.dishName);
   const sourceInfo = SOURCE_LABEL[post.source] || SOURCE_LABEL.home_cooked;
   const mealInfo = MEAL_LABEL[post.mealType] || MEAL_LABEL.lunch;
+  const creatorTier = post.creatorType ? CREATOR_TIERS.find(t => t.id === post.creatorType) : null;
 
   const handleLike = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -230,12 +232,24 @@ export default function FoodDetailScreen() {
           {/* ─── User Info ─── */}
           <Animated.View entering={FadeInDown.duration(300)} style={styles.userSection}>
             <View style={styles.userLeft}>
-              <View style={styles.userAvatar}>
+              <View style={[styles.userAvatar, creatorTier ? { borderColor: creatorTier.color } : {}]}>
                 <Text style={styles.userAvatarText}>{post.avatarInitials}</Text>
               </View>
               <View>
-                <Text style={styles.userName}>@{post.username}</Text>
-                <Text style={styles.userTime}>{timeAgo(post.timestamp)}</Text>
+                <View style={styles.userNameRow}>
+                  <Text style={styles.userName}>@{post.username}</Text>
+                  {post.isVerified ? (
+                    <MaterialIcons name="verified" size={16} color="#3B82F6" />
+                  ) : null}
+                </View>
+                {creatorTier ? (
+                  <View style={styles.userTierRow}>
+                    <Text style={styles.userTierEmoji}>{creatorTier.emoji}</Text>
+                    <Text style={[styles.userTierName, { color: creatorTier.color }]}>{creatorTier.name}</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.userTime}>{timeAgo(post.timestamp)}</Text>
+                )}
               </View>
             </View>
             <Pressable
@@ -472,11 +486,24 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: theme.textPrimary,
   },
+  userNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
   userName: {
     fontSize: 15,
     fontWeight: '700',
     color: theme.textPrimary,
   },
+  userTierRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  userTierEmoji: { fontSize: 12 },
+  userTierName: { fontSize: 12, fontWeight: '600' },
   userTime: {
     fontSize: 12,
     fontWeight: '500',

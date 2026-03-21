@@ -15,7 +15,8 @@ import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { theme } from '../../constants/theme';
-import { usePosts } from '../../contexts/PostContext';
+import { usePosts, CreatorType } from '../../contexts/PostContext';
+import { CREATOR_TIERS } from '../../contexts/CreatorContext';
 import { useMeals } from '../../hooks/useMeals';
 import { useCreator } from '../../contexts/CreatorContext';
 import { useAlert, useAuth } from '@/template';
@@ -47,7 +48,11 @@ export default function ProfileScreen() {
     unlockedBadges,
     badges,
     totalLikes,
+    myCreatorType,
+    liveSessions,
   } = useCreator();
+
+  const myTier = CREATOR_TIERS.find(t => t.id === myCreatorType) || null;
 
   const name = user?.username || 'Food Lover';
   const email = user?.email || '';
@@ -158,10 +163,17 @@ export default function ProfileScreen() {
             <View style={styles.bioSection}>
               <View style={styles.bioNameRow}>
                 <Text style={styles.bioName}>{name}</Text>
-                <View style={[styles.levelTag, { backgroundColor: `${currentLevel.color}18`, borderColor: `${currentLevel.color}40` }]}>
-                  <Text style={styles.levelTagEmoji}>{currentLevel.emoji}</Text>
-                  <Text style={[styles.levelTagText, { color: currentLevel.color }]}>{currentLevel.name}</Text>
-                </View>
+                {myTier ? (
+                  <View style={[styles.levelTag, { backgroundColor: `${myTier.color}18`, borderColor: `${myTier.color}40` }]}>
+                    <Text style={styles.levelTagEmoji}>{myTier.emoji}</Text>
+                    <Text style={[styles.levelTagText, { color: myTier.color }]}>{myTier.name}</Text>
+                  </View>
+                ) : (
+                  <View style={[styles.levelTag, { backgroundColor: `${currentLevel.color}18`, borderColor: `${currentLevel.color}40` }]}>
+                    <Text style={styles.levelTagEmoji}>{currentLevel.emoji}</Text>
+                    <Text style={[styles.levelTagText, { color: currentLevel.color }]}>{currentLevel.name}</Text>
+                  </View>
+                )}
               </View>
               {email ? <Text style={styles.bioEmail}>{email}</Text> : null}
               <Text style={styles.bioText}>Food lover sharing my meals on FoodGenie 🍽✨</Text>
@@ -251,6 +263,13 @@ export default function ProfileScreen() {
                 onPress={() => { Haptics.selectionAsync(); router.push('/creator-dashboard'); }}
               >
                 <Text style={styles.editProfileText}>Dashboard</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.editProfileBtn, styles.showsBtn, pressed && { opacity: 0.8 }]}
+                onPress={() => { Haptics.selectionAsync(); router.push('/shows'); }}
+              >
+                <MaterialIcons name="live-tv" size={16} color={theme.primary} />
+                <Text style={[styles.editProfileText, { color: theme.primary }]}>Shows</Text>
               </Pressable>
             </Animated.View>
 
@@ -496,6 +515,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     gap: 8,
     paddingVertical: 10,
+  },
+  showsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    borderColor: 'rgba(74,222,128,0.25)',
+    backgroundColor: 'rgba(74,222,128,0.06)',
   },
   editProfileBtn: {
     flex: 1,
