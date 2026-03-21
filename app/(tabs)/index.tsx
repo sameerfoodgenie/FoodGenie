@@ -108,6 +108,7 @@ function ReelCard({
   onComment,
   onShare,
   onProfile,
+  onTap,
 }: {
   post: FoodPost;
   cardHeight: number;
