@@ -116,9 +116,13 @@ function ReelCard({
   onComment: () => void;
   onShare: () => void;
   onProfile: () => void;
+  onTap: () => void;
 }) {
   return (
     <View style={[styles.reelCard, { height: cardHeight }]}>
+      {/* Tap to open detail */}
+      <Pressable style={StyleSheet.absoluteFill} onPress={onTap} />
+
       {/* Full-screen image */}
       {post.imageUri ? (
         <Image
@@ -148,7 +152,7 @@ function ReelCard({
       />
 
       {/* ─── Right Action Bar ─── */}
-      <View style={styles.actionBar}>
+      <View style={styles.actionBar} pointerEvents="box-none">
         {/* Profile avatar */}
         <Pressable
           onPress={onProfile}
@@ -186,7 +190,7 @@ function ReelCard({
       </View>
 
       {/* ─── Bottom Info ─── */}
-      <View style={styles.bottomInfo}>
+      <View style={styles.bottomInfo} pointerEvents="box-none">
         {/* Username */}
         <Pressable onPress={onProfile} hitSlop={8}>
           <Text style={styles.reelUsername}>@{post.username}</Text>
@@ -302,8 +306,9 @@ export default function HomeScreen() {
       onComment={() => handleComment(item.id)}
       onShare={() => handleShare(item)}
       onProfile={() => Haptics.selectionAsync()}
+      onTap={() => { Haptics.selectionAsync(); router.push({ pathname: '/food-detail', params: { postId: item.id } }); }}
     />
-  ), [cardHeight, handleLike, handleSave, handleComment, handleShare]);
+  ), [cardHeight, handleLike, handleSave, handleComment, handleShare, router]);
 
   const getItemLayout = useCallback((_: any, index: number) => ({
     length: cardHeight,
