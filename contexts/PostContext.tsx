@@ -1,5 +1,21 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
+export interface Story {
+  id: string;
+  imageUri: string;
+  caption?: string;
+  timestamp: number;
+  duration: number;
+}
+
+export interface StoryGroup {
+  userId: string;
+  username: string;
+  avatarInitials: string;
+  stories: Story[];
+  hasUnseen: boolean;
+}
+
 export interface PostComment {
   id: string;
   username: string;
@@ -38,6 +54,8 @@ interface PostContextType {
   addComment: (postId: string, text: string) => void;
   streak: number;
   totalPosts: number;
+  storyGroups: StoryGroup[];
+  markStorySeen: (userId: string) => void;
 }
 
 const PostContext = createContext<PostContextType | undefined>(undefined);
@@ -152,8 +170,60 @@ const SAMPLE_POSTS: FoodPost[] = [
   },
 ];
 
+const SAMPLE_STORIES: StoryGroup[] = [
+  {
+    userId: 'user_ananya',
+    username: 'ananya.foodie',
+    avatarInitials: 'AF',
+    hasUnseen: true,
+    stories: [
+      { id: 'st1a', imageUri: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80', caption: 'Morning chai vibes ☕', timestamp: Date.now() - 3600000, duration: 5000 },
+      { id: 'st1b', imageUri: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80', caption: 'Made pizza from scratch! 🍕', timestamp: Date.now() - 1800000, duration: 5000 },
+    ],
+  },
+  {
+    userId: 'user_rahul',
+    username: 'rahul.eats',
+    avatarInitials: 'RE',
+    hasUnseen: true,
+    stories: [
+      { id: 'st2a', imageUri: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80', caption: 'Burger night 🍔', timestamp: Date.now() - 7200000, duration: 5000 },
+    ],
+  },
+  {
+    userId: 'user_priya',
+    username: 'priya.cooks',
+    avatarInitials: 'PC',
+    hasUnseen: true,
+    stories: [
+      { id: 'st3a', imageUri: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&q=80', caption: 'Salad prep Sunday 🥗', timestamp: Date.now() - 10800000, duration: 5000 },
+      { id: 'st3b', imageUri: 'https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=800&q=80', caption: 'French toast perfection', timestamp: Date.now() - 9000000, duration: 5000 },
+      { id: 'st3c', imageUri: 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=800&q=80', caption: 'Afternoon snack plate', timestamp: Date.now() - 5400000, duration: 5000 },
+    ],
+  },
+  {
+    userId: 'user_dev',
+    username: 'dev.bites',
+    avatarInitials: 'DB',
+    hasUnseen: true,
+    stories: [
+      { id: 'st4a', imageUri: 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=800&q=80', caption: 'Street food crawl tonight 🌮', timestamp: Date.now() - 14400000, duration: 5000 },
+    ],
+  },
+  {
+    userId: 'user_meera',
+    username: 'meera.meals',
+    avatarInitials: 'MM',
+    hasUnseen: false,
+    stories: [
+      { id: 'st5a', imageUri: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=800&q=80', caption: 'Dessert time 🍰', timestamp: Date.now() - 21600000, duration: 5000 },
+    ],
+  },
+];
+
 export function PostProvider({ children }: { children: ReactNode }) {
   const [posts, setPosts] = useState<FoodPost[]>(SAMPLE_POSTS);
+  const [storyGroups, setStoryGroups] = useState<StoryGroup[]>(SAMPLE_STORIES);
 
   const myPosts = posts.filter(p => p.userId === 'me');
 
@@ -202,11 +272,17 @@ export function PostProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const markStorySeen = useCallback((userId: string) => {
+    setStoryGroups(prev => prev.map(g =>
+      g.userId === userId ? { ...g, hasUnseen: false } : g
+    ));
+  }, []);
+
   const streak = 3;
   const totalPosts = myPosts.length;
 
   return (
-    <PostContext.Provider value={{ posts, myPosts, addPost, toggleLike, toggleSave, addComment, streak, totalPosts }}>
+    <PostContext.Provider value={{ posts, myPosts, addPost, toggleLike, toggleSave, addComment, streak, totalPosts, storyGroups, markStorySeen }}>
       {children}
     </PostContext.Provider>
   );

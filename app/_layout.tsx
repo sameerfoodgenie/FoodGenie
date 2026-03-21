@@ -49,6 +49,7 @@ export default function RootLayout() {
                     <Stack.Screen name="creator-studio" options={{ headerShown: false, animation: 'slide_from_right' }} />
                     <Stack.Screen name="create-show" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
                     <Stack.Screen name="creator-dashboard" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                    <Stack.Screen name="story-viewer" options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />
                   </Stack>
                 </View>
                 </CreatorProvider>

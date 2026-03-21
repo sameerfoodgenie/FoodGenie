@@ -17,10 +17,114 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { theme } from '../../constants/theme';
-import { usePosts, FoodPost } from '../../contexts/PostContext';
+import { usePosts, FoodPost, StoryGroup } from '../../contexts/PostContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const IMAGE_HEIGHT = SCREEN_WIDTH * 1.1;
+
+// ─── Story Bar ───
+function StoryBar({ groups, onStoryPress }: { groups: StoryGroup[]; onStoryPress: (userId: string) => void }) {
+  return (
+    <View style={storyStyles.container}>
+      <FlatList
+        horizontal
+        data={groups}
+        keyExtractor={item => item.userId}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={storyStyles.scroll}
+        renderItem={({ item }) => (
+          <Pressable
+            style={({ pressed }) => [storyStyles.storyItem, pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] }]}
+            onPress={() => onStoryPress(item.userId)}
+          >
+            {item.hasUnseen ? (
+              <LinearGradient
+                colors={['#4ADE80', '#22C55E', '#FBBF24']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={storyStyles.gradientRing}
+              >
+                <View style={storyStyles.avatarInner}>
+                  <Text style={storyStyles.avatarText}>{item.avatarInitials}</Text>
+                </View>
+              </LinearGradient>
+            ) : (
+              <View style={storyStyles.seenRing}>
+                <View style={storyStyles.avatarInner}>
+                  <Text style={storyStyles.avatarText}>{item.avatarInitials}</Text>
+                </View>
+              </View>
+            )}
+            <Text style={[storyStyles.username, item.hasUnseen && storyStyles.usernameBold]} numberOfLines={1}>
+              {item.username.split('.')[0]}
+            </Text>
+          </Pressable>
+        )}
+      />
+    </View>
+  );
+}
+
+const storyStyles = StyleSheet.create({
+  container: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
+    paddingVertical: 12,
+  },
+  scroll: {
+    paddingHorizontal: 16,
+    gap: 14,
+  },
+  storyItem: {
+    alignItems: 'center',
+    width: 72,
+    gap: 6,
+  },
+  gradientRing: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 3,
+  },
+  seenRing: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 3,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  avatarInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 30,
+    backgroundColor: theme.backgroundTertiary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2.5,
+    borderColor: theme.background,
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: theme.textPrimary,
+  },
+  username: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: theme.textMuted,
+    textAlign: 'center',
+  },
+  usernameBold: {
+    fontWeight: '700',
+    color: theme.textSecondary,
+  },
+});
 
 const MEAL_EMOJI: Record<string, string> = {
   breakfast: '☀️',
@@ -203,7 +307,7 @@ function PostCard({ post, onLike, onSave, onComment, onShare }: {
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { posts, toggleLike, toggleSave, addComment } = usePosts();
+  const { posts, toggleLike, toggleSave, addComment, storyGroups } = usePosts();
   const [commentingPostId, setCommentingPostId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const commentInputRef = useRef<TextInput>(null);
@@ -223,6 +327,11 @@ export default function HomeScreen() {
     setCommentingPostId(postId);
     setTimeout(() => commentInputRef.current?.focus(), 100);
   }, []);
+
+  const handleStoryPress = useCallback((userId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({ pathname: '/story-viewer', params: { userId } });
+  }, [router]);
 
   const handleShare = useCallback(async (post: FoodPost) => {
     Haptics.selectionAsync();
@@ -268,6 +377,11 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </View>
+
+        {/* Stories */}
+        {storyGroups.length > 0 ? (
+          <StoryBar groups={storyGroups} onStoryPress={handleStoryPress} />
+        ) : null}
 
         {/* Feed */}
         <FlatList
