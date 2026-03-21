@@ -8,6 +8,9 @@ export interface ShowEpisode {
   title: string;
   description: string;
   imageUri: string | null;
+  videoUri?: string | null;
+  ingredients?: string[];
+  steps?: string[];
   createdAt: number;
 }
 

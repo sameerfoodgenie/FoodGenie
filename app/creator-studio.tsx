@@ -173,20 +173,31 @@ export default function CreatorStudioScreen() {
           }
         />
 
-        {/* Create button */}
+        {/* Create buttons */}
         <Animated.View
           entering={FadeInUp.delay(400).duration(400)}
           style={[styles.fabWrap, { bottom: insets.bottom + 24 }]}
         >
-          <Pressable
-            style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85, transform: [{ scale: 0.95 }] }]}
-            onPress={handleCreateShow}
-          >
-            <LinearGradient colors={['#4ADE80', '#22C55E']} style={styles.fabGradient}>
-              <MaterialIcons name="add" size={24} color={theme.textOnPrimary} />
-              <Text style={styles.fabText}>Create New Show</Text>
-            </LinearGradient>
-          </Pressable>
+          <View style={styles.fabRow}>
+            <Pressable
+              style={({ pressed }) => [styles.fab, styles.fabSecondary, pressed && { opacity: 0.85, transform: [{ scale: 0.95 }] }]}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/upload-recipe'); }}
+            >
+              <View style={styles.fabSecondaryInner}>
+                <MaterialIcons name="videocam" size={20} color={theme.primary} />
+                <Text style={styles.fabSecondaryText}>Upload Recipe</Text>
+              </View>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.fab, { flex: 1 }, pressed && { opacity: 0.85, transform: [{ scale: 0.95 }] }]}
+              onPress={handleCreateShow}
+            >
+              <LinearGradient colors={['#4ADE80', '#22C55E']} style={styles.fabGradient}>
+                <MaterialIcons name="add" size={24} color={theme.textOnPrimary} />
+                <Text style={styles.fabText}>New Show</Text>
+              </LinearGradient>
+            </Pressable>
+          </View>
         </Animated.View>
       </SafeAreaView>
     </View>
@@ -310,13 +321,30 @@ const styles = StyleSheet.create({
   emptyDesc: { fontSize: 14, color: theme.textMuted, textAlign: 'center', lineHeight: 20, maxWidth: 280 },
 
   fabWrap: { position: 'absolute', left: 20, right: 20 },
+  fabRow: { flexDirection: 'row', gap: 10 },
   fab: { borderRadius: 16, overflow: 'hidden', ...theme.shadows.colored },
+  fabSecondary: {
+    borderWidth: 1,
+    borderColor: 'rgba(74,222,128,0.25)',
+    backgroundColor: 'rgba(74,222,128,0.06)',
+  },
+  fabSecondaryInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+  },
+  fabSecondaryText: { fontSize: 14, fontWeight: '700', color: theme.primary },
   fabGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
     paddingVertical: 18,
+    paddingHorizontal: 20,
     borderRadius: 16,
   },
   fabText: { fontSize: 16, fontWeight: '700', color: theme.textOnPrimary },

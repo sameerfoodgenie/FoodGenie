@@ -54,6 +54,7 @@ export default function RootLayout() {
                     <Stack.Screen name="shows" options={{ headerShown: false, animation: 'slide_from_right' }} />
                     <Stack.Screen name="live-session" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
                     <Stack.Screen name="schedule-live" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
+                    <Stack.Screen name="upload-recipe" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
                   </Stack>
                 </View>
                 </CreatorProvider>
