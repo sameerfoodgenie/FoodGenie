@@ -27,12 +27,12 @@ const { width: SCREEN_W } = Dimensions.get('window');
 export default function UploadRecipeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ showId?: string }>();
+  const params = useLocalSearchParams<{ showId?: string; videoUri?: string }>();
   const { shows, addEpisode, addShow } = useCreator();
   const { showAlert } = useAlert();
 
   // Video
-  const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [videoUri, setVideoUri] = useState<string | null>(params.videoUri || null);
   const [videoDuration, setVideoDuration] = useState<number>(0);
 
   // Recipe info
