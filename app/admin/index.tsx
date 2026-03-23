@@ -36,6 +36,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   { title: 'Add Restaurant', icon: 'add-business', route: '/ops/onboard-restaurant', color: '#FBBF24', bgColor: 'rgba(251,191,36,0.10)' },
   { title: 'Add Dish', icon: 'restaurant-menu', route: '/ops/add-dish', color: '#A78BFA', bgColor: 'rgba(167,139,250,0.10)' },
   { title: 'Dish Tags', icon: 'local-offer', route: '/ops/add-dish-tags', color: '#FB923C', bgColor: 'rgba(251,146,60,0.10)' },
+  { title: 'Analytics', icon: 'bar-chart', route: '/admin/analytics', color: '#2DD4BF', bgColor: 'rgba(45,212,191,0.10)' },
   { title: 'Activity Log', icon: 'history', route: '/admin/activity', color: '#94A3B8', bgColor: 'rgba(148,163,184,0.10)' },
 ];
 

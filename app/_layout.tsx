@@ -62,6 +62,7 @@ export default function RootLayout() {
                     <Stack.Screen name="admin/users" options={{ headerShown: false, animation: 'slide_from_right' }} />
                     <Stack.Screen name="admin/posts" options={{ headerShown: false, animation: 'slide_from_right' }} />
                     <Stack.Screen name="admin/activity" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                    <Stack.Screen name="admin/analytics" options={{ headerShown: false, animation: 'slide_from_right' }} />
                   </Stack>
                 </View>
                 </CreatorProvider>

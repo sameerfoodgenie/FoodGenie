@@ -131,6 +131,145 @@ export async function fetchUsers(limit: number = 20): Promise<{ data: AdminUser[
   }
 }
 
+// ─── Analytics: Posts Per Day (7d) ───
+export interface DailyPostCount {
+  date: string;
+  count: number;
+}
+
+export async function fetchPostsPerDay(days: number = 7): Promise<{ data: DailyPostCount[]; error: string | null }> {
+  try {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days + 1);
+    startDate.setHours(0, 0, 0, 0);
+
+    const { data, error } = await supabase
+      .from('posts')
+      .select('created_at')
+      .gte('created_at', startDate.toISOString())
+      .order('created_at', { ascending: true });
+
+    if (error) return { data: [], error: error.message };
+
+    const countMap: Record<string, number> = {};
+    for (let i = 0; i < days; i++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      countMap[d.toISOString().split('T')[0]] = 0;
+    }
+    (data || []).forEach((p: any) => {
+      const day = new Date(p.created_at).toISOString().split('T')[0];
+      if (countMap[day] !== undefined) countMap[day]++;
+    });
+
+    const result = Object.entries(countMap).map(([date, count]) => ({ date, count }));
+    return { data: result, error: null };
+  } catch (e: any) {
+    return { data: [], error: e?.message || 'Failed to fetch posts per day' };
+  }
+}
+
+// ─── Analytics: User Growth (7d) ───
+export interface DailyUserCount {
+  date: string;
+  count: number;
+  cumulative: number;
+}
+
+export async function fetchUserGrowth(days: number = 7): Promise<{ data: DailyUserCount[]; error: string | null }> {
+  try {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days + 1);
+    startDate.setHours(0, 0, 0, 0);
+
+    // Total users before period
+    const { count: beforeCount } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .lt('created_at', startDate.toISOString());
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('created_at')
+      .gte('created_at', startDate.toISOString())
+      .order('created_at', { ascending: true });
+
+    if (error) return { data: [], error: error.message };
+
+    const countMap: Record<string, number> = {};
+    for (let i = 0; i < days; i++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      countMap[d.toISOString().split('T')[0]] = 0;
+    }
+    (data || []).forEach((u: any) => {
+      const day = new Date(u.created_at).toISOString().split('T')[0];
+      if (countMap[day] !== undefined) countMap[day]++;
+    });
+
+    let cumulative = beforeCount || 0;
+    const result = Object.entries(countMap).map(([date, count]) => {
+      cumulative += count;
+      return { date, count, cumulative };
+    });
+    return { data: result, error: null };
+  } catch (e: any) {
+    return { data: [], error: e?.message || 'Failed to fetch user growth' };
+  }
+}
+
+// ─── Analytics: Engagement Trends (7d) ───
+export interface DailyEngagement {
+  date: string;
+  likes: number;
+  comments: number;
+}
+
+export async function fetchEngagementTrends(days: number = 7): Promise<{ data: DailyEngagement[]; error: string | null }> {
+  try {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days + 1);
+    startDate.setHours(0, 0, 0, 0);
+    const isoStart = startDate.toISOString();
+
+    const [likesRes, commentsRes] = await Promise.all([
+      supabase.from('post_likes').select('created_at').gte('created_at', isoStart),
+      supabase.from('post_comments').select('created_at').gte('created_at', isoStart),
+    ]);
+
+    const initMap = () => {
+      const m: Record<string, number> = {};
+      for (let i = 0; i < days; i++) {
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + i);
+        m[d.toISOString().split('T')[0]] = 0;
+      }
+      return m;
+    };
+
+    const likesMap = initMap();
+    const commentsMap = initMap();
+
+    (likesRes.data || []).forEach((l: any) => {
+      const day = new Date(l.created_at).toISOString().split('T')[0];
+      if (likesMap[day] !== undefined) likesMap[day]++;
+    });
+    (commentsRes.data || []).forEach((c: any) => {
+      const day = new Date(c.created_at).toISOString().split('T')[0];
+      if (commentsMap[day] !== undefined) commentsMap[day]++;
+    });
+
+    const result = Object.keys(likesMap).map((date) => ({
+      date,
+      likes: likesMap[date],
+      comments: commentsMap[date],
+    }));
+    return { data: result, error: null };
+  } catch (e: any) {
+    return { data: [], error: e?.message || 'Failed to fetch engagement trends' };
+  }
+}
+
 // ─── Recent Ops Actions ───
 export interface OpsAction {
   id: string;
