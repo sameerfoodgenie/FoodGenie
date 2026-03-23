@@ -55,6 +55,8 @@ export default function RootLayout() {
                     <Stack.Screen name="live-session" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
                     <Stack.Screen name="schedule-live" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
                     <Stack.Screen name="upload-recipe" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
+                    <Stack.Screen name="profile-setup" options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />
+                    <Stack.Screen name="notifications" options={{ headerShown: false, animation: 'slide_from_right' }} />
                   </Stack>
                 </View>
                 </CreatorProvider>

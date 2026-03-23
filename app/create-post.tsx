@@ -22,6 +22,7 @@ import { useApp } from '../contexts/AppContext';
 import { useCreator } from '../contexts/CreatorContext';
 import { useAuth, useAlert } from '@/template';
 import { POPULAR_DISHES, ORDER_PLATFORMS } from '../services/mealInsights';
+import { uploadImage } from '../services/storageService';
 
 type MealSource = 'home_cooked' | 'restaurant' | 'online_order';
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
@@ -62,6 +63,7 @@ export default function CreatePostScreen() {
   const [taggedFriends, setTaggedFriends] = useState('');
   const [showDishSuggestions, setShowDishSuggestions] = useState(false);
   const [showRestaurantSearch, setShowRestaurantSearch] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const filteredDishes = useMemo(() => {
     if (!dishName.trim()) return POPULAR_DISHES.slice(0, 10);
@@ -78,40 +80,61 @@ export default function CreatePostScreen() {
 
   const canPost = dishName.trim().length > 0;
 
-  const handlePost = useCallback(() => {
+  const handlePost = useCallback(async () => {
     if (!canPost) {
       showAlert('Add Dish Name', 'Give your post a dish name before posting');
       return;
     }
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-    const username = user?.username || 'you';
-    const initials = username.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
-    const friends = taggedFriends.split(',').map(f => f.trim()).filter(Boolean);
-
-    addPost({
-      userId: 'me',
-      username,
-      avatarInitials: initials || 'ME',
-      imageUri: params.imageUri || null,
-      dishName: dishName.trim(),
-      caption: caption.trim(),
-      location: location.trim() || (restaurantName ? restaurantName : ''),
-      mealType,
-      source: source || 'home_cooked',
-      restaurantName: restaurantName || undefined,
-      platform: platform || undefined,
-      tags: [],
-      taggedFriends: friends,
-      timestamp: Date.now(),
-    });
-
-    if (!isCreatorUnlocked && postsNeeded > 0) {
-      showAlert('Posted! 🎉', `+1 step closer to Creator Mode! ${postsNeeded - 1} post${postsNeeded - 1 !== 1 ? 's' : ''} to go`);
-    } else {
-      showAlert('Posted!', 'Your meal has been shared');
+    if (!user?.id) {
+      showAlert('Error', 'Please log in to post');
+      return;
     }
-    router.back();
+
+    setUploading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    try {
+      let imageUrl: string | null = null;
+
+      // Upload image to storage if available
+      if (params.imageUri) {
+        const { url, error: uploadError } = await uploadImage('post-images', params.imageUri, user.id);
+        if (uploadError) {
+          console.warn('Image upload failed:', uploadError);
+          // Continue without image
+        } else {
+          imageUrl = url;
+        }
+      }
+
+      const friends = taggedFriends.split(',').map(f => f.trim()).filter(Boolean);
+
+      await addPost({
+        imageUri: imageUrl,
+        dishName: dishName.trim(),
+        caption: caption.trim(),
+        location: location.trim() || (restaurantName ? restaurantName : ''),
+        mealType,
+        source: source || 'home_cooked',
+        restaurantName: restaurantName || undefined,
+        platform: platform || undefined,
+        tags: [],
+        taggedFriends: friends,
+      });
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      if (!isCreatorUnlocked && postsNeeded > 0) {
+        showAlert('Posted!', `+1 step closer to Creator Mode! ${postsNeeded - 1} post${postsNeeded - 1 !== 1 ? 's' : ''} to go`);
+      } else {
+        showAlert('Posted!', 'Your meal has been shared');
+      }
+      router.back();
+    } catch (e: any) {
+      showAlert('Error', e?.message || 'Failed to create post');
+    } finally {
+      setUploading(false);
+    }
   }, [canPost, user, dishName, caption, location, source, mealType, restaurantName, platform, taggedFriends, params.imageUri, addPost, router, showAlert]);
 
   return (
@@ -138,13 +161,13 @@ export default function CreatePostScreen() {
               <Pressable
                 style={({ pressed }) => [
                   styles.postHeaderBtn,
-                  !canPost && { opacity: 0.4 },
-                  pressed && canPost && { opacity: 0.8 },
+                  (!canPost || uploading) && { opacity: 0.4 },
+                  pressed && canPost && !uploading && { opacity: 0.8 },
                 ]}
                 onPress={handlePost}
-                disabled={!canPost}
+                disabled={!canPost || uploading}
               >
-                <Text style={styles.postHeaderText}>Share</Text>
+                <Text style={styles.postHeaderText}>{uploading ? 'Uploading...' : 'Share'}</Text>
               </Pressable>
             </View>
 
@@ -353,18 +376,18 @@ export default function CreatePostScreen() {
             <Pressable
               style={({ pressed }) => [
                 styles.postBtn,
-                !canPost && styles.postBtnDisabled,
-                pressed && canPost && { opacity: 0.85, transform: [{ scale: 0.98 }] },
+                (!canPost || uploading) && styles.postBtnDisabled,
+                pressed && canPost && !uploading && { opacity: 0.85, transform: [{ scale: 0.98 }] },
               ]}
               onPress={handlePost}
-              disabled={!canPost}
+              disabled={!canPost || uploading}
             >
               <LinearGradient
                 colors={canPost ? ['#4ADE80', '#22C55E'] : [theme.backgroundTertiary, theme.backgroundTertiary]}
                 style={styles.postBtnGradient}
               >
                 <MaterialIcons name="send" size={20} color={canPost ? theme.textOnPrimary : theme.textMuted} />
-                <Text style={[styles.postBtnText, !canPost && { color: theme.textMuted }]}>Post</Text>
+                <Text style={[styles.postBtnText, (!canPost || uploading) && { color: theme.textMuted }]}>{uploading ? 'Uploading...' : 'Post'}</Text>
               </LinearGradient>
             </Pressable>
           </Animated.View>

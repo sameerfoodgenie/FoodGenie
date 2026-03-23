@@ -24,6 +24,8 @@ import { useOnboardingStatus } from '../../components/OnboardingWalkthrough';
 import { usePosts, FoodPost, CreatorType } from '../../contexts/PostContext';
 import { useCreator } from '../../contexts/CreatorContext';
 import { CREATOR_TIERS } from '../../contexts/CreatorContext';
+import { useAuth } from '@/template';
+import { useNotifications } from '../../hooks/useNotifications';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -295,7 +297,9 @@ function ReelCard({
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { feedPosts, toggleLike, toggleSave, addComment, storyGroups, toggleFollow, isFollowing } = usePosts();
+  const { feedPosts, toggleLike, toggleSave, addComment, storyGroups, toggleFollow, isFollowing, loading: feedLoading, refreshFeed } = usePosts();
+  const { user } = useAuth();
+  const { unreadCount } = useNotifications(user?.id || null);
   const [commentingPostId, setCommentingPostId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const commentInputRef = useRef<TextInput>(null);
@@ -396,12 +400,25 @@ export default function HomeScreen() {
       {/* Header overlay */}
       <View style={[styles.headerOverlay, { paddingTop: insets.top + 8 }]}>
         <Text style={styles.appTitle}>FoodGenie</Text>
-        <Pressable
-          onPress={() => { Haptics.selectionAsync(); router.push('/(tabs)/camera'); }}
-          style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
-        >
-          <MaterialIcons name="camera-alt" size={22} color="#FFF" />
-        </Pressable>
+        <View style={styles.headerRight}>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); router.push('/notifications'); }}
+            style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
+          >
+            <MaterialIcons name="notifications-none" size={22} color="#FFF" />
+            {unreadCount > 0 ? (
+              <View style={styles.notifBadge}>
+                <Text style={styles.notifBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+              </View>
+            ) : null}
+          </Pressable>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); router.push('/(tabs)/camera'); }}
+            style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
+          >
+            <MaterialIcons name="camera-alt" size={22} color="#FFF" />
+          </Pressable>
+        </View>
       </View>
 
       {/* Reels Feed */}
@@ -531,6 +548,11 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 8,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   headerBtn: {
     width: 40,
     height: 40,
@@ -540,6 +562,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: 'rgba(212,175,55,0.15)',
+  },
+  notifBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#FF3B30',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: '#0A0A0A',
+  },
+  notifBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFF',
   },
 
   // Reel card

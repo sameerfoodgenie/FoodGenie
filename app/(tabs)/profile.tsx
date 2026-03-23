@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import { useMeals } from '../../hooks/useMeals';
 import { useCreator } from '../../contexts/CreatorContext';
 import { useAlert, useAuth } from '@/template';
 import { useRouter } from 'expo-router';
+import { fetchProfile, UserProfile } from '../../services/profileService';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_GAP = 2;
@@ -30,7 +31,16 @@ const GRID_SIZE = (SCREEN_WIDTH - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS;
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { posts, streak, totalPosts, followingCount, followerCount } = usePosts();
+  const { posts, streak, totalPosts, followingCount, followerCount, refreshFeed } = usePosts();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchProfile(user.id).then(({ data }) => {
+        if (data) setProfile(data);
+      });
+    }
+  }, [user?.id]);
   const { todayMeals } = useMeals();
   const { showAlert } = useAlert();
   const { user, logout } = useAuth();
@@ -54,7 +64,7 @@ export default function ProfileScreen() {
 
   const myTier = CREATOR_TIERS.find(t => t.id === myCreatorType) || null;
 
-  const name = user?.username || 'Food Lover';
+  const name = profile?.full_name || user?.username || 'Food Lover';
   const email = user?.email || '';
   const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
   const gridPosts = posts;
