@@ -58,6 +58,10 @@ export default function RootLayout() {
                     <Stack.Screen name="profile-setup" options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />
                     <Stack.Screen name="notifications" options={{ headerShown: false, animation: 'slide_from_right' }} />
                     <Stack.Screen name="send-notification" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
+                    <Stack.Screen name="admin/index" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                    <Stack.Screen name="admin/users" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                    <Stack.Screen name="admin/posts" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                    <Stack.Screen name="admin/activity" options={{ headerShown: false, animation: 'slide_from_right' }} />
                   </Stack>
                 </View>
                 </CreatorProvider>
