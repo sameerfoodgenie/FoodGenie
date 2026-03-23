@@ -69,7 +69,7 @@ function TrendingChefCard({ creator, rank, onPress }: { creator: TopCreator; ran
         <Text style={styles.chefAvatarText}>{creator.avatarInitials}</Text>
         {creator.isVerified ? (
           <View style={styles.verifiedDot}>
-            <MaterialIcons name="verified" size={12} color="#3B82F6" />
+            <MaterialIcons name="verified" size={12} color="#D4AF37" />
           </View>
         ) : null}
       </View>
@@ -85,7 +85,9 @@ function TrendingChefCard({ creator, rank, onPress }: { creator: TopCreator; ran
         style={({ pressed }) => [styles.chefFollowBtn, pressed && { opacity: 0.8 }]}
         onPress={(e) => { e.stopPropagation(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onPress(); }}
       >
-        <Text style={styles.chefFollowText}>Follow</Text>
+        <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.chefFollowBtnGrad}>
+          <Text style={styles.chefFollowText}>Follow</Text>
+        </LinearGradient>
       </Pressable>
     </Pressable>
   );
@@ -105,12 +107,12 @@ function LiveNowCard({ session, onPress }: { session: LiveSession; onPress: () =
       {session.coverUri ? (
         <Image source={{ uri: session.coverUri }} style={styles.liveCardImage} contentFit="cover" transition={200} />
       ) : (
-        <View style={[styles.liveCardImage, { backgroundColor: theme.backgroundTertiary, alignItems: 'center', justifyContent: 'center' }]}>
+        <View style={[styles.liveCardImage, { backgroundColor: '#1A1A1A', alignItems: 'center', justifyContent: 'center' }]}>
           <Text style={{ fontSize: 36, opacity: 0.3 }}>🎬</Text>
         </View>
       )}
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.85)']}
+        colors={['transparent', 'rgba(0,0,0,0.90)']}
         style={styles.liveCardOverlay}
       >
         {/* Status badge */}
@@ -121,7 +123,7 @@ function LiveNowCard({ session, onPress }: { session: LiveSession; onPress: () =
           </View>
         ) : (
           <View style={styles.countdownBadge}>
-            <MaterialIcons name="schedule" size={11} color="#FFF" />
+            <MaterialIcons name="schedule" size={11} color="#D4AF37" />
             <Text style={styles.countdownText}>in {formatTime(timeUntil)}</Text>
           </View>
         )}
@@ -142,7 +144,7 @@ function LiveNowCard({ session, onPress }: { session: LiveSession; onPress: () =
           </View>
           <Text style={styles.liveHost}>@{session.hostUsername}</Text>
           <View style={styles.liveDivider} />
-          <MaterialIcons name="people" size={13} color="rgba(255,255,255,0.5)" />
+          <MaterialIcons name="people" size={13} color="rgba(255,255,255,0.4)" />
           <Text style={styles.liveAttendees}>{session.attendeeCount}</Text>
         </View>
         {/* Join button */}
@@ -150,8 +152,17 @@ function LiveNowCard({ session, onPress }: { session: LiveSession; onPress: () =
           style={({ pressed }) => [styles.joinBtn, isLive && styles.joinBtnLive, pressed && { opacity: 0.85 }]}
           onPress={(e) => { e.stopPropagation(); onPress(); }}
         >
-          <MaterialIcons name={isLive ? 'play-arrow' : 'notifications-none'} size={16} color={isLive ? '#FFF' : theme.primary} />
-          <Text style={[styles.joinBtnText, isLive && { color: '#FFF' }]}>{isLive ? 'Join Now' : 'Remind Me'}</Text>
+          {isLive ? (
+            <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.joinBtnGrad}>
+              <MaterialIcons name="play-arrow" size={16} color="#0A0A0A" />
+              <Text style={styles.joinBtnTextLive}>Join Now</Text>
+            </LinearGradient>
+          ) : (
+            <View style={styles.joinBtnInner}>
+              <MaterialIcons name="notifications-none" size={16} color="#D4AF37" />
+              <Text style={styles.joinBtnText}>Remind Me</Text>
+            </View>
+          )}
         </Pressable>
       </LinearGradient>
     </Pressable>
@@ -170,16 +181,16 @@ function PopularShowCard({ show, onPress }: { show: TrendingShow; onPress: () =>
       {show.coverUri ? (
         <Image source={{ uri: show.coverUri }} style={styles.showCardImage} contentFit="cover" transition={200} />
       ) : (
-        <View style={[styles.showCardImage, { backgroundColor: theme.backgroundTertiary, alignItems: 'center', justifyContent: 'center' }]}>
+        <View style={[styles.showCardImage, { backgroundColor: '#1A1A1A', alignItems: 'center', justifyContent: 'center' }]}>
           <Text style={{ fontSize: 28 }}>🎬</Text>
         </View>
       )}
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.9)']}
+        colors={['transparent', 'rgba(0,0,0,0.92)']}
         style={styles.showCardOverlay}
       >
         <View style={styles.showRatingBadge}>
-          <MaterialIcons name="star" size={11} color="#FBBF24" />
+          <MaterialIcons name="star" size={11} color="#FFD700" />
           <Text style={styles.showRating}>{show.rating}</Text>
         </View>
         <Text style={styles.showCardTitle} numberOfLines={2}>{show.title}</Text>
@@ -207,10 +218,10 @@ function NewCreatorCard({ creator, onPress }: { creator: NewCreator; onPress: ()
       {creator.coverUri ? (
         <Image source={{ uri: creator.coverUri }} style={styles.newCreatorCover} contentFit="cover" transition={200} />
       ) : (
-        <View style={[styles.newCreatorCover, { backgroundColor: theme.backgroundTertiary }]} />
+        <View style={[styles.newCreatorCover, { backgroundColor: '#1A1A1A' }]} />
       )}
       <LinearGradient
-        colors={['transparent', 'rgba(10,10,15,0.95)']}
+        colors={['transparent', 'rgba(10,10,10,0.95)']}
         style={styles.newCreatorOverlay}
       >
         <View style={[styles.newCreatorAvatar, tier ? { borderColor: tier.color } : {}]}>
@@ -220,7 +231,7 @@ function NewCreatorCard({ creator, onPress }: { creator: NewCreator; onPress: ()
         <Text style={styles.newCreatorMeta}>{creator.postCount} posts · {timeAgoShort(creator.unlockedAt)}</Text>
       </LinearGradient>
       <View style={styles.newCreatorBadge}>
-        <MaterialIcons name="fiber-new" size={14} color={theme.primary} />
+        <MaterialIcons name="fiber-new" size={14} color="#4ADE80" />
       </View>
     </Pressable>
   );
@@ -231,7 +242,6 @@ export default function LearnScreen() {
   const insets = useSafeAreaInsets();
   const { liveSessions, trendingShows, topCreators, newCreators } = useCreator();
 
-  const homeChefs = topCreators.filter(c => c.creatorType === 'home_master_chef' || c.creatorType === 'verified_chef');
   const liveNow = liveSessions.filter(s => s.isLive);
   const upcoming = liveSessions.filter(s => !s.isLive).slice(0, 3);
   const allSessions = [...liveNow, ...upcoming];
@@ -253,7 +263,7 @@ export default function LearnScreen() {
           style={({ pressed }) => [styles.searchBtn, pressed && { opacity: 0.7 }]}
           onPress={() => { Haptics.selectionAsync(); router.push('/shows'); }}
         >
-          <MaterialIcons name="explore" size={22} color={theme.textPrimary} />
+          <MaterialIcons name="explore" size={22} color="#D4AF37" />
         </Pressable>
       </View>
 
@@ -268,7 +278,7 @@ export default function LearnScreen() {
               style={({ pressed }) => [styles.liveBanner, pressed && { opacity: 0.95 }]}
               onPress={() => handleSessionPress(liveNow[0])}
             >
-              <LinearGradient colors={['#EF4444', '#DC2626']} style={styles.liveBannerGrad}>
+              <LinearGradient colors={['#FF3B30', '#CC2D25']} style={styles.liveBannerGrad}>
                 <View style={styles.liveBannerLeft}>
                   <View style={styles.liveBannerDotRow}>
                     <View style={styles.liveDot} />
@@ -286,9 +296,9 @@ export default function LearnScreen() {
         {/* ─── Trending Home Chefs ─── */}
         <Animated.View entering={FadeInDown.delay(50).duration(350)}>
           <View style={styles.sectionHeader}>
-            <View>
-              <Text style={styles.sectionTitle}>🔥 Trending Home Chefs</Text>
-              <Text style={styles.sectionSubtitle}>Follow your favorite creators</Text>
+            <View style={styles.sectionTitleRow}>
+              <Text style={styles.sectionIcon}>🔥</Text>
+              <Text style={styles.sectionTitle}>Trending Home Chefs</Text>
             </View>
           </View>
           <ScrollView
@@ -308,20 +318,20 @@ export default function LearnScreen() {
           </ScrollView>
         </Animated.View>
 
-        {/* ─── Live & Upcoming Sessions ─── */}
+        {/* ─── Live & Upcoming ─── */}
         {allSessions.length > 0 ? (
           <Animated.View entering={FadeInDown.delay(100).duration(350)}>
             <View style={styles.sectionHeader}>
-              <View>
-                <Text style={styles.sectionTitle}>📡 Live & Upcoming</Text>
-                <Text style={styles.sectionSubtitle}>Join cooking sessions in real-time</Text>
+              <View style={styles.sectionTitleRow}>
+                <Text style={styles.sectionIcon}>📡</Text>
+                <Text style={styles.sectionTitle}>Live & Upcoming</Text>
               </View>
               <Pressable
                 style={({ pressed }) => [styles.seeAllBtn, pressed && { opacity: 0.7 }]}
                 onPress={() => { Haptics.selectionAsync(); router.push('/shows'); }}
               >
                 <Text style={styles.seeAllText}>See All</Text>
-                <MaterialIcons name="chevron-right" size={18} color={theme.primary} />
+                <MaterialIcons name="chevron-right" size={18} color="#D4AF37" />
               </Pressable>
             </View>
             {allSessions.map((session, i) => (
@@ -335,9 +345,9 @@ export default function LearnScreen() {
         {/* ─── Popular Shows ─── */}
         <Animated.View entering={FadeInDown.delay(200).duration(350)}>
           <View style={styles.sectionHeader}>
-            <View>
-              <Text style={styles.sectionTitle}>⭐ Popular Shows</Text>
-              <Text style={styles.sectionSubtitle}>Trending cooking series</Text>
+            <View style={styles.sectionTitleRow}>
+              <Text style={styles.sectionIcon}>⭐</Text>
+              <Text style={styles.sectionTitle}>Popular Shows</Text>
             </View>
           </View>
           <ScrollView
@@ -356,9 +366,9 @@ export default function LearnScreen() {
         {/* ─── New Creators ─── */}
         <Animated.View entering={FadeInDown.delay(300).duration(350)}>
           <View style={styles.sectionHeader}>
-            <View>
-              <Text style={styles.sectionTitle}>🌱 New Creators</Text>
-              <Text style={styles.sectionSubtitle}>Recently unlocked chefs</Text>
+            <View style={styles.sectionTitleRow}>
+              <Text style={styles.sectionIcon}>🌱</Text>
+              <Text style={styles.sectionTitle}>New Creators</Text>
             </View>
           </View>
           <ScrollView
@@ -377,11 +387,11 @@ export default function LearnScreen() {
         {/* ─── Become a Creator CTA ─── */}
         <Animated.View entering={FadeInDown.delay(400).duration(350)} style={styles.ctaSection}>
           <LinearGradient
-            colors={['rgba(74,222,128,0.08)', 'rgba(74,222,128,0.03)']}
+            colors={['rgba(212,175,55,0.08)', 'rgba(212,175,55,0.02)']}
             style={styles.ctaCard}
           >
             <View style={styles.ctaIcon}>
-              <MaterialIcons name="auto-awesome" size={28} color={theme.primary} />
+              <MaterialIcons name="auto-awesome" size={28} color="#D4AF37" />
             </View>
             <Text style={styles.ctaTitle}>Start Your Food Journey</Text>
             <Text style={styles.ctaDesc}>Post 5 meals or maintain a 7-day streak to unlock Creator Mode</Text>
@@ -389,8 +399,8 @@ export default function LearnScreen() {
               style={({ pressed }) => [pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/(tabs)/camera'); }}
             >
-              <LinearGradient colors={['#4ADE80', '#22C55E']} style={styles.ctaBtn}>
-                <MaterialIcons name="camera-alt" size={18} color={theme.textOnPrimary} />
+              <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.ctaBtn}>
+                <MaterialIcons name="camera-alt" size={18} color="#0A0A0A" />
                 <Text style={styles.ctaBtnText}>Start Posting</Text>
               </LinearGradient>
             </Pressable>
@@ -402,7 +412,7 @@ export default function LearnScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.background },
+  container: { flex: 1, backgroundColor: '#0A0A0A' },
 
   // Header
   header: {
@@ -413,17 +423,17 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 16,
   },
-  headerTitle: { fontSize: 28, fontWeight: '900', color: theme.textPrimary, letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 14, fontWeight: '500', color: theme.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 28, fontWeight: '900', color: '#FFF', letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 14, fontWeight: '500', color: '#6B6B6B', marginTop: 2 },
   searchBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: theme.surface,
+    backgroundColor: '#151515',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(212,175,55,0.15)',
   },
 
   // Section
@@ -435,10 +445,11 @@ const styles = StyleSheet.create({
     marginTop: 28,
     marginBottom: 14,
   },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: theme.textPrimary },
-  sectionSubtitle: { fontSize: 13, fontWeight: '500', color: theme.textMuted, marginTop: 2 },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionIcon: { fontSize: 18 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#FFF' },
   seeAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  seeAllText: { fontSize: 13, fontWeight: '700', color: theme.primary },
+  seeAllText: { fontSize: 13, fontWeight: '700', color: '#D4AF37' },
 
   // Live banner
   liveBanner: { marginHorizontal: 20, marginTop: 8, borderRadius: 16, overflow: 'hidden' },
@@ -456,55 +467,58 @@ const styles = StyleSheet.create({
   liveBannerHost: { fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.7)' },
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFF' },
 
-  // Trending Chef Card
+  // Chef Card
   chefCard: {
     width: CHEF_CARD_W,
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 12,
     borderRadius: 16,
-    backgroundColor: theme.surface,
+    backgroundColor: '#151515',
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(212,175,55,0.10)',
     gap: 4,
   },
   chefAvatar: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: theme.backgroundTertiary,
+    backgroundColor: '#1A1A1A',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: theme.border,
+    borderColor: 'rgba(212,175,55,0.20)',
     marginBottom: 4,
   },
-  chefAvatarText: { fontSize: 17, fontWeight: '800', color: theme.textPrimary },
+  chefAvatarText: { fontSize: 17, fontWeight: '800', color: '#FFF' },
   verifiedDot: {
     position: 'absolute',
     bottom: -1,
     right: -1,
-    backgroundColor: theme.background,
+    backgroundColor: '#0A0A0A',
     borderRadius: 8,
     padding: 1,
   },
-  chefName: { fontSize: 12, fontWeight: '700', color: theme.textPrimary, textAlign: 'center' },
+  chefName: { fontSize: 12, fontWeight: '700', color: '#FFF', textAlign: 'center' },
   chefTierTag: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
   },
   chefTierEmoji: { fontSize: 12 },
-  chefFollowers: { fontSize: 15, fontWeight: '800', color: theme.textPrimary },
-  chefFollowersLabel: { fontSize: 10, fontWeight: '500', color: theme.textMuted, marginTop: -2 },
+  chefFollowers: { fontSize: 15, fontWeight: '800', color: '#FFF' },
+  chefFollowersLabel: { fontSize: 10, fontWeight: '500', color: '#6B6B6B', marginTop: -2 },
   chefFollowBtn: {
     marginTop: 4,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  chefFollowBtnGrad: {
     paddingHorizontal: 20,
     paddingVertical: 7,
     borderRadius: 14,
-    backgroundColor: theme.primary,
   },
-  chefFollowText: { fontSize: 12, fontWeight: '700', color: theme.textOnPrimary },
+  chefFollowText: { fontSize: 12, fontWeight: '700', color: '#0A0A0A' },
 
   // Live card
   liveCard: {
@@ -528,7 +542,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
     alignSelf: 'flex-start',
-    backgroundColor: '#EF4444',
+    backgroundColor: '#FF3B30',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -539,22 +553,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(212,175,55,0.15)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.20)',
   },
-  countdownText: { fontSize: 12, fontWeight: '700', color: '#FFF' },
+  countdownText: { fontSize: 12, fontWeight: '700', color: '#D4AF37' },
   priceBadge: {
     position: 'absolute',
     top: 12,
     right: 12,
-    backgroundColor: 'rgba(251,191,36,0.9)',
+    backgroundColor: 'rgba(212,175,55,0.90)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
   },
-  priceText: { fontSize: 13, fontWeight: '800', color: '#0A0A0F' },
+  priceText: { fontSize: 13, fontWeight: '800', color: '#0A0A0A' },
   freeBadge: {
     position: 'absolute',
     top: 12,
@@ -564,44 +580,55 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 10,
   },
-  freeText: { fontSize: 11, fontWeight: '800', color: '#0A0A0F', letterSpacing: 0.5 },
+  freeText: { fontSize: 11, fontWeight: '800', color: '#0A0A0A', letterSpacing: 0.5 },
   liveTitle: { fontSize: 17, fontWeight: '800', color: '#FFF' },
   liveMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   miniAvatar: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(212,175,55,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: theme.border,
+    borderColor: 'rgba(212,175,55,0.20)',
   },
   miniAvatarText: { fontSize: 8, fontWeight: '800', color: '#FFF' },
   liveHost: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
-  liveDivider: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(255,255,255,0.3)' },
-  liveAttendees: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.5)' },
+  liveDivider: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(255,255,255,0.25)' },
+  liveAttendees: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.4)' },
   joinBtn: {
+    alignSelf: 'flex-start',
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginTop: 2,
+  },
+  joinBtnLive: {},
+  joinBtnGrad: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    alignSelf: 'flex-start',
     paddingHorizontal: 18,
     paddingVertical: 9,
     borderRadius: 20,
-    backgroundColor: 'rgba(74,222,128,0.15)',
+  },
+  joinBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    backgroundColor: 'rgba(212,175,55,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.3)',
-    marginTop: 2,
+    borderColor: 'rgba(212,175,55,0.25)',
+    borderRadius: 20,
   },
-  joinBtnLive: {
-    backgroundColor: '#EF4444',
-    borderColor: '#EF4444',
-  },
-  joinBtnText: { fontSize: 13, fontWeight: '700', color: theme.primary },
+  joinBtnText: { fontSize: 13, fontWeight: '700', color: '#D4AF37' },
+  joinBtnTextLive: { fontSize: 13, fontWeight: '700', color: '#0A0A0A' },
 
-  // Popular Show Card
+  // Show Card
   showCard: {
     width: SHOW_CARD_W,
     height: SHOW_CARD_W * 1.2,
@@ -624,17 +651,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,
     marginBottom: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.20)',
   },
-  showRating: { fontSize: 12, fontWeight: '700', color: '#FBBF24' },
+  showRating: { fontSize: 12, fontWeight: '700', color: '#FFD700' },
   showCardTitle: { fontSize: 16, fontWeight: '800', color: '#FFF' },
   showCardMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   showCardHost: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
-  showCardStats: { fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.5)' },
+  showCardStats: { fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.45)' },
 
   // New Creator Card
   newCreatorCard: {
@@ -661,16 +690,16 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(212,175,55,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: theme.primary,
+    borderColor: '#4ADE80',
     marginBottom: 4,
   },
   newCreatorAvatarText: { fontSize: 14, fontWeight: '800', color: '#FFF' },
   newCreatorName: { fontSize: 12, fontWeight: '700', color: '#FFF', textAlign: 'center' },
-  newCreatorMeta: { fontSize: 10, fontWeight: '500', color: 'rgba(255,255,255,0.6)', textAlign: 'center' },
+  newCreatorMeta: { fontSize: 10, fontWeight: '500', color: 'rgba(255,255,255,0.5)', textAlign: 'center' },
   newCreatorBadge: {
     position: 'absolute',
     top: 8,
@@ -678,7 +707,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(10,10,15,0.7)',
+    backgroundColor: 'rgba(10,10,10,0.7)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -691,19 +720,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.15)',
+    borderColor: 'rgba(212,175,55,0.12)',
   },
   ctaIcon: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(74,222,128,0.1)',
+    backgroundColor: 'rgba(212,175,55,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
-  ctaTitle: { fontSize: 18, fontWeight: '800', color: theme.textPrimary },
-  ctaDesc: { fontSize: 14, fontWeight: '500', color: theme.textMuted, textAlign: 'center', lineHeight: 20, maxWidth: 280 },
+  ctaTitle: { fontSize: 18, fontWeight: '800', color: '#FFF' },
+  ctaDesc: { fontSize: 14, fontWeight: '500', color: '#6B6B6B', textAlign: 'center', lineHeight: 20, maxWidth: 280 },
   ctaBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -713,5 +742,5 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginTop: 8,
   },
-  ctaBtnText: { fontSize: 15, fontWeight: '700', color: theme.textOnPrimary },
+  ctaBtnText: { fontSize: 15, fontWeight: '700', color: '#0A0A0A' },
 });

@@ -426,7 +426,7 @@ export default function UploadRecipeScreen() {
             disabled={isPublishing}
           >
             <LinearGradient
-              colors={isPublishing ? [theme.backgroundTertiary, theme.backgroundTertiary] : [theme.primary, theme.primaryDark]}
+              colors={isPublishing ? ['#1A1A1A', '#1A1A1A'] : ['#D4AF37', '#FFD700']}
               style={styles.publishBtn}
             >
               {isPublishing ? (
@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: theme.primary,
+    backgroundColor: '#D4AF37',
     alignItems: 'center',
     justifyContent: 'center',
   },

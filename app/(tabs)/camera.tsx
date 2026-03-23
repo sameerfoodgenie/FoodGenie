@@ -275,7 +275,7 @@ export default function CameraScreen() {
                 style={({ pressed }) => [styles.useVideoBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
                 onPress={handleUseVideo}
               >
-                <LinearGradient colors={['#4ADE80', '#22C55E']} style={styles.useVideoBtnInner}>
+                <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.useVideoBtnInner}>
                   <MaterialIcons name="restaurant-menu" size={20} color={theme.textOnPrimary} />
                   <Text style={styles.useVideoBtnText}>Use for Recipe</Text>
                 </LinearGradient>
@@ -774,12 +774,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: theme.backgroundTertiary,
+    backgroundColor: '#1A1A1A',
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.2)',
+    borderColor: 'rgba(212,175,55,0.2)',
   },
   webVideoBtn: {
-    borderColor: 'rgba(251,191,36,0.2)',
+    borderColor: 'rgba(255,193,7,0.2)',
   },
-  webGalleryText: { fontSize: 15, fontWeight: '600', color: theme.primary },
+  webGalleryText: { fontSize: 15, fontWeight: '600', color: '#D4AF37' },
 });

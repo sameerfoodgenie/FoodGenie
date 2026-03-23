@@ -121,10 +121,10 @@ export default function ProfileScreen() {
               <Text style={styles.title}>{name}</Text>
               <View style={styles.headerActions}>
                 <Pressable style={styles.headerIconBtn} onPress={() => router.push('/(tabs)/camera')}>
-                  <MaterialIcons name="add-box" size={26} color={theme.textPrimary} />
+                  <MaterialIcons name="add-box" size={26} color="#FFF" />
                 </Pressable>
                 <Pressable style={styles.headerIconBtn} onPress={handleLogout}>
-                  <MaterialIcons name="logout" size={22} color={theme.textMuted} />
+                  <MaterialIcons name="logout" size={22} color="#6B6B6B" />
                 </Pressable>
               </View>
             </View>
@@ -132,7 +132,7 @@ export default function ProfileScreen() {
             {/* Profile info + social stats */}
             <Animated.View entering={FadeIn.duration(400)} style={styles.profileSection}>
               <View style={styles.avatarWrap}>
-                <LinearGradient colors={[currentLevel.color, `${currentLevel.color}CC`]} style={styles.avatar}>
+                <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.avatar}>
                   <Text style={styles.avatarText}>{initials}</Text>
                 </LinearGradient>
                 <View style={[styles.levelBadge, { backgroundColor: currentLevel.color }]}>
@@ -153,7 +153,7 @@ export default function ProfileScreen() {
                   <Text style={styles.statLabel}>Following</Text>
                 </View>
                 <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: '#F87171' }]}>{totalLikes}</Text>
+                  <Text style={[styles.statValue, { color: '#D4AF37' }]}>{totalLikes}</Text>
                   <Text style={styles.statLabel}>Likes</Text>
                 </View>
               </View>
@@ -195,7 +195,7 @@ export default function ProfileScreen() {
                     </View>
                   )}
                   <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.7)', 'rgba(0,0,0,0.9)']}
+                    colors={['transparent', 'rgba(0,0,0,0.7)', 'rgba(0,0,0,0.92)']}
                     style={styles.latestPostOverlay}
                   >
                     <View style={styles.latestPostInfo}>
@@ -205,11 +205,11 @@ export default function ProfileScreen() {
                       ) : null}
                       <View style={styles.latestMeta}>
                         <View style={styles.latestMetaItem}>
-                          <MaterialIcons name="favorite" size={14} color="#F87171" />
+                          <MaterialIcons name="favorite" size={14} color="#D4AF37" />
                           <Text style={styles.latestMetaText}>{latestPost.likes}</Text>
                         </View>
                         <View style={styles.latestMetaItem}>
-                          <MaterialIcons name="chat-bubble" size={13} color={theme.textMuted} />
+                          <MaterialIcons name="chat-bubble" size={13} color="#6B6B6B" />
                           <Text style={styles.latestMetaText}>{latestPost.comments.length}</Text>
                         </View>
                       </View>
@@ -268,8 +268,8 @@ export default function ProfileScreen() {
                 style={({ pressed }) => [styles.editProfileBtn, styles.showsBtn, pressed && { opacity: 0.8 }]}
                 onPress={() => { Haptics.selectionAsync(); router.push('/shows'); }}
               >
-                <MaterialIcons name="live-tv" size={16} color={theme.primary} />
-                <Text style={[styles.editProfileText, { color: theme.primary }]}>Shows</Text>
+                <MaterialIcons name="live-tv" size={16} color="#D4AF37" />
+                <Text style={[styles.editProfileText, { color: '#D4AF37' }]}>Shows</Text>
               </Pressable>
             </Animated.View>
 
@@ -281,12 +281,12 @@ export default function ProfileScreen() {
                   onPress={handleShowsTap}
                 >
                   <LinearGradient
-                    colors={['rgba(74,222,128,0.08)', 'rgba(74,222,128,0.02)']}
+                    colors={['rgba(212,175,55,0.08)', 'rgba(212,175,55,0.02)']}
                     style={styles.creatorCardInner}
                   >
                     <View style={styles.creatorHeader}>
                       <View style={styles.creatorTitleRow}>
-                        <MaterialIcons name="auto-awesome" size={20} color={theme.primary} />
+                        <MaterialIcons name="auto-awesome" size={20} color="#D4AF37" />
                         <Text style={styles.creatorTitle}>Creator Studio</Text>
                       </View>
                       <View style={styles.creatorBadgeTag}>
@@ -307,7 +307,7 @@ export default function ProfileScreen() {
                     </View>
                     <View style={styles.creatorCta}>
                       <Text style={styles.creatorCtaText}>Open Studio</Text>
-                      <MaterialIcons name="arrow-forward" size={16} color={theme.primary} />
+                      <MaterialIcons name="arrow-forward" size={16} color="#D4AF37" />
                     </View>
                   </LinearGradient>
                 </Pressable>
@@ -315,7 +315,7 @@ export default function ProfileScreen() {
                 <View style={styles.creatorCardLocked}>
                   <View style={styles.lockHeader}>
                     <View style={styles.lockIconWrap}>
-                      <MaterialIcons name="rocket-launch" size={24} color={theme.primary} />
+                      <MaterialIcons name="rocket-launch" size={24} color="#D4AF37" />
                     </View>
                     <View style={styles.lockTitleBlock}>
                       <Text style={styles.lockTitle}>Creator Mode</Text>
@@ -330,7 +330,7 @@ export default function ProfileScreen() {
 
                   {/* Reward preview */}
                   <View style={styles.rewardPreview}>
-                    <MaterialIcons name="emoji-events" size={16} color={theme.accent} />
+                    <MaterialIcons name="emoji-events" size={16} color="#D4AF37" />
                     <Text style={styles.rewardPreviewText}>Unlock: Create Shows & gain followers</Text>
                   </View>
 
@@ -341,7 +341,7 @@ export default function ProfileScreen() {
                         <Text style={styles.progressCount}>{postCount}/5</Text>
                       </View>
                       <View style={styles.progressBarBg}>
-                        <Animated.View style={[styles.progressBarFill, { width: `${postProgress * 100}%`, backgroundColor: theme.primary }]} />
+                        <Animated.View style={[styles.progressBarFill, { width: `${postProgress * 100}%`, backgroundColor: '#D4AF37' }]} />
                       </View>
                     </View>
                     <View style={styles.progressItem}>
@@ -350,7 +350,7 @@ export default function ProfileScreen() {
                         <Text style={styles.progressCount}>{streakCount}/7 days</Text>
                       </View>
                       <View style={styles.progressBarBg}>
-                        <Animated.View style={[styles.progressBarFill, { width: `${streakProgress * 100}%`, backgroundColor: theme.accent }]} />
+                        <Animated.View style={[styles.progressBarFill, { width: `${streakProgress * 100}%`, backgroundColor: '#FFD700' }]} />
                       </View>
                     </View>
                   </View>
@@ -361,14 +361,14 @@ export default function ProfileScreen() {
             {/* Grid header */}
             <View style={styles.gridHeader}>
               <View style={styles.gridTab}>
-                <MaterialIcons name="grid-on" size={22} color={theme.textPrimary} />
+                <MaterialIcons name="grid-on" size={22} color="#FFF" />
               </View>
             </View>
           </View>
         }
         ListEmptyComponent={
           <View style={styles.emptyGrid}>
-            <MaterialIcons name="camera-alt" size={48} color={theme.textMuted} />
+            <MaterialIcons name="camera-alt" size={48} color="#6B6B6B" />
             <Text style={styles.emptyGridTitle}>No Posts Yet</Text>
             <Text style={styles.emptyGridSub}>Share your first meal!</Text>
           </View>
@@ -379,7 +379,7 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.background },
+  container: { flex: 1, backgroundColor: '#0A0A0A' },
 
   header: {
     flexDirection: 'row',
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 12,
   },
-  title: { fontSize: 22, fontWeight: '800', color: theme.textPrimary },
+  title: { fontSize: 22, fontWeight: '800', color: '#FFF' },
   headerActions: { flexDirection: 'row', gap: 16 },
   headerIconBtn: { padding: 4 },
 
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 28, fontWeight: '800', color: theme.textOnPrimary },
+  avatarText: { fontSize: 28, fontWeight: '800', color: '#0A0A0A' },
   levelBadge: {
     position: 'absolute',
     bottom: -2,
@@ -419,18 +419,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: theme.background,
+    borderColor: '#0A0A0A',
   },
   levelBadgeEmoji: { fontSize: 12 },
 
   socialStats: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
   statItem: { alignItems: 'center', gap: 2 },
-  statValue: { fontSize: 19, fontWeight: '800', color: theme.textPrimary },
-  statLabel: { fontSize: 11, fontWeight: '500', color: theme.textMuted },
+  statValue: { fontSize: 19, fontWeight: '800', color: '#FFF' },
+  statLabel: { fontSize: 11, fontWeight: '500', color: '#6B6B6B' },
 
   bioSection: { paddingHorizontal: 20, paddingBottom: 8, gap: 4 },
   bioNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  bioName: { fontSize: 15, fontWeight: '700', color: theme.textPrimary },
+  bioName: { fontSize: 15, fontWeight: '700', color: '#FFF' },
   levelTag: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -442,15 +442,15 @@ const styles = StyleSheet.create({
   },
   levelTagEmoji: { fontSize: 12 },
   levelTagText: { fontSize: 11, fontWeight: '700' },
-  bioEmail: { fontSize: 13, color: theme.textMuted },
-  bioText: { fontSize: 14, color: theme.textSecondary, marginTop: 4 },
+  bioEmail: { fontSize: 13, color: '#6B6B6B' },
+  bioText: { fontSize: 14, color: '#A0A0A0', marginTop: 4 },
 
   // Latest post hero
   latestPostSection: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
   latestLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: theme.textMuted,
+    color: '#D4AF37',
     letterSpacing: 1,
     marginBottom: 8,
   },
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
   latestPostNoImage: {
     width: '100%',
     height: '100%',
-    backgroundColor: theme.backgroundTertiary,
+    backgroundColor: '#1A1A1A',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
   },
   latestPostInfo: { gap: 4 },
   latestDishName: { fontSize: 18, fontWeight: '800', color: '#FFF' },
-  latestCaption: { fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
+  latestCaption: { fontSize: 13, color: 'rgba(255,255,255,0.65)', fontWeight: '500' },
   latestMeta: { flexDirection: 'row', gap: 14, marginTop: 4 },
   latestMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   latestMetaText: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.8)' },
@@ -502,13 +502,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: theme.backgroundTertiary,
+    backgroundColor: '#1A1A1A',
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(212,175,55,0.10)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  moreBadgesText: { fontSize: 12, fontWeight: '700', color: theme.textMuted },
+  moreBadgesText: { fontSize: 12, fontWeight: '700', color: '#6B6B6B' },
 
   actionRow: {
     flexDirection: 'row',
@@ -521,19 +521,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    borderColor: 'rgba(74,222,128,0.25)',
-    backgroundColor: 'rgba(74,222,128,0.06)',
+    borderColor: 'rgba(212,175,55,0.25)',
+    backgroundColor: 'rgba(212,175,55,0.06)',
   },
   editProfileBtn: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: theme.backgroundTertiary,
+    backgroundColor: '#1A1A1A',
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(212,175,55,0.10)',
   },
-  editProfileText: { fontSize: 14, fontWeight: '700', color: theme.textPrimary },
+  editProfileText: { fontSize: 14, fontWeight: '700', color: '#FFF' },
 
   /* Creator Section */
   creatorSection: { paddingHorizontal: 20, paddingBottom: 16 },
@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.2)',
+    borderColor: 'rgba(212,175,55,0.20)',
     gap: 14,
   },
   creatorHeader: {
@@ -551,33 +551,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   creatorTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  creatorTitle: { fontSize: 16, fontWeight: '700', color: theme.textPrimary },
+  creatorTitle: { fontSize: 16, fontWeight: '700', color: '#FFF' },
   creatorBadgeTag: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
-    backgroundColor: 'rgba(74,222,128,0.15)',
+    backgroundColor: 'rgba(212,175,55,0.12)',
   },
-  creatorBadgeText: { fontSize: 12, fontWeight: '700', color: theme.primary },
+  creatorBadgeText: { fontSize: 12, fontWeight: '700', color: '#D4AF37' },
   creatorStats: { flexDirection: 'row', gap: 24 },
   creatorStatItem: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
-  creatorStatVal: { fontSize: 20, fontWeight: '800', color: theme.textPrimary },
-  creatorStatLbl: { fontSize: 13, color: theme.textMuted, fontWeight: '500' },
+  creatorStatVal: { fontSize: 20, fontWeight: '800', color: '#FFF' },
+  creatorStatLbl: { fontSize: 13, color: '#6B6B6B', fontWeight: '500' },
   creatorCta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     alignSelf: 'flex-end',
   },
-  creatorCtaText: { fontSize: 14, fontWeight: '600', color: theme.primary },
+  creatorCtaText: { fontSize: 14, fontWeight: '600', color: '#D4AF37' },
 
   /* Locked */
   creatorCardLocked: {
     padding: 16,
     borderRadius: 16,
-    backgroundColor: theme.surface,
+    backgroundColor: '#151515',
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(212,175,55,0.12)',
     gap: 14,
   },
   lockHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -585,15 +585,15 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(74,222,128,0.1)',
+    backgroundColor: 'rgba(212,175,55,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.2)',
+    borderColor: 'rgba(212,175,55,0.15)',
   },
   lockTitleBlock: { flex: 1, gap: 3 },
-  lockTitle: { fontSize: 16, fontWeight: '700', color: theme.textPrimary },
-  lockSubtitle: { fontSize: 13, color: theme.textSecondary, fontWeight: '500', lineHeight: 18 },
+  lockTitle: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+  lockSubtitle: { fontSize: 13, color: '#A0A0A0', fontWeight: '500', lineHeight: 18 },
 
   rewardPreview: {
     flexDirection: 'row',
@@ -602,21 +602,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: 'rgba(251,191,36,0.08)',
+    backgroundColor: 'rgba(212,175,55,0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.15)',
+    borderColor: 'rgba(212,175,55,0.12)',
   },
-  rewardPreviewText: { fontSize: 13, fontWeight: '600', color: theme.accent },
+  rewardPreviewText: { fontSize: 13, fontWeight: '600', color: '#D4AF37' },
 
   progressSection: { gap: 10 },
   progressItem: { gap: 6 },
   progressLabel: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  progressText: { fontSize: 13, fontWeight: '600', color: theme.textSecondary },
-  progressCount: { fontSize: 13, fontWeight: '700', color: theme.textPrimary },
+  progressText: { fontSize: 13, fontWeight: '600', color: '#A0A0A0' },
+  progressCount: { fontSize: 13, fontWeight: '700', color: '#FFF' },
   progressBarBg: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: theme.backgroundTertiary,
+    backgroundColor: '#1A1A1A',
     overflow: 'hidden',
   },
   progressBarFill: { height: '100%', borderRadius: 3 },
@@ -626,26 +626,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     borderTopWidth: 1,
-    borderTopColor: theme.border,
+    borderTopColor: 'rgba(212,175,55,0.10)',
     borderBottomWidth: 1,
-    borderBottomColor: theme.border,
+    borderBottomColor: 'rgba(212,175,55,0.10)',
   },
   gridTab: {
     paddingVertical: 12,
     paddingHorizontal: 32,
     borderBottomWidth: 2,
-    borderBottomColor: theme.textPrimary,
+    borderBottomColor: '#D4AF37',
   },
   gridItem: { width: GRID_SIZE, height: GRID_SIZE, overflow: 'hidden' },
   gridImage: { width: '100%', height: '100%' },
   gridNoImage: {
     width: '100%',
     height: '100%',
-    backgroundColor: theme.backgroundTertiary,
+    backgroundColor: '#1A1A1A',
     alignItems: 'center',
     justifyContent: 'center',
   },
   emptyGrid: { alignItems: 'center', paddingTop: 60, gap: 8 },
-  emptyGridTitle: { fontSize: 18, fontWeight: '700', color: theme.textPrimary },
-  emptyGridSub: { fontSize: 14, color: theme.textMuted },
+  emptyGridTitle: { fontSize: 18, fontWeight: '700', color: '#FFF' },
+  emptyGridSub: { fontSize: 14, color: '#6B6B6B' },
 });

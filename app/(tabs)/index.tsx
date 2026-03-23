@@ -16,7 +16,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn, FadeInRight, FadeInDown, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../constants/theme';
 import { usePosts, FoodPost, CreatorType } from '../../contexts/PostContext';
@@ -61,16 +61,6 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-function timeAgo(ts: number): string {
-  const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'now';
-  if (mins < 60) return `${mins}m`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h`;
-  return `${Math.floor(hrs / 24)}d`;
-}
-
 // ─── Action Button ───
 function ActionButton({
   icon,
@@ -96,7 +86,7 @@ function ActionButton({
       <MaterialIcons
         name={isActive && activeIcon ? activeIcon : icon}
         size={28}
-        color={isActive ? (activeColor || '#F87171') : '#FFF'}
+        color={isActive ? (activeColor || '#D4AF37') : '#FFF'}
       />
       {count !== undefined ? (
         <Text style={styles.actionCount}>{formatCount(count)}</Text>
@@ -132,10 +122,8 @@ function ReelCard({
   const isHomeMasterChef = post.creatorType === 'home_master_chef';
   return (
     <View style={[styles.reelCard, { height: cardHeight }]}>
-      {/* Tap to open detail */}
       <Pressable style={StyleSheet.absoluteFill} onPress={onTap} />
 
-      {/* Full-screen image */}
       {post.imageUri ? (
         <Image
           source={{ uri: post.imageUri }}
@@ -150,22 +138,21 @@ function ReelCard({
         </View>
       )}
 
-      {/* Bottom gradient overlay */}
+      {/* Bottom gradient */}
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.15)', 'rgba(0,0,0,0.65)', 'rgba(0,0,0,0.88)']}
-        locations={[0, 0.4, 0.7, 1]}
+        colors={['transparent', 'rgba(0,0,0,0.10)', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.92)']}
+        locations={[0, 0.35, 0.65, 1]}
         style={styles.bottomGradient}
       />
 
-      {/* Top subtle gradient */}
+      {/* Top gradient */}
       <LinearGradient
-        colors={['rgba(0,0,0,0.4)', 'rgba(0,0,0,0.1)', 'transparent']}
+        colors={['rgba(0,0,0,0.5)', 'rgba(0,0,0,0.15)', 'transparent']}
         style={styles.topGradient}
       />
 
       {/* ─── Right Action Bar ─── */}
       <View style={styles.actionBar} pointerEvents="box-none">
-        {/* Profile avatar */}
         <Pressable
           onPress={onProfile}
           style={({ pressed }) => [styles.actionAvatarWrap, pressed && { opacity: 0.8 }]}
@@ -179,7 +166,7 @@ function ReelCard({
           icon="favorite-border"
           activeIcon="favorite"
           isActive={post.isLiked}
-          activeColor="#F87171"
+          activeColor="#D4AF37"
           count={post.likes}
           onPress={onLike}
         />
@@ -196,7 +183,7 @@ function ReelCard({
           icon="bookmark-border"
           activeIcon="bookmark"
           isActive={post.isSaved}
-          activeColor={theme.accent}
+          activeColor="#FFD700"
           onPress={onSave}
         />
       </View>
@@ -207,7 +194,7 @@ function ReelCard({
         <Pressable onPress={onProfile} hitSlop={8} style={styles.usernameRow}>
           <Text style={styles.reelUsername}>@{post.username}</Text>
           {post.isVerified ? (
-            <MaterialIcons name="verified" size={16} color="#3B82F6" />
+            <MaterialIcons name="verified" size={16} color="#D4AF37" />
           ) : null}
           {(() => {
             const badge = getCreatorBadge(post.creatorType);
@@ -228,41 +215,37 @@ function ReelCard({
           <Text style={styles.reelCaption} numberOfLines={2}>{post.caption}</Text>
         ) : null}
 
-        {/* Show reference for Home Master Chef */}
+        {/* Show reference */}
         {isHomeMasterChef && post.showName ? (
           <View style={styles.showRefRow}>
-            <MaterialIcons name="movie-creation" size={13} color="rgba(255,255,255,0.7)" />
+            <MaterialIcons name="movie-creation" size={13} color="rgba(212,175,55,0.8)" />
             <Text style={styles.showRefText}>From Show: {post.showName}</Text>
           </View>
         ) : null}
 
-        {/* Tags row */}
+        {/* Tags row — gold pill style */}
         <View style={styles.tagsRow}>
-          {/* Source badge */}
           <View style={styles.tagBadge}>
             <Text style={styles.tagBadgeEmoji}>{SOURCE_ICON[post.source]}</Text>
             <Text style={styles.tagBadgeText}>{SOURCE_LABEL[post.source]}</Text>
           </View>
 
-          {/* Meal type badge */}
           <View style={styles.tagBadge}>
             <Text style={styles.tagBadgeEmoji}>{MEAL_EMOJI[post.mealType]}</Text>
             <Text style={styles.tagBadgeText}>{MEAL_LABEL[post.mealType]}</Text>
           </View>
 
-          {/* Location */}
           {post.location ? (
             <View style={styles.tagBadge}>
-              <MaterialIcons name="place" size={12} color="rgba(255,255,255,0.8)" />
+              <MaterialIcons name="place" size={12} color="#D4AF37" />
               <Text style={styles.tagBadgeText}>{post.location}</Text>
             </View>
           ) : null}
 
-          {/* Restaurant */}
           {post.restaurantName ? (
             <View style={[styles.tagBadge, styles.tagBadgeAccent]}>
-              <MaterialIcons name="storefront" size={12} color={theme.primary} />
-              <Text style={[styles.tagBadgeText, { color: theme.primary }]}>{post.restaurantName}</Text>
+              <MaterialIcons name="storefront" size={12} color="#FFD700" />
+              <Text style={[styles.tagBadgeText, { color: '#FFD700' }]}>{post.restaurantName}</Text>
             </View>
           ) : null}
         </View>
@@ -283,8 +266,8 @@ function ReelCard({
               style={({ pressed }) => [styles.chefActionBtn, styles.chefFollowBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.96 }] }]}
               onPress={onFollowChef}
             >
-              <MaterialIcons name="person-add" size={14} color={theme.primary} />
-              <Text style={[styles.chefActionText, { color: theme.primary }]}>Follow Chef</Text>
+              <MaterialIcons name="person-add" size={14} color="#D4AF37" />
+              <Text style={[styles.chefActionText, { color: '#D4AF37' }]}>Follow Chef</Text>
             </Pressable>
           </View>
         ) : null}
@@ -302,7 +285,6 @@ export default function HomeScreen() {
   const commentInputRef = useRef<TextInput>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Calculate card height: full screen minus tab bar
   const tabBarHeight = Platform.select({
     ios: insets.bottom + 60,
     android: insets.bottom + 60,
@@ -374,7 +356,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* ─── Header overlay ─── */}
+      {/* Header overlay */}
       <View style={[styles.headerOverlay, { paddingTop: insets.top + 8 }]}>
         <Text style={styles.appTitle}>FoodGenie</Text>
         <Pressable
@@ -385,7 +367,7 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      {/* ─── Reels Feed ─── */}
+      {/* Reels Feed */}
       <FlatList
         data={posts}
         keyExtractor={item => item.id}
@@ -411,7 +393,7 @@ export default function HomeScreen() {
               style={styles.emptyBtn}
               onPress={() => router.push('/(tabs)/camera')}
             >
-              <LinearGradient colors={['#4ADE80', '#22C55E']} style={styles.emptyBtnGrad}>
+              <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.emptyBtnGrad}>
                 <Text style={styles.emptyBtnText}>Create Post</Text>
               </LinearGradient>
             </Pressable>
@@ -419,7 +401,7 @@ export default function HomeScreen() {
         }
       />
 
-      {/* ─── Comment input overlay ─── */}
+      {/* Comment input overlay */}
       {commentingPostId ? (
         <Animated.View
           entering={FadeIn.duration(200)}
@@ -432,7 +414,7 @@ export default function HomeScreen() {
             value={commentText}
             onChangeText={setCommentText}
             placeholder="Add a comment..."
-            placeholderTextColor="rgba(255,255,255,0.4)"
+            placeholderTextColor="rgba(255,255,255,0.35)"
             returnKeyType="send"
             onSubmitEditing={handleSubmitComment}
             autoFocus
@@ -441,7 +423,7 @@ export default function HomeScreen() {
             onPress={handleSubmitComment}
             style={({ pressed }) => [styles.commentSendBtn, pressed && { opacity: 0.7 }]}
           >
-            <MaterialIcons name="send" size={20} color={commentText.trim() ? theme.primary : 'rgba(255,255,255,0.3)'} />
+            <MaterialIcons name="send" size={20} color={commentText.trim() ? '#D4AF37' : 'rgba(255,255,255,0.25)'} />
           </Pressable>
           <Pressable
             onPress={() => { setCommentingPostId(null); setCommentText(''); }}
@@ -458,10 +440,10 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#0A0A0A',
   },
 
-  // Header overlay
+  // Header
   headerOverlay: {
     position: 'absolute',
     top: 0,
@@ -477,26 +459,28 @@ const styles = StyleSheet.create({
   appTitle: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#FFF',
-    letterSpacing: -0.5,
-    textShadowColor: 'rgba(0,0,0,0.5)',
+    color: '#D4AF37',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 6,
+    textShadowRadius: 8,
   },
   headerBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.10)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.15)',
   },
 
   // Reel card
   reelCard: {
     width: SCREEN_W,
     position: 'relative',
-    backgroundColor: '#000',
+    backgroundColor: '#0A0A0A',
   },
   reelImage: {
     ...StyleSheet.absoluteFillObject,
@@ -505,7 +489,7 @@ const styles = StyleSheet.create({
   },
   reelNoImage: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#111',
+    backgroundColor: '#0A0A0A',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -516,7 +500,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: '55%',
+    height: '60%',
   },
   topGradient: {
     position: 'absolute',
@@ -543,7 +527,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#FFF',
-    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowColor: 'rgba(0,0,0,0.6)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
@@ -554,11 +538,11 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(212,175,55,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#FFF',
+    borderColor: '#D4AF37',
   },
   actionAvatarText: {
     fontSize: 14,
@@ -585,7 +569,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
     color: '#FFF',
-    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 6,
   },
@@ -605,21 +589,21 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#FFF',
     letterSpacing: -0.3,
-    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 8,
   },
   reelCaption: {
     fontSize: 14,
     fontWeight: '500',
-    color: 'rgba(255,255,255,0.85)',
+    color: 'rgba(255,255,255,0.80)',
     lineHeight: 20,
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
 
-  // Tags
+  // Gold pill tags
   tagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -633,12 +617,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(212,175,55,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.20)',
   },
   tagBadgeAccent: {
-    backgroundColor: 'rgba(74,222,128,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.25)',
+    backgroundColor: 'rgba(255,215,0,0.12)',
+    borderColor: 'rgba(255,215,0,0.25)',
   },
   tagBadgeEmoji: {
     fontSize: 11,
@@ -646,7 +631,7 @@ const styles = StyleSheet.create({
   tagBadgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.9)',
+    color: '#D4AF37',
   },
 
   // Show reference
@@ -659,7 +644,7 @@ const styles = StyleSheet.create({
   showRefText: {
     fontSize: 12,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.65)',
+    color: 'rgba(212,175,55,0.7)',
     fontStyle: 'italic',
   },
 
@@ -676,13 +661,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.10)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    borderColor: 'rgba(255,255,255,0.12)',
   },
   chefFollowBtn: {
-    backgroundColor: 'rgba(74,222,128,0.12)',
-    borderColor: 'rgba(74,222,128,0.25)',
+    backgroundColor: 'rgba(212,175,55,0.10)',
+    borderColor: 'rgba(212,175,55,0.25)',
   },
   chefActionText: {
     fontSize: 12,
@@ -698,14 +683,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyTitle: { fontSize: 22, fontWeight: '800', color: '#FFF' },
-  emptySub: { fontSize: 15, color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 22 },
+  emptySub: { fontSize: 15, color: 'rgba(255,255,255,0.45)', textAlign: 'center', lineHeight: 22 },
   emptyBtn: { marginTop: 12, borderRadius: 16, overflow: 'hidden' },
   emptyBtnGrad: {
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 16,
   },
-  emptyBtnText: { fontSize: 16, fontWeight: '700', color: '#0A0A0F' },
+  emptyBtnText: { fontSize: 16, fontWeight: '700', color: '#0A0A0A' },
 
   // Comment bar
   commentBar: {
@@ -718,20 +703,20 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingTop: 12,
-    backgroundColor: 'rgba(0,0,0,0.85)',
+    backgroundColor: 'rgba(10,10,10,0.9)',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
+    borderTopColor: 'rgba(212,175,55,0.10)',
   },
   commentInput: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 15,
     color: '#FFF',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(212,175,55,0.12)',
   },
   commentSendBtn: { padding: 8 },
   commentCloseBtn: { padding: 8 },

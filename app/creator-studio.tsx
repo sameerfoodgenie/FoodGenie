@@ -34,7 +34,7 @@ function ShowCard({ show, onPress, onDelete }: { show: CreatorShow; onPress: () 
         {show.coverUri ? (
           <Image source={{ uri: show.coverUri }} style={styles.showCoverImage} contentFit="cover" transition={200} />
         ) : (
-          <LinearGradient colors={['#1E1E26', '#2A2A35']} style={styles.showCoverPlaceholder}>
+          <LinearGradient colors={['#1A1A1A', '#121212']} style={styles.showCoverPlaceholder}>
             <MaterialIcons name="movie-creation" size={32} color={theme.textMuted} />
           </LinearGradient>
         )}
@@ -128,7 +128,7 @@ export default function CreatorStudioScreen() {
         {/* Stats banner */}
         <Animated.View entering={FadeIn.duration(400)} style={styles.statsBanner}>
           <LinearGradient
-            colors={['rgba(74,222,128,0.08)', 'rgba(74,222,128,0.02)']}
+            colors={['rgba(212,175,55,0.08)', 'rgba(212,175,55,0.02)']}
             style={styles.statsBannerInner}
           >
             <View style={styles.statItem}>
@@ -145,7 +145,7 @@ export default function CreatorStudioScreen() {
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <View style={styles.creatorBadge}>
-                <MaterialIcons name="auto-awesome" size={14} color={theme.primary} />
+                <MaterialIcons name="auto-awesome" size={14} color="#D4AF37" />
                 <Text style={styles.creatorBadgeText}>Creator</Text>
               </View>
               <Text style={styles.statLabel}>Status</Text>
@@ -184,7 +184,7 @@ export default function CreatorStudioScreen() {
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/upload-recipe'); }}
             >
               <View style={styles.fabSecondaryInner}>
-                <MaterialIcons name="videocam" size={20} color={theme.primary} />
+                <MaterialIcons name="videocam" size={20} color="#D4AF37" />
                 <Text style={styles.fabSecondaryText}>Upload Recipe</Text>
               </View>
             </Pressable>
@@ -192,7 +192,7 @@ export default function CreatorStudioScreen() {
               style={({ pressed }) => [styles.fab, { flex: 1 }, pressed && { opacity: 0.85, transform: [{ scale: 0.95 }] }]}
               onPress={handleCreateShow}
             >
-              <LinearGradient colors={['#4ADE80', '#22C55E']} style={styles.fabGradient}>
+              <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.fabGradient}>
                 <MaterialIcons name="add" size={24} color={theme.textOnPrimary} />
                 <Text style={styles.fabText}>New Show</Text>
               </LinearGradient>
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.15)',
+    borderColor: 'rgba(212,175,55,0.15)',
   },
   statItem: { flex: 1, alignItems: 'center', gap: 4 },
   statValue: { fontSize: 22, fontWeight: '800', color: theme.textPrimary },
@@ -250,9 +250,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: 'rgba(74,222,128,0.1)',
+    backgroundColor: 'rgba(212,175,55,0.10)',
   },
-  creatorBadgeText: { fontSize: 13, fontWeight: '700', color: theme.primary },
+  creatorBadgeText: { fontSize: 13, fontWeight: '700', color: '#D4AF37' },
 
   listContent: { paddingHorizontal: 16, paddingTop: 16 },
 
@@ -325,8 +325,8 @@ const styles = StyleSheet.create({
   fab: { borderRadius: 16, overflow: 'hidden', ...theme.shadows.colored },
   fabSecondary: {
     borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.25)',
-    backgroundColor: 'rgba(74,222,128,0.06)',
+    borderColor: 'rgba(212,175,55,0.25)',
+    backgroundColor: 'rgba(212,175,55,0.06)',
   },
   fabSecondaryInner: {
     flexDirection: 'row',
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 16,
   },
-  fabSecondaryText: { fontSize: 14, fontWeight: '700', color: theme.primary },
+  fabSecondaryText: { fontSize: 14, fontWeight: '700', color: '#D4AF37' },
   fabGradient: {
     flexDirection: 'row',
     alignItems: 'center',

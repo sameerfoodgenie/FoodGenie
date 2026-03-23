@@ -1,53 +1,57 @@
 // FoodGenie Design System
-// Dark premium, camera-first, Gen-Z inspired
+// Premium Luxury — Black + Gold + Yellow
 
 export const theme = {
-  // Primary - Vibrant Green (health/freshness)
-  primary: '#4ADE80',
-  primaryLight: '#86EFAC',
-  primaryDark: '#22C55E',
+  // Primary - Rich Gold
+  primary: '#D4AF37',
+  primaryLight: '#FFD700',
+  primaryDark: '#B8960C',
 
-  // Accent - Warm Gold (scores, streaks)
-  accent: '#FBBF24',
-  accentLight: '#FDE68A',
-  accentDark: '#F59E0B',
+  // Accent - Warm Yellow
+  accent: '#FFC107',
+  accentLight: '#FFE082',
+  accentDark: '#FFA000',
 
   // Trust Colors
   success: '#4ADE80',
-  warning: '#FBBF24',
-  error: '#F87171',
+  warning: '#FFC107',
+  error: '#FF3B30',
 
-  // Backgrounds - Deep dark
-  background: '#0A0A0F',
-  backgroundSecondary: '#141419',
-  backgroundTertiary: '#1E1E26',
-  surface: '#1A1A22',
+  // Backgrounds - Deep black luxury
+  background: '#0A0A0A',
+  backgroundSecondary: '#121212',
+  backgroundTertiary: '#1A1A1A',
+  surface: '#151515',
 
   // Text
-  textPrimary: '#F5F5F7',
-  textSecondary: '#9CA3AF',
-  textMuted: '#6B7280',
-  textOnPrimary: '#0A0A0F',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#A0A0A0',
+  textMuted: '#6B6B6B',
+  textOnPrimary: '#0A0A0A',
 
   // Borders
-  border: 'rgba(255,255,255,0.08)',
+  border: 'rgba(212,175,55,0.10)',
   borderLight: 'rgba(255,255,255,0.05)',
 
   // Gradients
   gradients: {
-    genie: ['#4ADE80', '#22C55E', '#16A34A'],
-    genieReverse: ['#16A34A', '#22C55E', '#4ADE80'],
-    gold: ['#FDE68A', '#FBBF24', '#F59E0B'],
-    accent: ['#FBBF24', '#F59E0B'],
-    trust: ['#4ADE80', '#22C55E'],
-    background: ['#0A0A0F', '#141419'],
-    vibrant: ['#4ADE80', '#22C55E', '#86EFAC'],
-    sunset: ['#F87171', '#FB923C', '#FBBF24'],
-    card: ['rgba(26,26,34,0.95)', 'rgba(26,26,34,0.98)'],
-    premium: ['#141419', '#1A1A22'],
-    goldShine: ['#FDE68A', '#FBBF24', '#F59E0B', '#D97706'],
-    glass: ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)'],
-    cameraBtn: ['#4ADE80', '#22C55E'],
+    gold: ['#D4AF37', '#FFD700'],
+    goldReverse: ['#FFD700', '#D4AF37'],
+    goldShine: ['#FFE082', '#FFD700', '#D4AF37', '#B8960C'],
+    goldSubtle: ['rgba(212,175,55,0.12)', 'rgba(212,175,55,0.04)'],
+    accent: ['#FFC107', '#FFA000'],
+    trust: ['#D4AF37', '#B8960C'],
+    background: ['#0A0A0A', '#121212'],
+    vibrant: ['#FFD700', '#D4AF37', '#B8960C'],
+    sunset: ['#FF3B30', '#FF6B3A', '#FFC107'],
+    card: ['rgba(21,21,21,0.95)', 'rgba(21,21,21,0.98)'],
+    premium: ['#121212', '#1A1A1A'],
+    glass: ['rgba(212,175,55,0.06)', 'rgba(255,255,255,0.02)'],
+    cameraBtn: ['#D4AF37', '#FFD700'],
+    darkOverlay: ['transparent', 'rgba(0,0,0,0.85)'],
+    // Legacy compat
+    genie: ['#D4AF37', '#FFD700', '#B8960C'],
+    genieReverse: ['#B8960C', '#FFD700', '#D4AF37'],
   },
 
   // Shadows
@@ -55,47 +59,55 @@ export const theme = {
     card: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
+      shadowOpacity: 0.4,
       shadowRadius: 12,
-      elevation: 3,
+      elevation: 4,
     },
     cardElevated: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.4,
+      shadowOpacity: 0.5,
       shadowRadius: 20,
-      elevation: 6,
+      elevation: 8,
     },
-    genie: {
-      shadowColor: '#4ADE80',
+    goldGlow: {
+      shadowColor: '#D4AF37',
       shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.3,
-      shadowRadius: 20,
+      shadowOpacity: 0.35,
+      shadowRadius: 16,
       elevation: 10,
     },
     heavy: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 16 },
-      shadowOpacity: 0.5,
+      shadowOpacity: 0.6,
       shadowRadius: 32,
       elevation: 14,
     },
     colored: {
-      shadowColor: '#4ADE80',
-      shadowOffset: { width: 0, height: 6 },
+      shadowColor: '#D4AF37',
+      shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.2,
-      shadowRadius: 14,
+      shadowRadius: 12,
       elevation: 5,
     },
-    goldGlow: {
-      shadowColor: '#FBBF24',
+    neonGold: {
+      shadowColor: '#FFD700',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.4,
+      shadowRadius: 20,
+      elevation: 8,
+    },
+    // Legacy compat
+    genie: {
+      shadowColor: '#D4AF37',
       shadowOffset: { width: 0, height: 0 },
       shadowOpacity: 0.3,
       shadowRadius: 20,
-      elevation: 12,
+      elevation: 10,
     },
     neonGreen: {
-      shadowColor: '#4ADE80',
+      shadowColor: '#D4AF37',
       shadowOffset: { width: 0, height: 0 },
       shadowOpacity: 0.4,
       shadowRadius: 24,

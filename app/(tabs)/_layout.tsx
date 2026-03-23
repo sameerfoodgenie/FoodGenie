@@ -15,16 +15,16 @@ import { theme } from '../../constants/theme';
 
 function GlowingPlusButton({ focused }: { focused: boolean }) {
   const glowScale = useSharedValue(1);
-  const glowOpacity = useSharedValue(0.3);
+  const glowOpacity = useSharedValue(0.25);
 
   useEffect(() => {
     glowScale.value = withRepeat(
-      withTiming(1.4, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1.35, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
       -1,
       true,
     );
     glowOpacity.value = withRepeat(
-      withTiming(0.6, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+      withTiming(0.55, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
       -1,
       true,
     );
@@ -37,16 +37,15 @@ function GlowingPlusButton({ focused }: { focused: boolean }) {
 
   return (
     <View style={styles.postTabWrap}>
-      {/* Animated glow ring */}
       <Animated.View style={[styles.glowRing, glowStyle]} />
       <LinearGradient
-        colors={focused ? ['#4ADE80', '#22C55E'] : ['#2A2A35', '#22222A']}
+        colors={focused ? ['#FFD700', '#D4AF37'] : ['#1A1A1A', '#151515']}
         style={styles.postTabBtn}
       >
         <MaterialIcons
           name="add"
           size={32}
-          color={focused ? theme.textOnPrimary : theme.textSecondary}
+          color={focused ? '#0A0A0A' : '#A0A0A0'}
         />
       </LinearGradient>
     </View>
@@ -69,9 +68,9 @@ export default function TabLayout() {
       default: 6,
     }),
     paddingHorizontal: 32,
-    backgroundColor: theme.background,
+    backgroundColor: '#0A0A0A',
     borderTopWidth: 1,
-    borderTopColor: theme.border,
+    borderTopColor: 'rgba(212,175,55,0.08)',
   };
 
   return (
@@ -79,8 +78,8 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle,
-        tabBarActiveTintColor: theme.textPrimary,
-        tabBarInactiveTintColor: theme.textMuted,
+        tabBarActiveTintColor: '#D4AF37',
+        tabBarInactiveTintColor: '#6B6B6B',
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
@@ -144,7 +143,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 20,
-    backgroundColor: 'rgba(74,222,128,0.2)',
+    backgroundColor: 'rgba(212,175,55,0.25)',
   },
   postTabBtn: {
     width: 56,
@@ -153,8 +152,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(74,222,128,0.3)',
-    shadowColor: '#4ADE80',
+    borderColor: 'rgba(212,175,55,0.35)',
+    shadowColor: '#D4AF37',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.4,
     shadowRadius: 16,
