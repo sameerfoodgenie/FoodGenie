@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { theme } from '../../constants/theme';
+import OnboardingWalkthrough, { useOnboardingStatus } from '../../components/OnboardingWalkthrough';
 
 function GlowingPlusButton({ focused }: { focused: boolean }) {
   const glowScale = useSharedValue(1);
@@ -54,6 +55,19 @@ function GlowingPlusButton({ focused }: { focused: boolean }) {
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { hasCompleted, markComplete } = useOnboardingStatus();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (hasCompleted === false) {
+      setShowOnboarding(true);
+    }
+  }, [hasCompleted]);
+
+  const handleOnboardingComplete = () => {
+    markComplete();
+    setShowOnboarding(false);
+  };
 
   const tabBarStyle = {
     height: Platform.select({
@@ -74,6 +88,7 @@ export default function TabLayout() {
   };
 
   return (
+    <View style={{ flex: 1 }}>
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -129,6 +144,10 @@ export default function TabLayout() {
       <Tabs.Screen name="plans" options={{ href: null }} />
       <Tabs.Screen name="cart" options={{ href: null }} />
     </Tabs>
+    {showOnboarding ? (
+      <OnboardingWalkthrough onComplete={handleOnboardingComplete} />
+    ) : null}
+    </View>
   );
 }
 

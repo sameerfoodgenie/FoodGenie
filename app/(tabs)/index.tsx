@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,9 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../constants/theme';
+import { useOnboardingStatus } from '../../components/OnboardingWalkthrough';
 import { usePosts, FoodPost, CreatorType } from '../../contexts/PostContext';
 import { CREATOR_TIERS } from '../../contexts/CreatorContext';
 
@@ -284,6 +286,21 @@ export default function HomeScreen() {
   const [commentText, setCommentText] = useState('');
   const commentInputRef = useRef<TextInput>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const { hasCompleted: onboardingDone } = useOnboardingStatus();
+  const [taskDismissed, setTaskDismissed] = useState(true);
+
+  useEffect(() => {
+    AsyncStorage.getItem('foodgenie_first_task_dismissed').then(val => {
+      setTaskDismissed(val === 'true');
+    });
+  }, []);
+
+  const showFirstTask = onboardingDone === true && !taskDismissed && posts.length < 1;
+
+  const dismissTask = useCallback(() => {
+    setTaskDismissed(true);
+    AsyncStorage.setItem('foodgenie_first_task_dismissed', 'true');
+  }, []);
 
   const tabBarHeight = Platform.select({
     ios: insets.bottom + 60,
@@ -400,6 +417,35 @@ export default function HomeScreen() {
           </View>
         }
       />
+
+      {/* First Task Banner */}
+      {showFirstTask ? (
+        <Animated.View
+          entering={FadeIn.duration(400)}
+          exiting={FadeOut.duration(200)}
+          style={[styles.taskBanner, { top: insets.top + 56 }]}
+        >
+          <LinearGradient
+            colors={['rgba(212,175,55,0.12)', 'rgba(212,175,55,0.04)']}
+            style={styles.taskBannerInner}
+          >
+            <View style={styles.taskBannerIcon}>
+              <MaterialIcons name="restaurant" size={18} color="#D4AF37" />
+            </View>
+            <View style={styles.taskBannerContent}>
+              <Text style={styles.taskBannerTitle}>Post your first meal</Text>
+              <Text style={styles.taskBannerDesc}>Tap + to share what you ate today</Text>
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.taskBannerClose, pressed && { opacity: 0.6 }]}
+              onPress={dismissTask}
+              hitSlop={10}
+            >
+              <MaterialIcons name="close" size={16} color="#6B6B6B" />
+            </Pressable>
+          </LinearGradient>
+        </Animated.View>
+      ) : null}
 
       {/* Comment input overlay */}
       {commentingPostId ? (
@@ -720,4 +766,41 @@ const styles = StyleSheet.create({
   },
   commentSendBtn: { padding: 8 },
   commentCloseBtn: { padding: 8 },
+
+  // Task banner
+  taskBanner: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    zIndex: 40,
+  },
+  taskBannerInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.15)',
+  },
+  taskBannerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(212,175,55,0.10)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  taskBannerContent: { flex: 1, gap: 2 },
+  taskBannerTitle: { fontSize: 15, fontWeight: '700', color: '#FFF' },
+  taskBannerDesc: { fontSize: 12, fontWeight: '500', color: '#A0A0A0' },
+  taskBannerClose: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
