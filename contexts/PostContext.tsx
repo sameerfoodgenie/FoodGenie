@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 
 export interface Story {
   id: string;
@@ -53,6 +53,7 @@ export interface FoodPost {
 
 interface PostContextType {
   posts: FoodPost[];
+  feedPosts: FoodPost[];
   myPosts: FoodPost[];
   addPost: (post: Omit<FoodPost, 'id' | 'likes' | 'isLiked' | 'isSaved' | 'comments'>) => void;
   toggleLike: (postId: string) => void;
@@ -62,6 +63,12 @@ interface PostContextType {
   totalPosts: number;
   storyGroups: StoryGroup[];
   markStorySeen: (userId: string) => void;
+  // Follow system
+  followedUserIds: Set<string>;
+  toggleFollow: (userId: string) => void;
+  isFollowing: (userId: string) => boolean;
+  followingCount: number;
+  followerCount: number;
 }
 
 const PostContext = createContext<PostContextType | undefined>(undefined);
@@ -242,8 +249,45 @@ const SAMPLE_STORIES: StoryGroup[] = [
 export function PostProvider({ children }: { children: ReactNode }) {
   const [posts, setPosts] = useState<FoodPost[]>(SAMPLE_POSTS);
   const [storyGroups, setStoryGroups] = useState<StoryGroup[]>(SAMPLE_STORIES);
+  const [followedUserIds, setFollowedUserIds] = useState<Set<string>>(new Set());
 
   const myPosts = posts.filter(p => p.userId === 'me');
+
+  // Feed sorted: followed creators first, then by timestamp
+  const feedPosts = useMemo(() => {
+    if (followedUserIds.size === 0) return posts;
+    const followed: FoodPost[] = [];
+    const others: FoodPost[] = [];
+    for (const p of posts) {
+      if (followedUserIds.has(p.userId)) {
+        followed.push(p);
+      } else {
+        others.push(p);
+      }
+    }
+    return [...followed, ...others];
+  }, [posts, followedUserIds]);
+
+  // Follow system
+  const toggleFollow = useCallback((userId: string) => {
+    setFollowedUserIds(prev => {
+      const next = new Set(prev);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
+      return next;
+    });
+  }, []);
+
+  const isFollowing = useCallback((userId: string) => {
+    return followedUserIds.has(userId);
+  }, [followedUserIds]);
+
+  const followingCount = followedUserIds.size;
+  // Simulated follower count (base + activity)
+  const followerCount = 128;
 
   const addPost = useCallback((post: Omit<FoodPost, 'id' | 'likes' | 'isLiked' | 'isSaved' | 'comments'>) => {
     const newPost: FoodPost = {
@@ -300,7 +344,11 @@ export function PostProvider({ children }: { children: ReactNode }) {
   const totalPosts = myPosts.length;
 
   return (
-    <PostContext.Provider value={{ posts, myPosts, addPost, toggleLike, toggleSave, addComment, streak, totalPosts, storyGroups, markStorySeen }}>
+    <PostContext.Provider value={{
+      posts, feedPosts, myPosts, addPost, toggleLike, toggleSave, addComment,
+      streak, totalPosts, storyGroups, markStorySeen,
+      followedUserIds, toggleFollow, isFollowing, followingCount, followerCount,
+    }}>
       {children}
     </PostContext.Provider>
   );

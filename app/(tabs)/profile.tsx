@@ -30,7 +30,7 @@ const GRID_SIZE = (SCREEN_WIDTH - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS;
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { posts, streak, totalPosts } = usePosts();
+  const { posts, streak, totalPosts, followingCount, followerCount } = usePosts();
   const { todayMeals } = useMeals();
   const { showAlert } = useAlert();
   const { user, logout } = useAuth();
@@ -145,11 +145,11 @@ export default function ProfileScreen() {
                   <Text style={styles.statLabel}>Posts</Text>
                 </View>
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>128</Text>
+                  <Text style={styles.statValue}>{followerCount}</Text>
                   <Text style={styles.statLabel}>Followers</Text>
                 </View>
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>89</Text>
+                  <Text style={styles.statValue}>{followingCount}</Text>
                   <Text style={styles.statLabel}>Following</Text>
                 </View>
                 <View style={styles.statItem}>

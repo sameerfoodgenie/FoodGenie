@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../constants/theme';
+import { usePosts } from '../../contexts/PostContext';
 import {
   useCreator,
   CREATOR_TIERS,
@@ -57,7 +58,7 @@ function timeAgoShort(ts: number): string {
 }
 
 // ─── Trending Home Chef Card ───
-function TrendingChefCard({ creator, rank, onPress }: { creator: TopCreator; rank: number; onPress: () => void }) {
+function TrendingChefCard({ creator, rank, isFollowed, onFollow, onPress }: { creator: TopCreator; rank: number; isFollowed: boolean; onFollow: () => void; onPress: () => void }) {
   const tier = getTierInfo(creator.creatorType);
 
   return (
@@ -83,11 +84,17 @@ function TrendingChefCard({ creator, rank, onPress }: { creator: TopCreator; ran
       <Text style={styles.chefFollowersLabel}>followers</Text>
       <Pressable
         style={({ pressed }) => [styles.chefFollowBtn, pressed && { opacity: 0.8 }]}
-        onPress={(e) => { e.stopPropagation(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onPress(); }}
+        onPress={(e) => { e.stopPropagation(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onFollow(); }}
       >
-        <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.chefFollowBtnGrad}>
-          <Text style={styles.chefFollowText}>Follow</Text>
-        </LinearGradient>
+        {isFollowed ? (
+          <View style={styles.chefFollowingBtnInner}>
+            <Text style={styles.chefFollowingText}>Following</Text>
+          </View>
+        ) : (
+          <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.chefFollowBtnGrad}>
+            <Text style={styles.chefFollowText}>Follow</Text>
+          </LinearGradient>
+        )}
       </Pressable>
     </Pressable>
   );
@@ -241,10 +248,16 @@ export default function LearnScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { liveSessions, trendingShows, topCreators, newCreators } = useCreator();
+  const { toggleFollow, isFollowing } = usePosts();
 
   const liveNow = liveSessions.filter(s => s.isLive);
   const upcoming = liveSessions.filter(s => !s.isLive).slice(0, 3);
   const allSessions = [...liveNow, ...upcoming];
+
+  const handleFollow = useCallback((userId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    toggleFollow(userId);
+  }, [toggleFollow]);
 
   const handleSessionPress = useCallback((session: LiveSession) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -311,6 +324,8 @@ export default function LearnScreen() {
                 <TrendingChefCard
                   creator={creator}
                   rank={i + 1}
+                  isFollowed={isFollowing(creator.id)}
+                  onFollow={() => handleFollow(creator.id)}
                   onPress={() => Haptics.selectionAsync()}
                 />
               </Animated.View>
@@ -519,6 +534,15 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   chefFollowText: { fontSize: 12, fontWeight: '700', color: '#0A0A0A' },
+  chefFollowingBtnInner: {
+    paddingHorizontal: 20,
+    paddingVertical: 7,
+    borderRadius: 14,
+    backgroundColor: 'rgba(212,175,55,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.25)',
+  },
+  chefFollowingText: { fontSize: 12, fontWeight: '700', color: '#D4AF37' },
 
   // Live card
   liveCard: {

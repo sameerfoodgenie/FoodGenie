@@ -22,6 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../constants/theme';
 import { useOnboardingStatus } from '../../components/OnboardingWalkthrough';
 import { usePosts, FoodPost, CreatorType } from '../../contexts/PostContext';
+import { useCreator } from '../../contexts/CreatorContext';
 import { CREATOR_TIERS } from '../../contexts/CreatorContext';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
@@ -101,6 +102,7 @@ function ActionButton({
 function ReelCard({
   post,
   cardHeight,
+  isFollowed,
   onLike,
   onSave,
   onComment,
@@ -112,6 +114,7 @@ function ReelCard({
 }: {
   post: FoodPost;
   cardHeight: number;
+  isFollowed: boolean;
   onLike: () => void;
   onSave: () => void;
   onComment: () => void;
@@ -122,6 +125,7 @@ function ReelCard({
   onFollowChef?: () => void;
 }) {
   const isHomeMasterChef = post.creatorType === 'home_master_chef';
+  const hasCreatorType = !!post.creatorType;
   return (
     <View style={[styles.reelCard, { height: cardHeight }]}>
       <Pressable style={StyleSheet.absoluteFill} onPress={onTap} />
@@ -252,10 +256,10 @@ function ReelCard({
           ) : null}
         </View>
 
-        {/* Chef action buttons */}
-        {isHomeMasterChef ? (
+        {/* Action buttons — follow for all creators, show for home master chef */}
+        {hasCreatorType ? (
           <View style={styles.chefActionsRow}>
-            {post.showName ? (
+            {isHomeMasterChef && post.showName ? (
               <Pressable
                 style={({ pressed }) => [styles.chefActionBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.96 }] }]}
                 onPress={onViewShow}
@@ -265,11 +269,21 @@ function ReelCard({
               </Pressable>
             ) : null}
             <Pressable
-              style={({ pressed }) => [styles.chefActionBtn, styles.chefFollowBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.96 }] }]}
+              style={({ pressed }) => [
+                styles.chefActionBtn,
+                isFollowed ? styles.chefFollowingBtn : styles.chefFollowBtn,
+                pressed && { opacity: 0.8, transform: [{ scale: 0.96 }] },
+              ]}
               onPress={onFollowChef}
             >
-              <MaterialIcons name="person-add" size={14} color="#D4AF37" />
-              <Text style={[styles.chefActionText, { color: '#D4AF37' }]}>Follow Chef</Text>
+              <MaterialIcons
+                name={isFollowed ? 'check' : 'person-add'}
+                size={14}
+                color={isFollowed ? '#0A0A0A' : '#D4AF37'}
+              />
+              <Text style={[styles.chefActionText, isFollowed ? { color: '#0A0A0A' } : { color: '#D4AF37' }]}>
+                {isFollowed ? 'Following' : 'Follow'}
+              </Text>
             </Pressable>
           </View>
         ) : null}
@@ -281,7 +295,7 @@ function ReelCard({
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { posts, toggleLike, toggleSave, addComment, storyGroups } = usePosts();
+  const { feedPosts, toggleLike, toggleSave, addComment, storyGroups, toggleFollow, isFollowing } = usePosts();
   const [commentingPostId, setCommentingPostId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const commentInputRef = useRef<TextInput>(null);
@@ -295,7 +309,7 @@ export default function HomeScreen() {
     });
   }, []);
 
-  const showFirstTask = onboardingDone === true && !taskDismissed && posts.length < 1;
+  const showFirstTask = onboardingDone === true && !taskDismissed && feedPosts.length < 1;
 
   const dismissTask = useCallback(() => {
     setTaskDismissed(true);
@@ -350,10 +364,16 @@ export default function HomeScreen() {
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
 
+  const handleFollowChef = useCallback((userId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    toggleFollow(userId);
+  }, [toggleFollow]);
+
   const renderReel = useCallback(({ item }: { item: FoodPost }) => (
     <ReelCard
       post={item}
       cardHeight={cardHeight}
+      isFollowed={isFollowing(item.userId)}
       onLike={() => handleLike(item.id)}
       onSave={() => handleSave(item.id)}
       onComment={() => handleComment(item.id)}
@@ -361,9 +381,9 @@ export default function HomeScreen() {
       onProfile={() => Haptics.selectionAsync()}
       onTap={() => { Haptics.selectionAsync(); router.push({ pathname: '/food-detail', params: { postId: item.id } }); }}
       onViewShow={item.showName ? () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/shows'); } : undefined}
-      onFollowChef={item.creatorType === 'home_master_chef' ? () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } : undefined}
+      onFollowChef={item.creatorType ? () => handleFollowChef(item.userId) : undefined}
     />
-  ), [cardHeight, handleLike, handleSave, handleComment, handleShare, router]);
+  ), [cardHeight, handleLike, handleSave, handleComment, handleShare, router, isFollowing, handleFollowChef]);
 
   const getItemLayout = useCallback((_: any, index: number) => ({
     length: cardHeight,
@@ -386,7 +406,7 @@ export default function HomeScreen() {
 
       {/* Reels Feed */}
       <FlatList
-        data={posts}
+        data={feedPosts}
         keyExtractor={item => item.id}
         renderItem={renderReel}
         pagingEnabled
@@ -714,6 +734,10 @@ const styles = StyleSheet.create({
   chefFollowBtn: {
     backgroundColor: 'rgba(212,175,55,0.10)',
     borderColor: 'rgba(212,175,55,0.25)',
+  },
+  chefFollowingBtn: {
+    backgroundColor: '#D4AF37',
+    borderColor: '#D4AF37',
   },
   chefActionText: {
     fontSize: 12,
