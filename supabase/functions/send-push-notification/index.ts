@@ -9,6 +9,9 @@ interface PushPayload {
   data?: Record<string, unknown>;
   // Optional: target specific user IDs. If empty, sends to ALL users.
   user_ids?: string[];
+  // Target audience filtering
+  target_audience?: 'all' | 'creators' | 'roles';
+  target_roles?: string[];
 }
 
 Deno.serve(async (req) => {
@@ -44,10 +47,46 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Determine target user IDs based on audience
+    let targetUserIds: string[] | null = null;
+
+    if (payload.user_ids && payload.user_ids.length > 0) {
+      targetUserIds = payload.user_ids;
+    } else if (payload.target_audience === 'creators') {
+      // Creators are users who have posted at least 5 posts
+      const { data: creatorUsers } = await supabaseAdmin
+        .from('posts')
+        .select('user_id')
+        .limit(1000);
+      if (creatorUsers) {
+        const postCounts: Record<string, number> = {};
+        creatorUsers.forEach((p: { user_id: string }) => {
+          postCounts[p.user_id] = (postCounts[p.user_id] || 0) + 1;
+        });
+        targetUserIds = Object.entries(postCounts)
+          .filter(([_, count]) => count >= 5)
+          .map(([uid]) => uid);
+      }
+    } else if (payload.target_audience === 'roles' && payload.target_roles && payload.target_roles.length > 0) {
+      const { data: roleUsers } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id')
+        .in('role', payload.target_roles);
+      if (roleUsers) {
+        targetUserIds = roleUsers.map((u: { user_id: string }) => u.user_id);
+      }
+    }
+
     // Fetch push tokens
     let query = supabaseAdmin.from('push_tokens').select('token, user_id');
-    if (payload.user_ids && payload.user_ids.length > 0) {
-      query = query.in('user_id', payload.user_ids);
+    if (targetUserIds && targetUserIds.length > 0) {
+      query = query.in('user_id', targetUserIds);
+    } else if (targetUserIds !== null && targetUserIds.length === 0) {
+      // No matching users found for the filter
+      return new Response(
+        JSON.stringify({ success: true, sent: 0, message: 'No matching users found for the selected audience' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
     const { data: tokens, error: tokensError } = await query;
 

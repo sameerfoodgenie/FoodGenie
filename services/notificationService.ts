@@ -128,12 +128,82 @@ export async function scheduleLocalNotification(title: string, body: string, dat
   }
 }
 
+// ─── Scheduled Notifications ───
+export interface ScheduledNotification {
+  id: string;
+  title: string;
+  body: string;
+  target_audience: string;
+  target_roles: string[];
+  scheduled_at: string;
+  status: string;
+  sent_count: number;
+  failed_count: number;
+  created_at: string;
+  executed_at: string | null;
+}
+
+export async function createScheduledNotification(params: {
+  title: string;
+  body: string;
+  target_audience: string;
+  target_roles?: string[];
+  scheduled_at: string;
+  created_by: string;
+}): Promise<{ data: ScheduledNotification | null; error: string | null }> {
+  try {
+    const { data, error } = await supabase
+      .from('scheduled_notifications')
+      .insert({
+        title: params.title,
+        body: params.body,
+        target_audience: params.target_audience,
+        target_roles: params.target_roles || [],
+        scheduled_at: params.scheduled_at,
+        created_by: params.created_by,
+      })
+      .select()
+      .single();
+    return { data: data as any, error: error?.message || null };
+  } catch (e: any) {
+    return { data: null, error: e?.message || 'Failed to schedule notification' };
+  }
+}
+
+export async function fetchScheduledNotifications(): Promise<{ data: ScheduledNotification[]; error: string | null }> {
+  try {
+    const { data, error } = await supabase
+      .from('scheduled_notifications')
+      .select('*')
+      .order('scheduled_at', { ascending: false })
+      .limit(20);
+    return { data: (data as any) || [], error: error?.message || null };
+  } catch (e: any) {
+    return { data: [], error: e?.message || 'Failed to fetch scheduled notifications' };
+  }
+}
+
+export async function cancelScheduledNotification(id: string): Promise<{ error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from('scheduled_notifications')
+      .update({ status: 'cancelled' })
+      .eq('id', id)
+      .eq('status', 'pending');
+    return { error: error?.message || null };
+  } catch (e: any) {
+    return { error: e?.message || 'Failed to cancel' };
+  }
+}
+
 // Send push notification to all users or specific users via Edge Function
 export async function sendBroadcastPushNotification(params: {
   title: string;
   body: string;
   data?: Record<string, unknown>;
   user_ids?: string[];
+  target_audience?: string;
+  target_roles?: string[];
 }): Promise<{ success: boolean; sent?: number; failed?: number; error?: string }> {
   try {
     const { data, error } = await supabase.functions.invoke('send-push-notification', {
