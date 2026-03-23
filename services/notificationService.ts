@@ -127,3 +127,35 @@ export async function scheduleLocalNotification(title: string, body: string, dat
     console.error('Failed to schedule notification:', e);
   }
 }
+
+// Send push notification to all users or specific users via Edge Function
+export async function sendBroadcastPushNotification(params: {
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+  user_ids?: string[];
+}): Promise<{ success: boolean; sent?: number; failed?: number; error?: string }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('send-push-notification', {
+      body: params,
+    });
+
+    if (error) {
+      // Check for FunctionsHttpError
+      let errorMessage = error.message;
+      try {
+        if ((error as any).context?.text) {
+          const textContent = await (error as any).context.text();
+          errorMessage = textContent || error.message;
+        }
+      } catch {
+        // use default message
+      }
+      return { success: false, error: errorMessage };
+    }
+
+    return { success: true, sent: data?.sent || 0, failed: data?.failed || 0 };
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Failed to send notification' };
+  }
+}
