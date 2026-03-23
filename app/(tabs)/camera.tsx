@@ -26,7 +26,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Video, ResizeMode } from 'expo-av';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { theme } from '../../constants/theme';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -244,17 +244,21 @@ export default function CameraScreen() {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
+  // ─── Video Player ───
+  const videoPlayer = useVideoPlayer(recordedVideoUri || '', (player) => {
+    player.loop = true;
+    if (recordedVideoUri) player.play();
+  });
+
   // ─── Video Preview ───
   if (recordedVideoUri) {
     return (
       <View style={styles.container}>
-        <Video
-          source={{ uri: recordedVideoUri }}
+        <VideoView
+          player={videoPlayer}
           style={StyleSheet.absoluteFillObject}
-          resizeMode={ResizeMode.COVER}
-          shouldPlay
-          isLooping
-          isMuted={false}
+          contentFit="cover"
+          nativeControls={false}
         />
         <LinearGradient
           colors={['rgba(0,0,0,0.6)', 'transparent', 'transparent', 'rgba(0,0,0,0.8)']}
