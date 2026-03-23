@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -39,6 +39,7 @@ export default function CameraScreen() {
   const router = useRouter();
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
+  const [micPermission, requestMicPermission] = useMicrophonePermissions();
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [flash, setFlash] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -60,10 +61,17 @@ export default function CameraScreen() {
   const recDotOpacity = useSharedValue(1);
 
   useEffect(() => {
-    if (!IS_WEB && !permission?.granted) {
-      requestPermission().then((result) => {
-        if (!result.granted) setPermissionDenied(true);
-      });
+    if (!IS_WEB) {
+      const requestPerms = async () => {
+        if (!permission?.granted) {
+          const camResult = await requestPermission();
+          if (!camResult.granted) { setPermissionDenied(true); return; }
+        }
+        if (!micPermission?.granted) {
+          await requestMicPermission();
+        }
+      };
+      requestPerms();
     }
   }, []);
 
@@ -124,6 +132,15 @@ export default function CameraScreen() {
       cancelAnimation(recordProgress);
       recordProgress.value = 0;
     } else {
+      // Ensure mic permission on Android before recording
+      if (Platform.OS === 'android' && !micPermission?.granted) {
+        const micResult = await requestMicPermission();
+        if (!micResult.granted) {
+          console.log('Microphone permission denied');
+          return;
+        }
+      }
+
       // Start recording
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       setIsRecording(true);
