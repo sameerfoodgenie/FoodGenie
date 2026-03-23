@@ -104,6 +104,16 @@ export interface TopCreator {
   isVerified: boolean;
 }
 
+export interface NewCreator {
+  id: string;
+  username: string;
+  avatarInitials: string;
+  creatorType: CreatorType;
+  unlockedAt: number;
+  postCount: number;
+  coverUri: string | null;
+}
+
 export type CreatorLevel = 'new_creator' | 'rising_creator' | 'food_influencer' | 'genie_creator' | 'elite_chef';
 
 export interface CreatorLevelInfo {
@@ -154,6 +164,7 @@ interface CreatorContextType {
   // Trending & Top
   trendingShows: TrendingShow[];
   topCreators: TopCreator[];
+  newCreators: NewCreator[];
 
   // Levels
   currentLevel: CreatorLevelInfo;
@@ -332,6 +343,13 @@ const SAMPLE_TRENDING_SHOWS: TrendingShow[] = [
   },
 ];
 
+const SAMPLE_NEW_CREATORS: NewCreator[] = [
+  { id: 'nc_1', username: 'sneha.kitchen', avatarInitials: 'SK', creatorType: 'home_master_chef', unlockedAt: Date.now() - 86400000, postCount: 7, coverUri: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&q=80' },
+  { id: 'nc_2', username: 'arjun.cooks', avatarInitials: 'AC', creatorType: 'home_master_chef', unlockedAt: Date.now() - 172800000, postCount: 6, coverUri: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=400&q=80' },
+  { id: 'nc_3', username: 'nisha.bakes', avatarInitials: 'NB', creatorType: 'food_blogger', unlockedAt: Date.now() - 259200000, postCount: 5, coverUri: 'https://images.unsplash.com/photo-1486427944544-d2c246c4df14?w=400&q=80' },
+  { id: 'nc_4', username: 'karan.eats', avatarInitials: 'KE', creatorType: 'home_master_chef', unlockedAt: Date.now() - 345600000, postCount: 8, coverUri: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&q=80' },
+];
+
 const SAMPLE_TOP_CREATORS: TopCreator[] = [
   { id: 'tc_1', username: 'ananya.foodie', avatarInitials: 'AF', creatorType: 'home_master_chef', followers: 12400, showCount: 3, isVerified: false },
   { id: 'tc_2', username: 'rahul.eats', avatarInitials: 'RE', creatorType: 'verified_chef', followers: 34200, showCount: 5, isVerified: true },
@@ -446,7 +464,7 @@ export function CreatorProvider({ children }: { children: ReactNode }) {
     <CreatorContext.Provider value={{
       myCreatorType, setMyCreatorType, creatorTiers: CREATOR_TIERS, getCreatorTier,
       liveSessions, scheduleLiveSession, joinLiveSession,
-      trendingShows: SAMPLE_TRENDING_SHOWS, topCreators: SAMPLE_TOP_CREATORS,
+      trendingShows: SAMPLE_TRENDING_SHOWS, topCreators: SAMPLE_TOP_CREATORS, newCreators: SAMPLE_NEW_CREATORS,
       currentLevel, nextLevel, levelProgress, allLevels: CREATOR_LEVELS,
       milestones, unlockedMilestones, nextMilestone,
       badges, unlockedBadges,

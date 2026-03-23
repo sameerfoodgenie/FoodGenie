@@ -47,6 +47,8 @@ export interface FoodPost {
   timestamp: number;
   creatorType?: CreatorType;
   isVerified?: boolean;
+  showName?: string;
+  showId?: string;
 }
 
 interface PostContextType {
@@ -81,6 +83,8 @@ const SAMPLE_POSTS: FoodPost[] = [
     source: 'home_cooked',
     tags: ['homemade', 'comfort food'],
     taggedFriends: [],
+    showName: 'Midnight Cravings',
+    showId: 'ts_1',
     likes: 42,
     isLiked: false,
     isSaved: false,

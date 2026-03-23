@@ -98,6 +98,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="learn"
+        options={{
+          title: 'Learn',
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialIcons name={focused ? 'school' : 'school'} size={26} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="camera"
         options={{
           title: '',

@@ -115,6 +115,8 @@ function ReelCard({
   onShare,
   onProfile,
   onTap,
+  onViewShow,
+  onFollowChef,
 }: {
   post: FoodPost;
   cardHeight: number;
@@ -124,7 +126,10 @@ function ReelCard({
   onShare: () => void;
   onProfile: () => void;
   onTap: () => void;
+  onViewShow?: () => void;
+  onFollowChef?: () => void;
 }) {
+  const isHomeMasterChef = post.creatorType === 'home_master_chef';
   return (
     <View style={[styles.reelCard, { height: cardHeight }]}>
       {/* Tap to open detail */}
@@ -223,6 +228,14 @@ function ReelCard({
           <Text style={styles.reelCaption} numberOfLines={2}>{post.caption}</Text>
         ) : null}
 
+        {/* Show reference for Home Master Chef */}
+        {isHomeMasterChef && post.showName ? (
+          <View style={styles.showRefRow}>
+            <MaterialIcons name="movie-creation" size={13} color="rgba(255,255,255,0.7)" />
+            <Text style={styles.showRefText}>From Show: {post.showName}</Text>
+          </View>
+        ) : null}
+
         {/* Tags row */}
         <View style={styles.tagsRow}>
           {/* Source badge */}
@@ -253,6 +266,28 @@ function ReelCard({
             </View>
           ) : null}
         </View>
+
+        {/* Chef action buttons */}
+        {isHomeMasterChef ? (
+          <View style={styles.chefActionsRow}>
+            {post.showName ? (
+              <Pressable
+                style={({ pressed }) => [styles.chefActionBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.96 }] }]}
+                onPress={onViewShow}
+              >
+                <MaterialIcons name="play-circle-outline" size={14} color="#FFF" />
+                <Text style={styles.chefActionText}>View Show</Text>
+              </Pressable>
+            ) : null}
+            <Pressable
+              style={({ pressed }) => [styles.chefActionBtn, styles.chefFollowBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.96 }] }]}
+              onPress={onFollowChef}
+            >
+              <MaterialIcons name="person-add" size={14} color={theme.primary} />
+              <Text style={[styles.chefActionText, { color: theme.primary }]}>Follow Chef</Text>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -326,6 +361,8 @@ export default function HomeScreen() {
       onShare={() => handleShare(item)}
       onProfile={() => Haptics.selectionAsync()}
       onTap={() => { Haptics.selectionAsync(); router.push({ pathname: '/food-detail', params: { postId: item.id } }); }}
+      onViewShow={item.showName ? () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/shows'); } : undefined}
+      onFollowChef={item.creatorType === 'home_master_chef' ? () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } : undefined}
     />
   ), [cardHeight, handleLike, handleSave, handleComment, handleShare, router]);
 
@@ -610,6 +647,47 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: 'rgba(255,255,255,0.9)',
+  },
+
+  // Show reference
+  showRefRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 2,
+  },
+  showRefText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.65)',
+    fontStyle: 'italic',
+  },
+
+  // Chef action buttons
+  chefActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  chefActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  chefFollowBtn: {
+    backgroundColor: 'rgba(74,222,128,0.12)',
+    borderColor: 'rgba(74,222,128,0.25)',
+  },
+  chefActionText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFF',
   },
 
   // Empty state
