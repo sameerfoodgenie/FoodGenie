@@ -307,31 +307,33 @@ export default function LearnScreen() {
         ) : null}
 
         {/* ─── Trending Home Chefs ─── */}
-        <Animated.View entering={FadeInDown.delay(50).duration(350)}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionIcon}>🔥</Text>
-              <Text style={styles.sectionTitle}>Trending Home Chefs</Text>
+        {topCreators.length > 0 ? (
+          <Animated.View entering={FadeInDown.delay(50).duration(350)}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleRow}>
+                <Text style={styles.sectionIcon}>🔥</Text>
+                <Text style={styles.sectionTitle}>Trending Home Chefs</Text>
+              </View>
             </View>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
-          >
-            {topCreators.map((creator, i) => (
-              <Animated.View key={creator.id} entering={FadeInRight.delay(i * 60).duration(250)}>
-                <TrendingChefCard
-                  creator={creator}
-                  rank={i + 1}
-                  isFollowed={isFollowing(creator.id)}
-                  onFollow={() => handleFollow(creator.id)}
-                  onPress={() => Haptics.selectionAsync()}
-                />
-              </Animated.View>
-            ))}
-          </ScrollView>
-        </Animated.View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
+            >
+              {topCreators.map((creator, i) => (
+                <Animated.View key={creator.id} entering={FadeInRight.delay(i * 60).duration(250)}>
+                  <TrendingChefCard
+                    creator={creator}
+                    rank={i + 1}
+                    isFollowed={isFollowing(creator.id)}
+                    onFollow={() => handleFollow(creator.id)}
+                    onPress={() => Haptics.selectionAsync()}
+                  />
+                </Animated.View>
+              ))}
+            </ScrollView>
+          </Animated.View>
+        ) : null}
 
         {/* ─── Live & Upcoming ─── */}
         {allSessions.length > 0 ? (
@@ -358,46 +360,50 @@ export default function LearnScreen() {
         ) : null}
 
         {/* ─── Popular Shows ─── */}
-        <Animated.View entering={FadeInDown.delay(200).duration(350)}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionIcon}>⭐</Text>
-              <Text style={styles.sectionTitle}>Popular Shows</Text>
+        {trendingShows.length > 0 ? (
+          <Animated.View entering={FadeInDown.delay(200).duration(350)}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleRow}>
+                <Text style={styles.sectionIcon}>⭐</Text>
+                <Text style={styles.sectionTitle}>Popular Shows</Text>
+              </View>
             </View>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}
-          >
-            {trendingShows.map((show, i) => (
-              <Animated.View key={show.id} entering={FadeInRight.delay(i * 70).duration(280)}>
-                <PopularShowCard show={show} onPress={() => Haptics.selectionAsync()} />
-              </Animated.View>
-            ))}
-          </ScrollView>
-        </Animated.View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}
+            >
+              {trendingShows.map((show, i) => (
+                <Animated.View key={show.id} entering={FadeInRight.delay(i * 70).duration(280)}>
+                  <PopularShowCard show={show} onPress={() => Haptics.selectionAsync()} />
+                </Animated.View>
+              ))}
+            </ScrollView>
+          </Animated.View>
+        ) : null}
 
         {/* ─── New Creators ─── */}
-        <Animated.View entering={FadeInDown.delay(300).duration(350)}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionIcon}>🌱</Text>
-              <Text style={styles.sectionTitle}>New Creators</Text>
+        {newCreators.length > 0 ? (
+          <Animated.View entering={FadeInDown.delay(300).duration(350)}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleRow}>
+                <Text style={styles.sectionIcon}>🌱</Text>
+                <Text style={styles.sectionTitle}>New Creators</Text>
+              </View>
             </View>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
-          >
-            {newCreators.map((creator, i) => (
-              <Animated.View key={creator.id} entering={FadeInRight.delay(i * 60).duration(250)}>
-                <NewCreatorCard creator={creator} onPress={() => Haptics.selectionAsync()} />
-              </Animated.View>
-            ))}
-          </ScrollView>
-        </Animated.View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
+            >
+              {newCreators.map((creator, i) => (
+                <Animated.View key={creator.id} entering={FadeInRight.delay(i * 60).duration(250)}>
+                  <NewCreatorCard creator={creator} onPress={() => Haptics.selectionAsync()} />
+                </Animated.View>
+              ))}
+            </ScrollView>
+          </Animated.View>
+        ) : null}
 
         {/* ─── Become a Creator CTA ─── */}
         <Animated.View entering={FadeInDown.delay(400).duration(350)} style={styles.ctaSection}>

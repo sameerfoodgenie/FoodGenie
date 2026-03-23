@@ -245,118 +245,17 @@ function getLevelProgress(postCount: number): number {
 
 // ─── Sample Data ───
 
-const SAMPLE_LIVE_SESSIONS: LiveSession[] = [
-  {
-    id: 'live_1',
-    hostUserId: 'user_ananya',
-    hostUsername: 'ananya.foodie',
-    hostAvatarInitials: 'AF',
-    hostCreatorType: 'home_master_chef',
-    title: 'Butter Chicken Masterclass',
-    description: 'Learn my secret recipe for the creamiest butter chicken ever',
-    coverUri: 'https://images.unsplash.com/photo-1631515243349-e0cb75fb8d4a?w=800&q=80',
-    scheduledAt: Date.now() + 3600000 * 2,
-    isLive: false,
-    isPaid: true,
-    price: 99,
-    attendeeCount: 45,
-    maxAttendees: 100,
-  },
-  {
-    id: 'live_2',
-    hostUserId: 'user_rahul',
-    hostUsername: 'rahul.eats',
-    hostAvatarInitials: 'RE',
-    hostCreatorType: 'verified_chef',
-    title: 'Street Food Secrets',
-    description: 'Mumbai street food at home - chaat, pav bhaji, vada pav',
-    coverUri: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=800&q=80',
-    scheduledAt: Date.now() + 3600000 * 5,
-    isLive: false,
-    isPaid: false,
-    price: 0,
-    attendeeCount: 128,
-    maxAttendees: 200,
-  },
-  {
-    id: 'live_3',
-    hostUserId: 'user_priya',
-    hostUsername: 'priya.cooks',
-    hostAvatarInitials: 'PC',
-    hostCreatorType: 'home_master_chef',
-    title: 'Healthy Meal Prep Sunday',
-    description: 'Prep 5 days of clean meals in 2 hours',
-    coverUri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80',
-    scheduledAt: Date.now() - 600000,
-    isLive: true,
-    isPaid: true,
-    price: 149,
-    attendeeCount: 67,
-    maxAttendees: 80,
-  },
-];
+// Live sessions start empty — populated by creators scheduling sessions
+const SAMPLE_LIVE_SESSIONS: LiveSession[] = [];
 
-const SAMPLE_TRENDING_SHOWS: TrendingShow[] = [
-  {
-    id: 'ts_1',
-    title: 'Midnight Cravings',
-    hostUsername: 'ananya.foodie',
-    hostAvatarInitials: 'AF',
-    hostCreatorType: 'home_master_chef',
-    coverUri: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80',
-    episodeCount: 12,
-    viewCount: 45200,
-    rating: 4.8,
-  },
-  {
-    id: 'ts_2',
-    title: 'Chef Rahul Specials',
-    hostUsername: 'rahul.eats',
-    hostAvatarInitials: 'RE',
-    hostCreatorType: 'verified_chef',
-    coverUri: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80',
-    episodeCount: 8,
-    viewCount: 32100,
-    rating: 4.9,
-  },
-  {
-    id: 'ts_3',
-    title: 'Clean Eating 101',
-    hostUsername: 'priya.cooks',
-    hostAvatarInitials: 'PC',
-    hostCreatorType: 'food_blogger',
-    coverUri: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&q=80',
-    episodeCount: 15,
-    viewCount: 28700,
-    rating: 4.7,
-  },
-  {
-    id: 'ts_4',
-    title: 'Biryani Chronicles',
-    hostUsername: 'dev.bites',
-    hostAvatarInitials: 'DB',
-    hostCreatorType: 'verified_chef',
-    coverUri: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&q=80',
-    episodeCount: 6,
-    viewCount: 19500,
-    rating: 4.6,
-  },
-];
+// Trending shows start empty — populated dynamically
+const SAMPLE_TRENDING_SHOWS: TrendingShow[] = [];
 
-const SAMPLE_NEW_CREATORS: NewCreator[] = [
-  { id: 'nc_1', username: 'sneha.kitchen', avatarInitials: 'SK', creatorType: 'home_master_chef', unlockedAt: Date.now() - 86400000, postCount: 7, coverUri: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&q=80' },
-  { id: 'nc_2', username: 'arjun.cooks', avatarInitials: 'AC', creatorType: 'home_master_chef', unlockedAt: Date.now() - 172800000, postCount: 6, coverUri: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=400&q=80' },
-  { id: 'nc_3', username: 'nisha.bakes', avatarInitials: 'NB', creatorType: 'food_blogger', unlockedAt: Date.now() - 259200000, postCount: 5, coverUri: 'https://images.unsplash.com/photo-1486427944544-d2c246c4df14?w=400&q=80' },
-  { id: 'nc_4', username: 'karan.eats', avatarInitials: 'KE', creatorType: 'home_master_chef', unlockedAt: Date.now() - 345600000, postCount: 8, coverUri: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&q=80' },
-];
+// New creators start empty — populated dynamically
+const SAMPLE_NEW_CREATORS: NewCreator[] = [];
 
-const SAMPLE_TOP_CREATORS: TopCreator[] = [
-  { id: 'tc_1', username: 'ananya.foodie', avatarInitials: 'AF', creatorType: 'home_master_chef', followers: 12400, showCount: 3, isVerified: false },
-  { id: 'tc_2', username: 'rahul.eats', avatarInitials: 'RE', creatorType: 'verified_chef', followers: 34200, showCount: 5, isVerified: true },
-  { id: 'tc_3', username: 'priya.cooks', avatarInitials: 'PC', creatorType: 'food_blogger', followers: 8900, showCount: 2, isVerified: false },
-  { id: 'tc_4', username: 'dev.bites', avatarInitials: 'DB', creatorType: 'verified_chef', followers: 21600, showCount: 4, isVerified: true },
-  { id: 'tc_5', username: 'meera.meals', avatarInitials: 'MM', creatorType: 'food_blogger', followers: 5700, showCount: 1, isVerified: false },
-];
+// Top creators start empty — populated dynamically
+const SAMPLE_TOP_CREATORS: TopCreator[] = [];
 
 export function CreatorProvider({ children }: { children: ReactNode }) {
   const { posts, streak, myPosts } = usePosts();
