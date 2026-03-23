@@ -457,7 +457,7 @@ export default function SnapShareScreen() {
               <View style={styles.cardTop}>
                 <View style={styles.logoRow}>
                   <Image
-                    source={require('../assets/images/genie-mascot.png')}
+                    source={require('../assets/images/icon.png')}
                     style={styles.logoImage}
                     contentFit="contain"
                   />

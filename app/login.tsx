@@ -23,20 +23,15 @@ import * as Haptics from 'expo-haptics';
 import { useAuth, useAlert } from '@/template';
 import { theme } from '../constants/theme';
 
-type Stage = 'teaser' | 'email' | 'otp';
+type Stage = 'email' | 'otp';
 
 export default function LoginScreen() {
   const { sendOTP, verifyOTPAndLogin, signInWithGoogle, operationLoading } = useAuth();
   const { showAlert } = useAlert();
 
-  const [stage, setStage] = useState<Stage>('teaser');
+  const [stage, setStage] = useState<Stage>('email');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
-
-  const handleGetStarted = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setStage('email');
-  };
 
   const handleSendOTP = async () => {
     if (!email.trim()) {
@@ -117,62 +112,6 @@ export default function LoginScreen() {
     showAlert('Could not resend', `${lastError}. Please try again in a moment.`);
   };
 
-  // ---- Teaser Screen ----
-  if (stage === 'teaser') {
-    return (
-      <View style={styles.container}>
-        <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
-          <View style={styles.teaserContent}>
-            {/* Hero */}
-            <Animated.View entering={FadeIn.delay(200).duration(600)} style={styles.teaserHero}>
-              <View style={styles.teaserGlow}>
-                <LinearGradient colors={theme.gradients.cameraBtn} style={styles.teaserRing}>
-                  <View style={styles.teaserInner}>
-                    <Image
-                      source={require('../assets/images/genie-mascot.png')}
-                      style={styles.teaserMascot}
-                      contentFit="contain"
-                    />
-                  </View>
-                </LinearGradient>
-              </View>
-            </Animated.View>
-
-            <Animated.View entering={FadeInUp.delay(400).duration(500)} style={styles.teaserTextBlock}>
-              <Text style={styles.teaserTitle}>FoodGenie</Text>
-              <Text style={styles.teaserSubtitle}>Scan. Track. Eat better.</Text>
-            </Animated.View>
-
-            <Animated.View entering={FadeInUp.delay(600).duration(500)} style={styles.teaserFeatures}>
-              {[
-                { icon: 'camera-alt', text: 'Scan any meal instantly' },
-                { icon: 'insights', text: 'AI-powered nutrition insights' },
-                { icon: 'trending-up', text: 'Track your health score' },
-              ].map((f, i) => (
-                <Animated.View key={f.icon} entering={SlideInRight.delay(700 + i * 120).duration(400)} style={styles.teaserFeature}>
-                  <View style={styles.featureIconWrap}>
-                    <MaterialIcons name={f.icon as any} size={20} color={theme.primary} />
-                  </View>
-                  <Text style={styles.teaserFeatureText}>{f.text}</Text>
-                </Animated.View>
-              ))}
-            </Animated.View>
-
-            <Animated.View entering={FadeInDown.delay(900).duration(400)} style={styles.teaserCTA}>
-              <Pressable style={styles.getStartedButton} onPress={handleGetStarted}>
-                <LinearGradient colors={theme.gradients.cameraBtn} style={styles.getStartedGradient}>
-                  <Text style={styles.getStartedText}>Get Started</Text>
-                  <MaterialIcons name="arrow-forward" size={20} color={theme.textOnPrimary} />
-                </LinearGradient>
-              </Pressable>
-              <Text style={styles.teaserNote}>Free forever. AI-powered food tracking.</Text>
-            </Animated.View>
-          </View>
-        </SafeAreaView>
-      </View>
-    );
-  }
-
   // ---- Email / OTP Screen ----
   return (
     <View style={styles.container}>
@@ -186,19 +125,25 @@ export default function LoginScreen() {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
+            {stage === 'otp' ? (
             <Pressable
               style={styles.backButton}
-              onPress={() => stage === 'otp' ? setStage('email') : setStage('teaser')}
+              onPress={() => setStage('email')}
             >
               <MaterialIcons name="arrow-back" size={24} color={theme.textPrimary} />
             </Pressable>
+            ) : null}
 
             <Animated.View entering={FadeInDown.duration(400)} style={styles.loginHeader}>
-              <Image
-                source={require('../assets/images/genie-mascot.png')}
-                style={styles.loginMascot}
-                contentFit="contain"
-              />
+              <View style={styles.logoContainer}>
+                <Image
+                  source={require('../assets/images/icon.png')}
+                  style={styles.loginLogo}
+                  contentFit="contain"
+                  transition={200}
+                />
+              </View>
+              <Text style={styles.brandName}>FoodGenie</Text>
               <Text style={styles.loginTitle}>
                 {stage === 'otp' ? 'Enter Verification Code' : 'Sign In'}
               </Text>
@@ -306,65 +251,24 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   keyboardView: { flex: 1 },
 
-  // Teaser
-  teaserContent: { flex: 1, paddingHorizontal: 24, justifyContent: 'center', alignItems: 'center' },
-  teaserHero: { marginBottom: 32 },
-  teaserGlow: { ...theme.shadows.neonGreen },
-  teaserRing: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    padding: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  teaserInner: {
-    width: 132,
-    height: 132,
-    borderRadius: 66,
-    backgroundColor: theme.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(74,222,128,0.15)',
-  },
-  teaserMascot: { width: 90, height: 90 },
-  teaserTextBlock: { alignItems: 'center', marginBottom: 32 },
-  teaserTitle: { fontSize: 36, fontWeight: '700', color: theme.primary, letterSpacing: 0.5 },
-  teaserSubtitle: { fontSize: 15, color: theme.textSecondary, marginTop: 8, textAlign: 'center' },
-  teaserFeatures: { width: '100%', gap: 10, marginBottom: 40 },
-  teaserFeature: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: theme.surface,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  featureIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(74,222,128,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  teaserFeatureText: { fontSize: 15, color: theme.textPrimary, fontWeight: '500' },
-  teaserCTA: { width: '100%', alignItems: 'center' },
-  getStartedButton: { width: '100%', borderRadius: 16, overflow: 'hidden', ...theme.shadows.neonGreen },
-  getStartedGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 18,
-  },
-  getStartedText: { fontSize: 17, fontWeight: '700', color: theme.textOnPrimary },
-  teaserNote: { fontSize: 12, color: theme.textMuted, marginTop: 12 },
-
   // Login
+  logoContainer: {
+    width: 88,
+    height: 88,
+    borderRadius: 22,
+    overflow: 'hidden',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.20)',
+  },
+  loginLogo: { width: 88, height: 88 },
+  brandName: {
+    fontSize: 30,
+    fontWeight: '900',
+    color: '#D4AF37',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
   loginScroll: { paddingHorizontal: 24, paddingBottom: 40 },
   backButton: {
     width: 44,
@@ -379,7 +283,7 @@ const styles = StyleSheet.create({
     borderColor: theme.border,
   },
   loginHeader: { alignItems: 'center', marginBottom: 32 },
-  loginMascot: { width: 72, height: 72, marginBottom: 16 },
+
   loginTitle: { fontSize: 24, fontWeight: '700', color: theme.textPrimary, marginBottom: 8 },
   loginSubtitle: { fontSize: 14, color: theme.textSecondary, textAlign: 'center', lineHeight: 20 },
   form: { gap: 16 },

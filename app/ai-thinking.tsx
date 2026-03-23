@@ -98,7 +98,7 @@ export default function AIThinkingScreen() {
       <View style={styles.content}>
         <View style={styles.mascotContainer}>
           <Image
-            source={require('../assets/images/genie-mascot.png')}
+            source={require('../assets/images/icon.png')}
             style={styles.mascot}
             contentFit="contain"
           />

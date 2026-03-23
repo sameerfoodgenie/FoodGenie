@@ -29,7 +29,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
             <LinearGradient colors={theme.gradients.cameraBtn} style={styles.outerRing}>
               <View style={styles.logoInner}>
                 <Image
-                  source={require('../assets/images/genie-mascot.png')}
+                  source={require('../assets/images/icon.png')}
                   style={styles.mascot}
                   contentFit="contain"
                 />

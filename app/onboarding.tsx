@@ -342,7 +342,7 @@ export default function OnboardingScreen() {
           <Animated.View style={[styles.genieContainer, genieAnimatedStyle]}>
             <LinearGradient colors={theme.gradients.goldShine} style={styles.genieRing}>
               <View style={styles.genieInner}>
-                <Image source={require('../assets/images/genie-mascot.png')} style={styles.genieMascot} contentFit="contain" />
+                <Image source={require('../assets/images/icon.png')} style={styles.genieMascot} contentFit="contain" />
               </View>
             </LinearGradient>
           </Animated.View>
