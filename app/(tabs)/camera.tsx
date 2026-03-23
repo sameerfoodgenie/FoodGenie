@@ -22,7 +22,6 @@ import Animated, {
   withTiming,
   withRepeat,
   Easing,
-  runOnJS,
   cancelAnimation,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
@@ -34,7 +33,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const IS_WEB = Platform.OS === 'web';
 const MAX_RECORD_SEC = 120;
 
-type CameraMode = 'photo' | 'video';
+type CameraMode = 'photo' | 'video' | 'live';
 
 export default function CameraScreen() {
   const router = useRouter();
@@ -58,7 +57,7 @@ export default function CameraScreen() {
 
   // Record progress animation
   const recordProgress = useSharedValue(0);
-  const pulseScale = useSharedValue(1);
+  const recDotOpacity = useSharedValue(1);
 
   useEffect(() => {
     if (!IS_WEB && !permission?.granted) {
@@ -74,6 +73,20 @@ export default function CameraScreen() {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
+
+  // Pulsing REC dot when recording
+  useEffect(() => {
+    if (isRecording) {
+      recDotOpacity.value = withRepeat(
+        withTiming(0.2, { duration: 700, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true,
+      );
+    } else {
+      cancelAnimation(recDotOpacity);
+      recDotOpacity.value = 1;
+    }
+  }, [isRecording]);
 
   // ─── Photo Capture ───
   const handleCapture = useCallback(async () => {
@@ -93,67 +106,72 @@ export default function CameraScreen() {
     }
   }, [isCapturing, router]);
 
-  // ─── Video Recording ───
-  const startRecording = useCallback(async () => {
-    if (!cameraRef.current || isRecording) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    setIsRecording(true);
-    setRecordSeconds(0);
-    recordProgress.value = 0;
+  // ─── Video Recording (tap to start / tap to stop) ───
+  const toggleRecording = useCallback(async () => {
+    if (!cameraRef.current) return;
 
-    // Start progress animation
-    recordProgress.value = withTiming(1, {
-      duration: MAX_RECORD_SEC * 1000,
-      easing: Easing.linear,
-    });
-
-    // Pulse animation
-    pulseScale.value = withRepeat(
-      withTiming(1.15, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true,
-    );
-
-    // Start timer
-    timerRef.current = setInterval(() => {
-      setRecordSeconds(prev => {
-        if (prev >= MAX_RECORD_SEC - 1) {
-          stopRecording();
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, 1000);
-
-    try {
-      const video = await cameraRef.current.recordAsync({ maxDuration: MAX_RECORD_SEC });
-      if (video?.uri) {
-        setRecordedVideoUri(video.uri);
-      }
-    } catch (e) {
-      console.log('Record error:', e);
+    if (isRecording) {
+      // Stop recording
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      cameraRef.current.stopRecording();
       setIsRecording(false);
+
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+
+      cancelAnimation(recordProgress);
+      recordProgress.value = 0;
+    } else {
+      // Start recording
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      setIsRecording(true);
+      setRecordSeconds(0);
+      recordProgress.value = 0;
+
+      // Progress bar animation
+      recordProgress.value = withTiming(1, {
+        duration: MAX_RECORD_SEC * 1000,
+        easing: Easing.linear,
+      });
+
+      // Timer
+      timerRef.current = setInterval(() => {
+        setRecordSeconds(prev => {
+          if (prev >= MAX_RECORD_SEC - 1) {
+            // Auto-stop at max
+            cameraRef.current?.stopRecording();
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+
+      try {
+        const video = await cameraRef.current.recordAsync({ maxDuration: MAX_RECORD_SEC });
+        // Recording finished (either stopped manually or max duration)
+        setIsRecording(false);
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+        cancelAnimation(recordProgress);
+        recordProgress.value = 0;
+
+        if (video?.uri) {
+          setRecordedVideoUri(video.uri);
+        }
+      } catch (e) {
+        console.log('Record error:', e);
+        setIsRecording(false);
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+      }
     }
   }, [isRecording]);
-
-  const stopRecording = useCallback(() => {
-    if (!cameraRef.current) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    cameraRef.current.stopRecording();
-    setIsRecording(false);
-
-    // Stop timer
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-
-    // Stop animations
-    cancelAnimation(recordProgress);
-    cancelAnimation(pulseScale);
-    recordProgress.value = 0;
-    pulseScale.value = 1;
-  }, []);
 
   // ─── Gallery Picker ───
   const handlePickImage = useCallback(async () => {
@@ -189,6 +207,10 @@ export default function CameraScreen() {
 
   const switchMode = useCallback((newMode: CameraMode) => {
     if (newMode === mode) return;
+    if (newMode === 'live') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return; // Future-ready, no action
+    }
     Haptics.selectionAsync();
     setMode(newMode);
   }, [mode]);
@@ -198,7 +220,6 @@ export default function CameraScreen() {
     if (!recordedVideoUri) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push({ pathname: '/upload-recipe', params: { videoUri: recordedVideoUri } });
-    // Reset after navigating
     setTimeout(() => setRecordedVideoUri(null), 500);
   }, [recordedVideoUri, router]);
 
@@ -213,8 +234,8 @@ export default function CameraScreen() {
     width: `${recordProgress.value * 100}%`,
   }));
 
-  const pulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulseScale.value }],
+  const recDotStyle = useAnimatedStyle(() => ({
+    opacity: recDotOpacity.value,
   }));
 
   const formatTime = (sec: number) => {
@@ -362,7 +383,7 @@ export default function CameraScreen() {
         </View>
       )}
 
-      {/* Recording progress bar */}
+      {/* Recording progress bar at top */}
       {isRecording ? (
         <View style={styles.recordProgressBar}>
           <Animated.View style={[styles.recordProgressFill, progressStyle]} />
@@ -374,14 +395,17 @@ export default function CameraScreen() {
         <View style={styles.topBar}>
           <View>
             {isRecording ? (
-              <View style={styles.recordingIndicator}>
-                <View style={styles.recordDot} />
-                <Text style={styles.recordTimerText}>{formatTime(recordSeconds)}</Text>
-              </View>
+              <Animated.View entering={FadeIn.duration(200)} style={styles.recordingIndicator}>
+                <Animated.View style={[styles.recDot, recDotStyle]} />
+                <Text style={styles.recLabel}>REC</Text>
+                <View style={styles.recTimerWrap}>
+                  <Text style={styles.recTimerText}>{formatTime(recordSeconds)}</Text>
+                </View>
+              </Animated.View>
             ) : (
               <Animated.View entering={FadeInDown.duration(400)}>
                 <Text style={styles.topLabel}>
-                  {mode === 'photo' ? 'New Post' : 'Record Recipe'}
+                  {mode === 'photo' ? 'New Post' : mode === 'video' ? 'Record Recipe' : 'Go Live'}
                 </Text>
               </Animated.View>
             )}
@@ -400,21 +424,36 @@ export default function CameraScreen() {
 
         <View style={{ flex: 1 }} />
 
-        {/* Mode switcher */}
+        {/* Mode selector — Photo / Video / Live */}
         {!isRecording ? (
           <Animated.View entering={FadeInUp.delay(100).duration(300)} style={styles.modeSwitcher}>
-            <Pressable
-              style={[styles.modeTab, mode === 'photo' && styles.modeTabActive]}
-              onPress={() => switchMode('photo')}
-            >
-              <Text style={[styles.modeTabText, mode === 'photo' && styles.modeTabTextActive]}>PHOTO</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.modeTab, mode === 'video' && styles.modeTabActive]}
-              onPress={() => switchMode('video')}
-            >
-              <Text style={[styles.modeTabText, mode === 'video' && styles.modeTabTextActive]}>VIDEO</Text>
-            </Pressable>
+            {(['photo', 'video', 'live'] as CameraMode[]).map((m) => {
+              const isActive = mode === m;
+              const isLive = m === 'live';
+              return (
+                <Pressable
+                  key={m}
+                  style={[styles.modeTab, isActive && styles.modeTabActive]}
+                  onPress={() => switchMode(m)}
+                >
+                  {isActive ? (
+                    <View style={styles.modeTabDot} />
+                  ) : null}
+                  <Text style={[
+                    styles.modeTabText,
+                    isActive && styles.modeTabTextActive,
+                    isLive && !isActive && styles.modeTabTextLive,
+                  ]}>
+                    {m === 'photo' ? 'PHOTO' : m === 'video' ? 'VIDEO' : 'LIVE'}
+                  </Text>
+                  {isLive ? (
+                    <View style={styles.comingSoonDot}>
+                      <Text style={styles.comingSoonText}>SOON</Text>
+                    </View>
+                  ) : null}
+                </Pressable>
+              );
+            })}
           </Animated.View>
         ) : null}
 
@@ -430,7 +469,7 @@ export default function CameraScreen() {
             <Text style={styles.sideBtnLabel}>Gallery</Text>
           </Pressable>
 
-          {/* Capture / Record button */}
+          {/* Capture / Record button — single tap for both */}
           {mode === 'photo' ? (
             <Pressable
               style={({ pressed }) => [
@@ -447,24 +486,32 @@ export default function CameraScreen() {
                 ) : null}
               </View>
             </Pressable>
-          ) : (
+          ) : mode === 'video' ? (
             <Pressable
-              onPressIn={!isRecording ? startRecording : undefined}
-              onPressOut={isRecording ? stopRecording : undefined}
-              onPress={isRecording ? stopRecording : undefined}
+              onPress={toggleRecording}
+              style={({ pressed }) => [pressed && !isRecording && { transform: [{ scale: 0.92 }] }]}
             >
               {isRecording ? (
-                <Animated.View style={[styles.recordOuter, pulseStyle]}>
-                  <View style={styles.recordOuterRing} />
+                /* Recording active — show red ring + stop square */
+                <Animated.View entering={FadeIn.duration(150)} style={styles.recordOuterActive}>
+                  <View style={styles.recordOuterRingActive} />
                   <View style={styles.recordStopIcon} />
                 </Animated.View>
               ) : (
+                /* Idle — show white ring + red circle */
                 <View style={styles.recordOuter}>
                   <View style={styles.recordOuterRing} />
                   <View style={styles.recordInnerCircle} />
                 </View>
               )}
             </Pressable>
+          ) : (
+            /* Live mode (future) — disabled button */
+            <View style={[styles.captureOuter, { opacity: 0.35 }]}>
+              <LinearGradient colors={['#FF3B30', '#CC2D25']} style={styles.liveCapture}>
+                <MaterialIcons name="cell-tower" size={28} color="#FFF" />
+              </LinearGradient>
+            </View>
           )}
 
           {/* Flip */}
@@ -478,12 +525,22 @@ export default function CameraScreen() {
           </Pressable>
         </View>
 
-        {/* Hold hint (video mode, not recording) */}
-        {mode === 'video' && !isRecording ? (
+        {/* Hint text */}
+        {!isRecording ? (
           <Animated.View entering={FadeIn.duration(400)} style={styles.holdHint}>
-            <Text style={styles.holdHintText}>Hold to record · Tap gallery for existing video</Text>
+            <Text style={styles.holdHintText}>
+              {mode === 'photo'
+                ? 'Tap to capture'
+                : mode === 'video'
+                  ? 'Tap to start recording · Tap again to stop'
+                  : 'Live streaming coming soon'}
+            </Text>
           </Animated.View>
-        ) : null}
+        ) : (
+          <Animated.View entering={FadeIn.duration(200)} style={styles.holdHint}>
+            <Text style={styles.holdHintText}>Tap the stop button to finish recording</Text>
+          </Animated.View>
+        )}
       </SafeAreaView>
     </View>
   );
@@ -526,24 +583,39 @@ const styles = StyleSheet.create({
     borderColor: theme.primary,
   },
 
-  // Recording indicator
+  // Recording indicator — REC badge + timer
   recordingIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(239,68,68,0.85)',
+    backgroundColor: 'rgba(0,0,0,0.65)',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.4)',
   },
-  recordDot: {
+  recDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#FFF',
+    backgroundColor: '#EF4444',
   },
-  recordTimerText: {
-    fontSize: 16,
+  recLabel: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#EF4444',
+    letterSpacing: 1,
+  },
+  recTimerWrap: {
+    backgroundColor: 'rgba(239,68,68,0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginLeft: 2,
+  },
+  recTimerText: {
+    fontSize: 15,
     fontWeight: '800',
     color: '#FFF',
     fontVariant: ['tabular-nums'],
@@ -565,32 +637,59 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
 
-  // Mode switcher
+  // Mode switcher — 3 tabs
   modeSwitcher: {
     flexDirection: 'row',
     alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    borderRadius: 20,
-    padding: 3,
+    backgroundColor: 'rgba(0,0,0,0.50)',
+    borderRadius: 24,
+    padding: 4,
     marginBottom: 20,
     gap: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   modeTab: {
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    borderRadius: 18,
+    paddingHorizontal: 22,
+    paddingVertical: 9,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 6,
   },
   modeTabActive: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+  },
+  modeTabDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#D4AF37',
   },
   modeTabText: {
     fontSize: 13,
     fontWeight: '700',
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255,255,255,0.45)',
     letterSpacing: 1,
   },
   modeTabTextActive: {
     color: '#FFF',
+  },
+  modeTabTextLive: {
+    color: 'rgba(255,255,255,0.25)',
+  },
+  comingSoonDot: {
+    backgroundColor: 'rgba(255,59,48,0.25)',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  comingSoonText: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#FF3B30',
+    letterSpacing: 0.5,
   },
 
   // Bottom bar
@@ -621,7 +720,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // Video record button
+  // Video record button (idle)
   recordOuter: {
     width: 80,
     height: 80,
@@ -643,6 +742,23 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: '#EF4444',
   },
+
+  // Video record button (recording active)
+  recordOuterActive: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordOuterRingActive: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 4,
+    borderColor: '#EF4444',
+  },
   recordStopIcon: {
     width: 28,
     height: 28,
@@ -650,7 +766,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#EF4444',
   },
 
-  // Hold hint
+  // Live capture (future)
+  liveCapture: {
+    flex: 1,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Hint
   holdHint: {
     alignSelf: 'center',
     paddingBottom: 12,
@@ -658,7 +782,7 @@ const styles = StyleSheet.create({
   holdHintText: {
     fontSize: 12,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.45)',
+    color: 'rgba(255,255,255,0.40)',
     textAlign: 'center',
   },
 
