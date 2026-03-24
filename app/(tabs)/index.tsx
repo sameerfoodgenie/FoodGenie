@@ -10,13 +10,15 @@ import {
   Platform,
   Share,
   ViewToken,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../constants/theme';
@@ -54,6 +56,53 @@ const SOURCE_LABEL: Record<string, string> = {
   restaurant: 'Restaurant',
   online_order: 'Online',
 };
+
+// Default blurhash for food images — warm amber tone
+const DEFAULT_BLURHASH = 'L6Pj0^jE.AyE_3t7t7R**0LMt7xu';
+
+// ─── Shimmer Loading Card ───
+function ShimmerCard({ cardHeight }: { cardHeight: number }) {
+  const shimmerOpacity = useSharedValue(0.3);
+
+  useEffect(() => {
+    shimmerOpacity.value = withRepeat(
+      withTiming(0.7, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true,
+    );
+    return () => cancelAnimation(shimmerOpacity);
+  }, []);
+
+  const shimmerStyle = useAnimatedStyle(() => ({
+    opacity: shimmerOpacity.value,
+  }));
+
+  return (
+    <View style={[styles.reelCard, { height: cardHeight, backgroundColor: '#0A0A0A' }]}>
+      <Animated.View style={[styles.shimmerContainer, shimmerStyle]}>
+        {/* Fake image area */}
+        <View style={styles.shimmerImage} />
+        {/* Fake bottom info */}
+        <View style={styles.shimmerBottom}>
+          <View style={styles.shimmerLine} />
+          <View style={[styles.shimmerLine, { width: '60%', marginTop: 8 }]} />
+          <View style={[styles.shimmerLine, { width: '40%', marginTop: 8 }]} />
+          <View style={styles.shimmerTagsRow}>
+            <View style={styles.shimmerTag} />
+            <View style={styles.shimmerTag} />
+          </View>
+        </View>
+        {/* Fake action bar */}
+        <View style={styles.shimmerActionBar}>
+          <View style={styles.shimmerCircle} />
+          <View style={styles.shimmerCircle} />
+          <View style={styles.shimmerCircle} />
+          <View style={styles.shimmerCircle} />
+        </View>
+      </Animated.View>
+    </View>
+  );
+}
 
 function getCreatorBadge(type?: CreatorType | null) {
   if (!type) return null;
@@ -137,8 +186,11 @@ function ReelCard({
           source={{ uri: post.imageUri }}
           style={styles.reelImage}
           contentFit="cover"
-          transition={200}
+          transition={300}
           recyclingKey={post.id}
+          placeholder={{ blurhash: DEFAULT_BLURHASH }}
+          placeholderContentFit="cover"
+          cachePolicy="memory-disk"
         />
       ) : (
         <View style={styles.reelNoImage}>
@@ -298,6 +350,15 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { feedPosts, toggleLike, toggleSave, addComment, storyGroups, toggleFollow, isFollowing, loading: feedLoading, refreshFeed } = usePosts();
+  const [refreshing, setRefreshing] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
+
+  // Track initial load completion
+  useEffect(() => {
+    if (!feedLoading && initialLoad) {
+      setInitialLoad(false);
+    }
+  }, [feedLoading, initialLoad]);
   const { user } = useAuth();
   const { unreadCount } = useNotifications(user?.id || null);
   const [commentingPostId, setCommentingPostId] = useState<string | null>(null);
@@ -422,38 +483,58 @@ export default function HomeScreen() {
       </View>
 
       {/* Reels Feed */}
-      <FlatList
-        data={feedPosts}
-        keyExtractor={item => item.id}
-        renderItem={renderReel}
-        pagingEnabled
-        snapToInterval={cardHeight}
-        snapToAlignment="start"
-        decelerationRate="fast"
-        showsVerticalScrollIndicator={false}
-        getItemLayout={getItemLayout}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        removeClippedSubviews={Platform.OS !== 'web'}
-        maxToRenderPerBatch={3}
-        windowSize={5}
-        initialNumToRender={2}
-        ListEmptyComponent={
-          <View style={[styles.emptyState, { height: cardHeight }]}>
-            <Text style={{ fontSize: 56 }}>📷</Text>
-            <Text style={styles.emptyTitle}>No posts yet</Text>
-            <Text style={styles.emptySub}>Be the first to share what you ate!</Text>
-            <Pressable
-              style={styles.emptyBtn}
-              onPress={() => router.push('/(tabs)/camera')}
-            >
-              <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.emptyBtnGrad}>
-                <Text style={styles.emptyBtnText}>Create Post</Text>
-              </LinearGradient>
-            </Pressable>
-          </View>
-        }
-      />
+      {feedLoading && initialLoad ? (
+        /* Show shimmer skeleton while loading initial feed */
+        <View style={{ flex: 1 }}>
+          <ShimmerCard cardHeight={cardHeight} />
+        </View>
+      ) : (
+        <FlatList
+          data={feedPosts}
+          keyExtractor={item => item.id}
+          renderItem={renderReel}
+          pagingEnabled
+          snapToInterval={cardHeight}
+          snapToAlignment="start"
+          decelerationRate="fast"
+          showsVerticalScrollIndicator={false}
+          getItemLayout={getItemLayout}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          removeClippedSubviews={Platform.OS !== 'web'}
+          maxToRenderPerBatch={3}
+          windowSize={5}
+          initialNumToRender={2}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={async () => {
+                setRefreshing(true);
+                await refreshFeed();
+                setRefreshing(false);
+              }}
+              tintColor="#D4AF37"
+              colors={['#D4AF37']}
+              progressBackgroundColor="#1A1A1A"
+            />
+          }
+          ListEmptyComponent={
+            <View style={[styles.emptyState, { height: cardHeight }]}>
+              <Text style={{ fontSize: 56 }}>📷</Text>
+              <Text style={styles.emptyTitle}>No posts yet</Text>
+              <Text style={styles.emptySub}>Be the first to share what you ate!</Text>
+              <Pressable
+                style={styles.emptyBtn}
+                onPress={() => router.push('/(tabs)/camera')}
+              >
+                <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.emptyBtnGrad}>
+                  <Text style={styles.emptyBtnText}>Create Post</Text>
+                </LinearGradient>
+              </Pressable>
+            </View>
+          }
+        />
+      )}
 
       {/* First Task Banner */}
       {showFirstTask ? (
@@ -802,6 +883,52 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   emptyBtnText: { fontSize: 16, fontWeight: '700', color: '#0A0A0A' },
+
+  // Shimmer loading
+  shimmerContainer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  shimmerImage: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#151515',
+  },
+  shimmerBottom: {
+    position: 'absolute',
+    bottom: 24,
+    left: 16,
+    right: 72,
+    gap: 4,
+  },
+  shimmerLine: {
+    height: 14,
+    width: '80%',
+    borderRadius: 7,
+    backgroundColor: '#1F1F1F',
+  },
+  shimmerTagsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  shimmerTag: {
+    width: 72,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#1A1A1A',
+  },
+  shimmerActionBar: {
+    position: 'absolute',
+    right: 14,
+    bottom: 120,
+    alignItems: 'center',
+    gap: 22,
+  },
+  shimmerCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#1A1A1A',
+  },
 
   // Comment bar
   commentBar: {
