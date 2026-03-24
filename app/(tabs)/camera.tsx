@@ -44,6 +44,8 @@ export default function CameraScreen() {
   const [flash, setFlash] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [recordError, setRecordError] = useState<string | null>(null);
 
   // Mode toggle
   const [mode, setMode] = useState<CameraMode>('photo');
@@ -52,6 +54,7 @@ export default function CameraScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isRecordingRef = useRef(false);
 
   // Video preview state
   const [recordedVideoUri, setRecordedVideoUri] = useState<string | null>(null);
@@ -96,6 +99,21 @@ export default function CameraScreen() {
     }
   }, [isRecording]);
 
+  // Keep ref in sync with state
+  useEffect(() => {
+    isRecordingRef.current = isRecording;
+  }, [isRecording]);
+
+  // Reset camera ready when mode or facing changes
+  useEffect(() => {
+    setCameraReady(false);
+  }, [mode, facing]);
+
+  const showError = useCallback((msg: string, duration = 3000) => {
+    setRecordError(msg);
+    setTimeout(() => setRecordError(null), duration);
+  }, []);
+
   // ─── Photo Capture ───
   const handleCapture = useCallback(async () => {
     if (!cameraRef.current || isCapturing) return;
@@ -114,81 +132,110 @@ export default function CameraScreen() {
     }
   }, [isCapturing, router]);
 
+  // ─── Helper: clean up recording state ───
+  const cleanupRecording = useCallback(() => {
+    setIsRecording(false);
+    isRecordingRef.current = false;
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    cancelAnimation(recordProgress);
+    recordProgress.value = 0;
+  }, [recordProgress]);
+
   // ─── Video Recording (tap to start / tap to stop) ───
   const toggleRecording = useCallback(async () => {
-    if (!cameraRef.current) return;
+    if (!cameraRef.current) {
+      showError('Camera not ready. Please wait a moment.');
+      return;
+    }
 
-    if (isRecording) {
+    if (isRecordingRef.current) {
       // Stop recording
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      cameraRef.current.stopRecording();
-      setIsRecording(false);
-
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
+      try {
+        cameraRef.current.stopRecording();
+      } catch (e) {
+        console.log('Stop error:', e);
       }
+      cleanupRecording();
+      return;
+    }
 
-      cancelAnimation(recordProgress);
-      recordProgress.value = 0;
-    } else {
-      // Ensure mic permission on Android before recording
-      if (Platform.OS === 'android' && !micPermission?.granted) {
+    // ── Starting a new recording ──
+
+    // 1. Ensure camera is ready (critical on Android after mode switch)
+    if (!cameraReady) {
+      showError('Camera is still initializing. Wait a moment and try again.');
+      return;
+    }
+
+    // 2. Ensure mic permission (read fresh state, not stale closure)
+    if (Platform.OS === 'android') {
+      try {
         const micResult = await requestMicPermission();
         if (!micResult.granted) {
-          console.log('Microphone permission denied');
+          showError('Microphone permission is required for video recording.');
           return;
         }
-      }
-
-      // Start recording
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      setIsRecording(true);
-      setRecordSeconds(0);
-      recordProgress.value = 0;
-
-      // Progress bar animation
-      recordProgress.value = withTiming(1, {
-        duration: MAX_RECORD_SEC * 1000,
-        easing: Easing.linear,
-      });
-
-      // Timer
-      timerRef.current = setInterval(() => {
-        setRecordSeconds(prev => {
-          if (prev >= MAX_RECORD_SEC - 1) {
-            // Auto-stop at max
-            cameraRef.current?.stopRecording();
-            return prev;
-          }
-          return prev + 1;
-        });
-      }, 1000);
-
-      try {
-        const video = await cameraRef.current.recordAsync({ maxDuration: MAX_RECORD_SEC });
-        // Recording finished (either stopped manually or max duration)
-        setIsRecording(false);
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-        }
-        cancelAnimation(recordProgress);
-        recordProgress.value = 0;
-
-        if (video?.uri) {
-          setRecordedVideoUri(video.uri);
-        }
       } catch (e) {
-        console.log('Record error:', e);
-        setIsRecording(false);
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-        }
+        console.log('Mic permission error:', e);
+        showError('Could not request microphone permission.');
+        return;
       }
     }
-  }, [isRecording]);
+
+    // 3. Clear any previous error
+    setRecordError(null);
+
+    // 4. Start recording
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    setIsRecording(true);
+    isRecordingRef.current = true;
+    setRecordSeconds(0);
+    recordProgress.value = 0;
+
+    // Progress bar animation
+    recordProgress.value = withTiming(1, {
+      duration: MAX_RECORD_SEC * 1000,
+      easing: Easing.linear,
+    });
+
+    // Timer
+    timerRef.current = setInterval(() => {
+      setRecordSeconds(prev => {
+        if (prev >= MAX_RECORD_SEC - 1) {
+          cameraRef.current?.stopRecording();
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 1000);
+
+    try {
+      const video = await cameraRef.current.recordAsync({ maxDuration: MAX_RECORD_SEC });
+      // Recording finished (stopped manually or max duration reached)
+      cleanupRecording();
+
+      if (video?.uri) {
+        setRecordedVideoUri(video.uri);
+      } else {
+        showError('Recording returned no video. Please try again.');
+      }
+    } catch (e: any) {
+      console.log('Record error:', e);
+      cleanupRecording();
+      const msg = e?.message || '';
+      if (msg.includes('permission')) {
+        showError('Permission denied. Check camera and microphone access in settings.');
+      } else if (msg.includes('not ready') || msg.includes('invalid')) {
+        showError('Camera was not ready. Switch to Photo and back to Video, then try again.');
+      } else {
+        showError('Recording failed: ' + (msg || 'Unknown error. Try using Gallery instead.'), 4000);
+      }
+    }
+  }, [cameraReady, cleanupRecording, requestMicPermission, showError, recordProgress]);
 
   // ─── Gallery Picker ───
   const handlePickImage = useCallback(async () => {
@@ -226,9 +273,10 @@ export default function CameraScreen() {
     if (newMode === mode) return;
     if (newMode === 'live') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      return; // Future-ready, no action
+      return;
     }
     Haptics.selectionAsync();
+    setCameraReady(false);
     setMode(newMode);
   }, [mode]);
 
@@ -397,6 +445,7 @@ export default function CameraScreen() {
           facing={facing}
           flash={flash ? 'on' : 'off'}
           mode={mode === 'video' ? 'video' : 'picture'}
+          onCameraReady={() => setCameraReady(true)}
         />
       ) : (
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#000' }]}>
@@ -510,7 +559,10 @@ export default function CameraScreen() {
           ) : mode === 'video' ? (
             <Pressable
               onPress={toggleRecording}
-              style={({ pressed }) => [pressed && !isRecording && { transform: [{ scale: 0.92 }] }]}
+              style={({ pressed }) => [
+                pressed && !isRecording && { transform: [{ scale: 0.92 }] },
+                !cameraReady && !isRecording && { opacity: 0.5 },
+              ]}
             >
               {isRecording ? (
                 /* Recording active — show red ring + stop square */
@@ -546,6 +598,14 @@ export default function CameraScreen() {
           </Pressable>
         </View>
 
+        {/* Error banner */}
+        {recordError ? (
+          <Animated.View entering={FadeIn.duration(200)} style={styles.errorBanner}>
+            <MaterialIcons name="warning" size={16} color="#FBBF24" />
+            <Text style={styles.errorBannerText}>{recordError}</Text>
+          </Animated.View>
+        ) : null}
+
         {/* Hint text */}
         {!isRecording ? (
           <Animated.View entering={FadeIn.duration(400)} style={styles.holdHint}>
@@ -553,7 +613,7 @@ export default function CameraScreen() {
               {mode === 'photo'
                 ? 'Tap to capture'
                 : mode === 'video'
-                  ? 'Tap to start recording · Tap again to stop'
+                  ? (cameraReady ? 'Tap to start recording \u00B7 Tap again to stop' : 'Preparing camera for video...')
                   : 'Live streaming coming soon'}
             </Text>
           </Animated.View>
@@ -793,6 +853,29 @@ const styles = StyleSheet.create({
     borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // Error banner
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(251,191,36,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(251,191,36,0.30)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 14,
+    marginBottom: 4,
+    marginHorizontal: 20,
+    maxWidth: SCREEN_WIDTH - 40,
+  },
+  errorBannerText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FBBF24',
+    flex: 1,
   },
 
   // Hint
