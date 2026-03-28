@@ -16,24 +16,12 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 
-const APP_VERSION = '1.2.0';
-const BUILD_NUMBER = '3';
+const APP_VERSION = '1.1.0';
+const BUILD_NUMBER = '2';
 const CONTACT_EMAIL = 'chocohivepvtltd@gmail.com';
 const DELETION_URL = 'https://amijhtmyxspkhsuramij.backend.onspace.ai/functions/v1/delete-account';
 
 const RELEASE_NOTES = [
-  { version: '1.2.0', date: 'March 2026', items: [
-    'Google Play Store publishing — now available on Play Store',
-    'New Android package identity (app.onspace.foodgenie)',
-    'App info screen with version details and release history',
-    'In-app privacy policy viewer',
-    'Account deletion request flow for compliance',
-    'Store listing assets for all device types (phone, tablet, Chromebook, XR)',
-    'Feature graphic and promotional branding refresh',
-    'Rate us shortcut to store listing',
-    'Contact support via email integration',
-    'Bug fixes and stability improvements',
-  ]},
   { version: '1.1.0', date: 'March 2026', items: [
     'Progressive image loading — feed photos appear instantly',
     'Pull-to-refresh on home feed',
