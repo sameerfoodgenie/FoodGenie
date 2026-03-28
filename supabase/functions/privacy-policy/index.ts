@@ -163,7 +163,7 @@ Deno.serve(async (req: Request) => {
     <ul>
       <li>Access and update: You can view and update your profile information, preferences, and settings at any time through the app.</li>
       <li>Delete content: You can delete your posts, comments, and other content you have created.</li>
-      <li>Account deletion: You may request deletion of your account and associated data by contacting us at ${CONTACT_EMAIL}.</li>
+      <li>Account deletion: You may request deletion of your account and associated data by visiting our <a href="https://amijhtmyxspkhsuramij.backend.onspace.ai/functions/v1/delete-account" style="color:#D4AF37;text-decoration:none;">Account Deletion</a> page or contacting us at ${CONTACT_EMAIL}.</li>
       <li>Notifications: You can manage push notification preferences through your device settings.</li>
       <li>Camera permissions: You can revoke camera and microphone access at any time through your device settings.</li>
     </ul>

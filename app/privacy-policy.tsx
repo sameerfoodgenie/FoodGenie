@@ -123,7 +123,7 @@ export default function PrivacyPolicyScreen() {
           <Section title="5. Your Rights and Choices">
             <BulletItem>Access and update: You can view and update your profile information, preferences, and settings at any time through the app.</BulletItem>
             <BulletItem>Delete content: You can delete your posts, comments, and other content you have created.</BulletItem>
-            <BulletItem>Account deletion: You may request deletion of your account and associated data by contacting us at {CONTACT_EMAIL}.</BulletItem>
+            <BulletItem>Account deletion: You may request deletion of your account and associated data at https://amijhtmyxspkhsuramij.backend.onspace.ai/functions/v1/delete-account or by contacting us at {CONTACT_EMAIL}.</BulletItem>
             <BulletItem>Notifications: You can manage push notification preferences through your device settings.</BulletItem>
             <BulletItem>Camera permissions: You can revoke camera and microphone access at any time through your device settings.</BulletItem>
           </Section>
