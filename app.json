@@ -13,11 +13,12 @@
     },
     "android": {
       "package": "app.onspace.foodgenie",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#D4A030"
       },
+      "blockedPermissions": ["android.permission.ACTIVITY_RECOGNITION"],
       "edgeToEdgeEnabled": true
     },
     "web": {
