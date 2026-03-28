@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "app.onspace.foodgenie",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#D4A030"
