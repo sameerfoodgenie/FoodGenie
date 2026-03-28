@@ -21,6 +21,7 @@ export interface DBPost {
   is_verified: boolean;
   show_name: string | null;
   show_id: string | null;
+  thumbnail_url: string | null;
   created_at: string;
   // Joined
   user_profiles?: { username: string; email: string };
@@ -82,6 +83,7 @@ export async function createPost(post: {
   is_verified?: boolean;
   show_name?: string;
   show_id?: string;
+  thumbnail_url?: string | null;
 }): Promise<{ data: DBPost | null; error: string | null }> {
   try {
     const { data, error } = await supabase

@@ -51,6 +51,7 @@ export interface FoodPost {
   isVerified?: boolean;
   showName?: string;
   showId?: string;
+  thumbnailUri: string | null;
   commentsCount: number;
 }
 
@@ -73,6 +74,7 @@ interface PostContextType {
     isVerified?: boolean;
     showName?: string;
     showId?: string;
+    thumbnailUri?: string | null;
   }) => Promise<void>;
   toggleLike: (postId: string) => void;
   toggleSave: (postId: string) => void;
@@ -120,6 +122,7 @@ function dbPostToFoodPost(dbPost: PostService.DBPost): FoodPost {
     isVerified: dbPost.is_verified || false,
     showName: dbPost.show_name || undefined,
     showId: dbPost.show_id || undefined,
+    thumbnailUri: dbPost.thumbnail_url || null,
     commentsCount: dbPost.comments_count || 0,
   };
 }
@@ -246,6 +249,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
     isVerified?: boolean;
     showName?: string;
     showId?: string;
+    thumbnailUri?: string | null;
   }) => {
     if (!userId) return;
 
@@ -265,6 +269,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
       is_verified: post.isVerified || false,
       show_name: post.showName,
       show_id: post.showId,
+      thumbnail_url: post.thumbnailUri || null,
     });
 
     if (data) {

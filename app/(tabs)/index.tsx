@@ -60,6 +60,46 @@ const SOURCE_LABEL: Record<string, string> = {
 // Default blurhash for food images — warm amber tone
 const DEFAULT_BLURHASH = 'L6Pj0^jE.AyE_3t7t7R**0LMt7xu';
 
+// ─── Progressive Image ───
+function ProgressiveImage({ fullUri, thumbnailUri, style }: { fullUri: string; thumbnailUri: string | null; style: any }) {
+  const [fullLoaded, setFullLoaded] = useState(false);
+
+  return (
+    <View style={style}>
+      {/* Thumbnail layer — shown instantly, hidden once full image loads */}
+      {thumbnailUri && !fullLoaded ? (
+        <Image
+          source={{ uri: thumbnailUri }}
+          style={StyleSheet.absoluteFillObject}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          placeholder={{ blurhash: DEFAULT_BLURHASH }}
+          placeholderContentFit="cover"
+        />
+      ) : !fullLoaded ? (
+        <Image
+          source={{ uri: fullUri }}
+          style={StyleSheet.absoluteFillObject}
+          contentFit="cover"
+          placeholder={{ blurhash: DEFAULT_BLURHASH }}
+          placeholderContentFit="cover"
+          transition={0}
+        />
+      ) : null}
+
+      {/* Full-resolution layer — fades in on load */}
+      <Image
+        source={{ uri: fullUri }}
+        style={[StyleSheet.absoluteFillObject, !fullLoaded && { opacity: 0 }]}
+        contentFit="cover"
+        transition={300}
+        cachePolicy="memory-disk"
+        onLoad={() => setFullLoaded(true)}
+      />
+    </View>
+  );
+}
+
 // ─── Shimmer Loading Card ───
 function ShimmerCard({ cardHeight }: { cardHeight: number }) {
   const shimmerOpacity = useSharedValue(0.3);
@@ -182,15 +222,10 @@ function ReelCard({
       <Pressable style={StyleSheet.absoluteFill} onPress={onTap} />
 
       {post.imageUri ? (
-        <Image
-          source={{ uri: post.imageUri }}
+        <ProgressiveImage
+          fullUri={post.imageUri}
+          thumbnailUri={post.thumbnailUri}
           style={styles.reelImage}
-          contentFit="cover"
-          transition={300}
-          recyclingKey={post.id}
-          placeholder={{ blurhash: DEFAULT_BLURHASH }}
-          placeholderContentFit="cover"
-          cachePolicy="memory-disk"
         />
       ) : (
         <View style={styles.reelNoImage}>

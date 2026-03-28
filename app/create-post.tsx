@@ -22,7 +22,7 @@ import { useApp } from '../contexts/AppContext';
 import { useCreator } from '../contexts/CreatorContext';
 import { useAuth, useAlert } from '@/template';
 import { POPULAR_DISHES, ORDER_PLATFORMS } from '../services/mealInsights';
-import { uploadImage } from '../services/storageService';
+import { uploadImage, uploadThumbnail } from '../services/storageService';
 
 type MealSource = 'home_cooked' | 'restaurant' | 'online_order';
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
@@ -95,15 +95,26 @@ export default function CreatePostScreen() {
 
     try {
       let imageUrl: string | null = null;
+      let thumbnailUrl: string | null = null;
 
       // Upload image to storage if available
       if (params.imageUri) {
-        const { url, error: uploadError } = await uploadImage('post-images', params.imageUri, user.id);
-        if (uploadError) {
-          console.warn('Image upload failed:', uploadError);
-          // Continue without image
+        // Upload full image and thumbnail in parallel
+        const [fullResult, thumbResult] = await Promise.all([
+          uploadImage('post-images', params.imageUri, user.id),
+          uploadThumbnail('post-images', params.imageUri, user.id),
+        ]);
+
+        if (fullResult.error) {
+          console.warn('Image upload failed:', fullResult.error);
         } else {
-          imageUrl = url;
+          imageUrl = fullResult.url;
+        }
+
+        if (thumbResult.error) {
+          console.warn('Thumbnail upload failed:', thumbResult.error);
+        } else {
+          thumbnailUrl = thumbResult.url;
         }
       }
 
@@ -120,6 +131,7 @@ export default function CreatePostScreen() {
         platform: platform || undefined,
         tags: [],
         taggedFriends: friends,
+        thumbnailUri: thumbnailUrl,
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
