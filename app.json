@@ -18,7 +18,6 @@
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#D4A030"
       },
-      "blockedPermissions": ["android.permission.ACTIVITY_RECOGNITION"],
       "edgeToEdgeEnabled": true
     },
     "web": {
