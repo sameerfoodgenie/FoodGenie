@@ -136,6 +136,9 @@ export default function ProfileScreen() {
                 <Pressable style={styles.headerIconBtn} onPress={() => { Haptics.selectionAsync(); router.push('/admin' as any); }}>
                   <MaterialIcons name="admin-panel-settings" size={22} color="#D4AF37" />
                 </Pressable>
+                <Pressable style={styles.headerIconBtn} onPress={() => { Haptics.selectionAsync(); router.push('/investor-deck' as any); }}>
+                  <MaterialIcons name="slideshow" size={20} color="#FFD700" />
+                </Pressable>
                 <Pressable style={styles.headerIconBtn} onPress={() => { Haptics.selectionAsync(); router.push('/app-info' as any); }}>
                   <MaterialIcons name="info-outline" size={20} color="#6B7280" />
                 </Pressable>
