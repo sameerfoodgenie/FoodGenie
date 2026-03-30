@@ -57,7 +57,6 @@ const SOURCE_LABEL: Record<string, string> = {
   online_order: 'Online',
 };
 
-// Default blurhash for food images — warm amber tone
 const DEFAULT_BLURHASH = 'L6Pj0^jE.AyE_3t7t7R**0LMt7xu';
 
 // ─── Progressive Image ───
@@ -66,7 +65,6 @@ function ProgressiveImage({ fullUri, thumbnailUri, style }: { fullUri: string; t
 
   return (
     <View style={style}>
-      {/* Thumbnail layer — shown instantly, hidden once full image loads */}
       {thumbnailUri && !fullLoaded ? (
         <Image
           source={{ uri: thumbnailUri }}
@@ -87,7 +85,6 @@ function ProgressiveImage({ fullUri, thumbnailUri, style }: { fullUri: string; t
         />
       ) : null}
 
-      {/* Full-resolution layer — fades in on load */}
       <Image
         source={{ uri: fullUri }}
         style={[StyleSheet.absoluteFillObject, !fullLoaded && { opacity: 0 }]}
@@ -118,11 +115,9 @@ function ShimmerCard({ cardHeight }: { cardHeight: number }) {
   }));
 
   return (
-    <View style={[styles.reelCard, { height: cardHeight, backgroundColor: '#0A0A0A' }]}>
+    <View style={[styles.reelCard, { height: cardHeight, backgroundColor: '#0A0A0F' }]}>
       <Animated.View style={[styles.shimmerContainer, shimmerStyle]}>
-        {/* Fake image area */}
         <View style={styles.shimmerImage} />
-        {/* Fake bottom info */}
         <View style={styles.shimmerBottom}>
           <View style={styles.shimmerLine} />
           <View style={[styles.shimmerLine, { width: '60%', marginTop: 8 }]} />
@@ -132,7 +127,6 @@ function ShimmerCard({ cardHeight }: { cardHeight: number }) {
             <View style={styles.shimmerTag} />
           </View>
         </View>
-        {/* Fake action bar */}
         <View style={styles.shimmerActionBar}>
           <View style={styles.shimmerCircle} />
           <View style={styles.shimmerCircle} />
@@ -177,11 +171,13 @@ function ActionButton({
       hitSlop={10}
       style={({ pressed }) => [styles.actionBtn, pressed && { transform: [{ scale: 0.85 }] }]}
     >
-      <MaterialIcons
-        name={isActive && activeIcon ? activeIcon : icon}
-        size={28}
-        color={isActive ? (activeColor || '#D4AF37') : '#FFF'}
-      />
+      <View style={styles.actionBtnGlass}>
+        <MaterialIcons
+          name={isActive && activeIcon ? activeIcon : icon}
+          size={26}
+          color={isActive ? (activeColor || '#FFD700') : '#FFF'}
+        />
+      </View>
       {count !== undefined ? (
         <Text style={styles.actionCount}>{formatCount(count)}</Text>
       ) : null}
@@ -233,16 +229,16 @@ function ReelCard({
         </View>
       )}
 
-      {/* Bottom gradient */}
+      {/* Bottom gradient — deeper, more cinematic */}
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.10)', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.92)']}
-        locations={[0, 0.35, 0.65, 1]}
+        colors={['transparent', 'rgba(10,10,15,0.08)', 'rgba(10,10,15,0.50)', 'rgba(10,10,15,0.95)']}
+        locations={[0, 0.30, 0.60, 1]}
         style={styles.bottomGradient}
       />
 
       {/* Top gradient */}
       <LinearGradient
-        colors={['rgba(0,0,0,0.5)', 'rgba(0,0,0,0.15)', 'transparent']}
+        colors={['rgba(10,10,15,0.55)', 'rgba(10,10,15,0.20)', 'transparent']}
         style={styles.topGradient}
       />
 
@@ -252,16 +248,18 @@ function ReelCard({
           onPress={onProfile}
           style={({ pressed }) => [styles.actionAvatarWrap, pressed && { opacity: 0.8 }]}
         >
-          <View style={styles.actionAvatar}>
-            <Text style={styles.actionAvatarText}>{post.avatarInitials}</Text>
-          </View>
+          <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.actionAvatarRing}>
+            <View style={styles.actionAvatar}>
+              <Text style={styles.actionAvatarText}>{post.avatarInitials}</Text>
+            </View>
+          </LinearGradient>
         </Pressable>
 
         <ActionButton
           icon="favorite-border"
           activeIcon="favorite"
           isActive={post.isLiked}
-          activeColor="#D4AF37"
+          activeColor="#FFD700"
           count={post.likes}
           onPress={onLike}
         />
@@ -289,12 +287,12 @@ function ReelCard({
         <Pressable onPress={onProfile} hitSlop={8} style={styles.usernameRow}>
           <Text style={styles.reelUsername}>@{post.username}</Text>
           {post.isVerified ? (
-            <MaterialIcons name="verified" size={16} color="#D4AF37" />
+            <MaterialIcons name="verified" size={16} color="#FFD700" />
           ) : null}
           {(() => {
             const badge = getCreatorBadge(post.creatorType);
             return badge ? (
-              <View style={[styles.creatorBadge, { backgroundColor: `${badge.color}20`, borderColor: `${badge.color}40` }]}>
+              <View style={[styles.creatorBadge, { backgroundColor: `${badge.color}18`, borderColor: `${badge.color}35` }]}>
                 <Text style={styles.creatorBadgeEmoji}>{badge.emoji}</Text>
                 <Text style={[styles.creatorBadgeText, { color: badge.color }]}>{badge.name}</Text>
               </View>
@@ -318,7 +316,7 @@ function ReelCard({
           </View>
         ) : null}
 
-        {/* Tags row — gold pill style */}
+        {/* Tags row — glass pill style */}
         <View style={styles.tagsRow}>
           <View style={styles.tagBadge}>
             <Text style={styles.tagBadgeEmoji}>{SOURCE_ICON[post.source]}</Text>
@@ -345,7 +343,7 @@ function ReelCard({
           ) : null}
         </View>
 
-        {/* Action buttons — follow for all creators, show for home master chef */}
+        {/* Action buttons — follow for all creators */}
         {hasCreatorType ? (
           <View style={styles.chefActionsRow}>
             {isHomeMasterChef && post.showName ? (
@@ -368,9 +366,9 @@ function ReelCard({
               <MaterialIcons
                 name={isFollowed ? 'check' : 'person-add'}
                 size={14}
-                color={isFollowed ? '#0A0A0A' : '#D4AF37'}
+                color={isFollowed ? '#0A0A0F' : '#D4AF37'}
               />
-              <Text style={[styles.chefActionText, isFollowed ? { color: '#0A0A0A' } : { color: '#D4AF37' }]}>
+              <Text style={[styles.chefActionText, isFollowed ? { color: '#0A0A0F' } : { color: '#D4AF37' }]}>
                 {isFollowed ? 'Following' : 'Follow'}
               </Text>
             </Pressable>
@@ -388,7 +386,6 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
 
-  // Track initial load completion
   useEffect(() => {
     if (!feedLoading && initialLoad) {
       setInitialLoad(false);
@@ -417,9 +414,9 @@ export default function HomeScreen() {
   }, []);
 
   const tabBarHeight = Platform.select({
-    ios: insets.bottom + 60,
-    android: insets.bottom + 60,
-    default: 68,
+    ios: insets.bottom + 64,
+    android: insets.bottom + 64,
+    default: 72,
   });
   const cardHeight = SCREEN_H - tabBarHeight;
 
@@ -443,7 +440,7 @@ export default function HomeScreen() {
     Haptics.selectionAsync();
     try {
       await Share.share({
-        message: `Check out ${post.dishName} by @${post.username} on FoodGenie! 🍽`,
+        message: `Check out ${post.dishName} by @${post.username} on FoodGenie!`,
       });
     } catch { /* ignore */ }
   }, []);
@@ -493,15 +490,22 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header overlay */}
-      <View style={[styles.headerOverlay, { paddingTop: insets.top + 8 }]}>
-        <Text style={styles.appTitle}>FoodGenie</Text>
+      {/* Header overlay — glass effect */}
+      <View style={[styles.headerOverlay, { paddingTop: insets.top + 10 }]}>
+        <View style={styles.headerLeft}>
+          <Image
+            source={require('../../assets/images/icon.png')}
+            style={styles.headerLogo}
+            contentFit="contain"
+          />
+          <Text style={styles.appTitle}>FoodGenie</Text>
+        </View>
         <View style={styles.headerRight}>
           <Pressable
             onPress={() => { Haptics.selectionAsync(); router.push('/notifications'); }}
             style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
           >
-            <MaterialIcons name="notifications-none" size={22} color="#FFF" />
+            <MaterialIcons name="notifications-none" size={21} color="#FFF" />
             {unreadCount > 0 ? (
               <View style={styles.notifBadge}>
                 <Text style={styles.notifBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -512,14 +516,13 @@ export default function HomeScreen() {
             onPress={() => { Haptics.selectionAsync(); router.push('/(tabs)/camera'); }}
             style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
           >
-            <MaterialIcons name="camera-alt" size={22} color="#FFF" />
+            <MaterialIcons name="camera-alt" size={21} color="#FFF" />
           </Pressable>
         </View>
       </View>
 
       {/* Reels Feed */}
       {feedLoading && initialLoad ? (
-        /* Show shimmer skeleton while loading initial feed */
         <View style={{ flex: 1 }}>
           <ShimmerCard cardHeight={cardHeight} />
         </View>
@@ -550,12 +553,14 @@ export default function HomeScreen() {
               }}
               tintColor="#D4AF37"
               colors={['#D4AF37']}
-              progressBackgroundColor="#1A1A1A"
+              progressBackgroundColor="#18181E"
             />
           }
           ListEmptyComponent={
             <View style={[styles.emptyState, { height: cardHeight }]}>
-              <Text style={{ fontSize: 56 }}>📷</Text>
+              <View style={styles.emptyIconWrap}>
+                <MaterialIcons name="camera-alt" size={40} color="#D4AF37" />
+              </View>
               <Text style={styles.emptyTitle}>No posts yet</Text>
               <Text style={styles.emptySub}>Be the first to share what you ate!</Text>
               <Pressable
@@ -563,6 +568,7 @@ export default function HomeScreen() {
                 onPress={() => router.push('/(tabs)/camera')}
               >
                 <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.emptyBtnGrad}>
+                  <MaterialIcons name="add" size={20} color="#0A0A0F" />
                   <Text style={styles.emptyBtnText}>Create Post</Text>
                 </LinearGradient>
               </Pressable>
@@ -576,12 +582,9 @@ export default function HomeScreen() {
         <Animated.View
           entering={FadeIn.duration(400)}
           exiting={FadeOut.duration(200)}
-          style={[styles.taskBanner, { top: insets.top + 56 }]}
+          style={[styles.taskBanner, { top: insets.top + 60 }]}
         >
-          <LinearGradient
-            colors={['rgba(212,175,55,0.12)', 'rgba(212,175,55,0.04)']}
-            style={styles.taskBannerInner}
-          >
+          <View style={styles.taskBannerInner}>
             <View style={styles.taskBannerIcon}>
               <MaterialIcons name="restaurant" size={18} color="#D4AF37" />
             </View>
@@ -594,9 +597,9 @@ export default function HomeScreen() {
               onPress={dismissTask}
               hitSlop={10}
             >
-              <MaterialIcons name="close" size={16} color="#6B6B6B" />
+              <MaterialIcons name="close" size={16} color="#6B7280" />
             </Pressable>
-          </LinearGradient>
+          </View>
         </Animated.View>
       ) : null}
 
@@ -613,7 +616,7 @@ export default function HomeScreen() {
             value={commentText}
             onChangeText={setCommentText}
             placeholder="Add a comment..."
-            placeholderTextColor="rgba(255,255,255,0.35)"
+            placeholderTextColor="rgba(255,255,255,0.30)"
             returnKeyType="send"
             onSubmitEditing={handleSubmitComment}
             autoFocus
@@ -622,13 +625,13 @@ export default function HomeScreen() {
             onPress={handleSubmitComment}
             style={({ pressed }) => [styles.commentSendBtn, pressed && { opacity: 0.7 }]}
           >
-            <MaterialIcons name="send" size={20} color={commentText.trim() ? '#D4AF37' : 'rgba(255,255,255,0.25)'} />
+            <MaterialIcons name="send" size={20} color={commentText.trim() ? '#D4AF37' : 'rgba(255,255,255,0.20)'} />
           </Pressable>
           <Pressable
             onPress={() => { setCommentingPostId(null); setCommentText(''); }}
             style={styles.commentCloseBtn}
           >
-            <MaterialIcons name="close" size={18} color="rgba(255,255,255,0.5)" />
+            <MaterialIcons name="close" size={18} color="rgba(255,255,255,0.4)" />
           </Pressable>
         </Animated.View>
       ) : null}
@@ -639,10 +642,10 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0A0A',
+    backgroundColor: '#0A0A0F',
   },
 
-  // Header
+  // Header — glass effect
   headerOverlay: {
     position: 'absolute',
     top: 0,
@@ -652,32 +655,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingBottom: 14,
     zIndex: 50,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerLogo: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+  },
   appTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
-    color: '#D4AF37',
-    letterSpacing: 0.5,
-    textShadowColor: 'rgba(0,0,0,0.7)',
+    color: '#FFD700',
+    letterSpacing: 0.3,
+    textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 8,
+    textShadowRadius: 10,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   headerBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.15)',
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   notifBadge: {
     position: 'absolute',
@@ -691,7 +704,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 4,
     borderWidth: 1.5,
-    borderColor: '#0A0A0A',
+    borderColor: '#0A0A0F',
   },
   notifBadgeText: {
     fontSize: 10,
@@ -703,7 +716,7 @@ const styles = StyleSheet.create({
   reelCard: {
     width: SCREEN_W,
     position: 'relative',
-    backgroundColor: '#0A0A0A',
+    backgroundColor: '#0A0A0F',
   },
   reelImage: {
     ...StyleSheet.absoluteFillObject,
@@ -712,7 +725,7 @@ const styles = StyleSheet.create({
   },
   reelNoImage: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0A0A0A',
+    backgroundColor: '#0A0A0F',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -723,49 +736,65 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: '60%',
+    height: '65%',
   },
   topGradient: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 120,
+    height: 130,
   },
 
-  // Right action bar
+  // Right action bar — glass buttons
   actionBar: {
     position: 'absolute',
-    right: 12,
+    right: 14,
     bottom: 100,
     alignItems: 'center',
-    gap: 20,
+    gap: 18,
     zIndex: 20,
   },
   actionBtn: {
     alignItems: 'center',
-    gap: 3,
+    gap: 4,
+  },
+  actionBtnGlass: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: 'rgba(10,10,15,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   actionCount: {
     fontSize: 12,
     fontWeight: '700',
     color: '#FFF',
-    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
   actionAvatarWrap: {
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  actionAvatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: 'rgba(212,175,55,0.15)',
+  actionAvatarRing: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    padding: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#D4AF37',
+  },
+  actionAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#18181E',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actionAvatarText: {
     fontSize: 14,
@@ -776,9 +805,9 @@ const styles = StyleSheet.create({
   // Bottom info
   bottomInfo: {
     position: 'absolute',
-    bottom: 24,
-    left: 16,
-    right: 72,
+    bottom: 28,
+    left: 18,
+    right: 80,
     zIndex: 20,
     gap: 6,
   },
@@ -792,61 +821,61 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
     color: '#FFF',
-    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 6,
+    textShadowRadius: 8,
   },
   creatorBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 10,
     borderWidth: 1,
   },
   creatorBadgeEmoji: { fontSize: 10 },
   creatorBadgeText: { fontSize: 10, fontWeight: '700' },
   reelDishName: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '900',
     color: '#FFF',
     letterSpacing: -0.3,
-    textShadowColor: 'rgba(0,0,0,0.7)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 8,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 10,
   },
   reelCaption: {
     fontSize: 14,
     fontWeight: '500',
-    color: 'rgba(255,255,255,0.80)',
+    color: 'rgba(255,255,255,0.75)',
     lineHeight: 20,
-    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowColor: 'rgba(0,0,0,0.6)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
 
-  // Gold pill tags
+  // Glass pill tags
   tagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginTop: 4,
+    marginTop: 6,
   },
   tagBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: 'rgba(212,175,55,0.12)',
+    backgroundColor: 'rgba(212,175,55,0.10)',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.20)',
+    borderColor: 'rgba(212,175,55,0.16)',
   },
   tagBadgeAccent: {
-    backgroundColor: 'rgba(255,215,0,0.12)',
-    borderColor: 'rgba(255,215,0,0.25)',
+    backgroundColor: 'rgba(255,215,0,0.10)',
+    borderColor: 'rgba(255,215,0,0.20)',
   },
   tagBadgeEmoji: {
     fontSize: 11,
@@ -875,22 +904,22 @@ const styles = StyleSheet.create({
   chefActionsRow: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: 8,
+    marginTop: 10,
   },
   chefActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'rgba(255,255,255,0.10)',
   },
   chefFollowBtn: {
     backgroundColor: 'rgba(212,175,55,0.10)',
-    borderColor: 'rgba(212,175,55,0.25)',
+    borderColor: 'rgba(212,175,55,0.22)',
   },
   chefFollowingBtn: {
     backgroundColor: '#D4AF37',
@@ -907,17 +936,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 40,
-    gap: 12,
+    gap: 14,
+  },
+  emptyIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(212,175,55,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
   emptyTitle: { fontSize: 22, fontWeight: '800', color: '#FFF' },
-  emptySub: { fontSize: 15, color: 'rgba(255,255,255,0.45)', textAlign: 'center', lineHeight: 22 },
-  emptyBtn: { marginTop: 12, borderRadius: 16, overflow: 'hidden' },
+  emptySub: { fontSize: 15, color: 'rgba(255,255,255,0.40)', textAlign: 'center', lineHeight: 22 },
+  emptyBtn: { marginTop: 12, borderRadius: 18, overflow: 'hidden' },
   emptyBtnGrad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 16,
+    paddingVertical: 16,
+    borderRadius: 18,
   },
-  emptyBtnText: { fontSize: 16, fontWeight: '700', color: '#0A0A0A' },
+  emptyBtnText: { fontSize: 16, fontWeight: '700', color: '#0A0A0F' },
 
   // Shimmer loading
   shimmerContainer: {
@@ -925,20 +968,20 @@ const styles = StyleSheet.create({
   },
   shimmerImage: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#151515',
+    backgroundColor: '#111116',
   },
   shimmerBottom: {
     position: 'absolute',
-    bottom: 24,
-    left: 16,
-    right: 72,
+    bottom: 28,
+    left: 18,
+    right: 80,
     gap: 4,
   },
   shimmerLine: {
     height: 14,
     width: '80%',
     borderRadius: 7,
-    backgroundColor: '#1F1F1F',
+    backgroundColor: '#1A1A22',
   },
   shimmerTagsRow: {
     flexDirection: 'row',
@@ -949,7 +992,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: '#18181E',
   },
   shimmerActionBar: {
     position: 'absolute',
@@ -959,10 +1002,10 @@ const styles = StyleSheet.create({
     gap: 22,
   },
   shimmerCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#1A1A1A',
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#18181E',
   },
 
   // Comment bar
@@ -976,20 +1019,20 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingTop: 12,
-    backgroundColor: 'rgba(10,10,10,0.9)',
+    backgroundColor: 'rgba(10,10,15,0.92)',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(212,175,55,0.10)',
+    borderTopColor: 'rgba(212,175,55,0.08)',
   },
   commentInput: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
     fontSize: 15,
     color: '#FFF',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.12)',
+    borderColor: 'rgba(212,175,55,0.10)',
   },
   commentSendBtn: { padding: 8 },
   commentCloseBtn: { padding: 8 },
@@ -1007,9 +1050,10 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderRadius: 16,
+    borderRadius: 18,
+    backgroundColor: 'rgba(26,26,34,0.85)',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.15)',
+    borderColor: 'rgba(212,175,55,0.12)',
   },
   taskBannerIcon: {
     width: 40,
@@ -1021,7 +1065,7 @@ const styles = StyleSheet.create({
   },
   taskBannerContent: { flex: 1, gap: 2 },
   taskBannerTitle: { fontSize: 15, fontWeight: '700', color: '#FFF' },
-  taskBannerDesc: { fontSize: 12, fontWeight: '500', color: '#A0A0A0' },
+  taskBannerDesc: { fontSize: 12, fontWeight: '500', color: '#9CA3AF' },
   taskBannerClose: {
     width: 28,
     height: 28,

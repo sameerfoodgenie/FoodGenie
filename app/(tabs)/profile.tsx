@@ -131,46 +131,51 @@ export default function ProfileScreen() {
               <Text style={styles.title}>{name}</Text>
               <View style={styles.headerActions}>
                 <Pressable style={styles.headerIconBtn} onPress={() => router.push('/(tabs)/camera')}>
-                  <MaterialIcons name="add-box" size={26} color="#FFF" />
+                  <MaterialIcons name="add-box" size={24} color="#FFF" />
                 </Pressable>
                 <Pressable style={styles.headerIconBtn} onPress={() => { Haptics.selectionAsync(); router.push('/admin' as any); }}>
-                  <MaterialIcons name="admin-panel-settings" size={24} color="#D4AF37" />
+                  <MaterialIcons name="admin-panel-settings" size={22} color="#D4AF37" />
                 </Pressable>
                 <Pressable style={styles.headerIconBtn} onPress={() => { Haptics.selectionAsync(); router.push('/app-info' as any); }}>
-                  <MaterialIcons name="info-outline" size={22} color="#6B6B6B" />
+                  <MaterialIcons name="info-outline" size={20} color="#6B7280" />
                 </Pressable>
                 <Pressable style={styles.headerIconBtn} onPress={handleLogout}>
-                  <MaterialIcons name="logout" size={22} color="#6B6B6B" />
+                  <MaterialIcons name="logout" size={20} color="#6B7280" />
                 </Pressable>
               </View>
             </View>
 
-            {/* Profile info + social stats */}
-            <Animated.View entering={FadeIn.duration(400)} style={styles.profileSection}>
-              <View style={styles.avatarWrap}>
-                <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.avatar}>
-                  <Text style={styles.avatarText}>{initials}</Text>
-                </LinearGradient>
-                <View style={[styles.levelBadge, { backgroundColor: currentLevel.color }]}>
-                  <Text style={styles.levelBadgeEmoji}>{currentLevel.emoji}</Text>
+            {/* Profile info + social stats — glass card */}
+            <Animated.View entering={FadeIn.duration(400)} style={styles.profileCard}>
+              <View style={styles.profileCardInner}>
+                <View style={styles.avatarWrap}>
+                  <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.avatar}>
+                    <Text style={styles.avatarText}>{initials}</Text>
+                  </LinearGradient>
+                  <View style={[styles.levelBadge, { backgroundColor: currentLevel.color }]}>
+                    <Text style={styles.levelBadgeEmoji}>{currentLevel.emoji}</Text>
+                  </View>
                 </View>
-              </View>
-              <View style={styles.socialStats}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{gridPosts.length}</Text>
-                  <Text style={styles.statLabel}>Posts</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{followerCount}</Text>
-                  <Text style={styles.statLabel}>Followers</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{followingCount}</Text>
-                  <Text style={styles.statLabel}>Following</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: '#D4AF37' }]}>{totalLikes}</Text>
-                  <Text style={styles.statLabel}>Likes</Text>
+                <View style={styles.socialStats}>
+                  <View style={styles.statItem}>
+                    <Text style={styles.statValue}>{gridPosts.length}</Text>
+                    <Text style={styles.statLabel}>Posts</Text>
+                  </View>
+                  <View style={styles.statDivider} />
+                  <View style={styles.statItem}>
+                    <Text style={styles.statValue}>{followerCount}</Text>
+                    <Text style={styles.statLabel}>Followers</Text>
+                  </View>
+                  <View style={styles.statDivider} />
+                  <View style={styles.statItem}>
+                    <Text style={styles.statValue}>{followingCount}</Text>
+                    <Text style={styles.statLabel}>Following</Text>
+                  </View>
+                  <View style={styles.statDivider} />
+                  <View style={styles.statItem}>
+                    <Text style={[styles.statValue, { color: '#FFD700' }]}>{totalLikes}</Text>
+                    <Text style={styles.statLabel}>Likes</Text>
+                  </View>
                 </View>
               </View>
             </Animated.View>
@@ -180,19 +185,19 @@ export default function ProfileScreen() {
               <View style={styles.bioNameRow}>
                 <Text style={styles.bioName}>{name}</Text>
                 {myTier ? (
-                  <View style={[styles.levelTag, { backgroundColor: `${myTier.color}18`, borderColor: `${myTier.color}40` }]}>
+                  <View style={[styles.levelTag, { backgroundColor: `${myTier.color}14`, borderColor: `${myTier.color}30` }]}>
                     <Text style={styles.levelTagEmoji}>{myTier.emoji}</Text>
                     <Text style={[styles.levelTagText, { color: myTier.color }]}>{myTier.name}</Text>
                   </View>
                 ) : (
-                  <View style={[styles.levelTag, { backgroundColor: `${currentLevel.color}18`, borderColor: `${currentLevel.color}40` }]}>
+                  <View style={[styles.levelTag, { backgroundColor: `${currentLevel.color}14`, borderColor: `${currentLevel.color}30` }]}>
                     <Text style={styles.levelTagEmoji}>{currentLevel.emoji}</Text>
                     <Text style={[styles.levelTagText, { color: currentLevel.color }]}>{currentLevel.name}</Text>
                   </View>
                 )}
               </View>
               {email ? <Text style={styles.bioEmail}>{email}</Text> : null}
-              <Text style={styles.bioText}>Food lover sharing my meals on FoodGenie 🍽✨</Text>
+              <Text style={styles.bioText}>Food lover sharing my meals on FoodGenie</Text>
             </View>
 
             {/* ─── Latest Post Hero ─── */}
@@ -211,7 +216,7 @@ export default function ProfileScreen() {
                     </View>
                   )}
                   <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.7)', 'rgba(0,0,0,0.92)']}
+                    colors={['transparent', 'rgba(10,10,15,0.75)', 'rgba(10,10,15,0.95)']}
                     style={styles.latestPostOverlay}
                   >
                     <View style={styles.latestPostInfo}>
@@ -221,11 +226,11 @@ export default function ProfileScreen() {
                       ) : null}
                       <View style={styles.latestMeta}>
                         <View style={styles.latestMetaItem}>
-                          <MaterialIcons name="favorite" size={14} color="#D4AF37" />
+                          <MaterialIcons name="favorite" size={14} color="#FFD700" />
                           <Text style={styles.latestMetaText}>{latestPost.likes}</Text>
                         </View>
                         <View style={styles.latestMetaItem}>
-                          <MaterialIcons name="chat-bubble" size={13} color="#6B6B6B" />
+                          <MaterialIcons name="chat-bubble" size={13} color="#6B7280" />
                           <Text style={styles.latestMetaText}>{latestPost.comments.length}</Text>
                         </View>
                       </View>
@@ -250,7 +255,7 @@ export default function ProfileScreen() {
                     {unlockedBadges.map(badge => (
                       <View
                         key={badge.id}
-                        style={[styles.profileBadge, { backgroundColor: `${badge.color}12`, borderColor: `${badge.color}30` }]}
+                        style={[styles.profileBadge, { backgroundColor: `${badge.color}10`, borderColor: `${badge.color}25` }]}
                       >
                         <Text style={styles.profileBadgeEmoji}>{badge.emoji}</Text>
                         <Text style={[styles.profileBadgeName, { color: badge.color }]}>{badge.name}</Text>
@@ -296,13 +301,10 @@ export default function ProfileScreen() {
                   style={({ pressed }) => [styles.creatorCardUnlocked, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
                   onPress={handleShowsTap}
                 >
-                  <LinearGradient
-                    colors={['rgba(212,175,55,0.08)', 'rgba(212,175,55,0.02)']}
-                    style={styles.creatorCardInner}
-                  >
+                  <View style={styles.creatorCardInner}>
                     <View style={styles.creatorHeader}>
                       <View style={styles.creatorTitleRow}>
-                        <MaterialIcons name="auto-awesome" size={20} color="#D4AF37" />
+                        <MaterialIcons name="auto-awesome" size={20} color="#FFD700" />
                         <Text style={styles.creatorTitle}>Creator Studio</Text>
                       </View>
                       <View style={styles.creatorBadgeTag}>
@@ -325,35 +327,34 @@ export default function ProfileScreen() {
                       <Text style={styles.creatorCtaText}>Open Studio</Text>
                       <MaterialIcons name="arrow-forward" size={16} color="#D4AF37" />
                     </View>
-                  </LinearGradient>
+                  </View>
                 </Pressable>
               ) : (
                 <View style={styles.creatorCardLocked}>
                   <View style={styles.lockHeader}>
                     <View style={styles.lockIconWrap}>
-                      <MaterialIcons name="rocket-launch" size={24} color="#D4AF37" />
+                      <MaterialIcons name="rocket-launch" size={24} color="#FFD700" />
                     </View>
                     <View style={styles.lockTitleBlock}>
                       <Text style={styles.lockTitle}>Creator Mode</Text>
                       <Text style={styles.lockSubtitle}>
                         {postsNeeded > 0
                           ? `You are ${postsNeeded} post${postsNeeded !== 1 ? 's' : ''} away from Creator Mode`
-                          : `🔥 ${streakNeeded} day${streakNeeded !== 1 ? 's' : ''} streak to unlock`
+                          : `${streakNeeded} day${streakNeeded !== 1 ? 's' : ''} streak to unlock`
                         }
                       </Text>
                     </View>
                   </View>
 
-                  {/* Reward preview */}
                   <View style={styles.rewardPreview}>
-                    <MaterialIcons name="emoji-events" size={16} color="#D4AF37" />
-                    <Text style={styles.rewardPreviewText}>Unlock: Create Shows & gain followers</Text>
+                    <MaterialIcons name="emoji-events" size={16} color="#FFD700" />
+                    <Text style={styles.rewardPreviewText}>Unlock: Create Shows and gain followers</Text>
                   </View>
 
                   <View style={styles.progressSection}>
                     <View style={styles.progressItem}>
                       <View style={styles.progressLabel}>
-                        <Text style={styles.progressText}>📸 Posts</Text>
+                        <Text style={styles.progressText}>Posts</Text>
                         <Text style={styles.progressCount}>{postCount}/5</Text>
                       </View>
                       <View style={styles.progressBarBg}>
@@ -362,7 +363,7 @@ export default function ProfileScreen() {
                     </View>
                     <View style={styles.progressItem}>
                       <View style={styles.progressLabel}>
-                        <Text style={styles.progressText}>🔥 Streak</Text>
+                        <Text style={styles.progressText}>Streak</Text>
                         <Text style={styles.progressCount}>{streakCount}/7 days</Text>
                       </View>
                       <View style={styles.progressBarBg}>
@@ -377,14 +378,16 @@ export default function ProfileScreen() {
             {/* Grid header */}
             <View style={styles.gridHeader}>
               <View style={styles.gridTab}>
-                <MaterialIcons name="grid-on" size={22} color="#FFF" />
+                <MaterialIcons name="grid-on" size={22} color="#D4AF37" />
               </View>
             </View>
           </View>
         }
         ListEmptyComponent={
           <View style={styles.emptyGrid}>
-            <MaterialIcons name="camera-alt" size={48} color="#6B6B6B" />
+            <View style={styles.emptyGridIcon}>
+              <MaterialIcons name="camera-alt" size={40} color="#6B7280" />
+            </View>
             <Text style={styles.emptyGridTitle}>No Posts Yet</Text>
             <Text style={styles.emptyGridSub}>Share your first meal!</Text>
           </View>
@@ -395,7 +398,7 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0A' },
+  container: { flex: 1, backgroundColor: '#0A0A0F' },
 
   header: {
     flexDirection: 'row',
@@ -403,28 +406,36 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 12,
+    paddingBottom: 14,
   },
-  title: { fontSize: 22, fontWeight: '800', color: '#FFF' },
-  headerActions: { flexDirection: 'row', gap: 16 },
-  headerIconBtn: { padding: 4 },
+  title: { fontSize: 22, fontWeight: '800', color: '#FFF', letterSpacing: -0.3 },
+  headerActions: { flexDirection: 'row', gap: 14 },
+  headerIconBtn: { padding: 6 },
 
-  profileSection: {
+  // Profile card — glass
+  profileCard: {
+    paddingHorizontal: 20,
+    paddingBottom: 4,
+  },
+  profileCardInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    gap: 20,
+    padding: 16,
+    borderRadius: 20,
+    backgroundColor: 'rgba(26,26,34,0.70)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    gap: 18,
   },
   avatarWrap: { position: 'relative' },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 28, fontWeight: '800', color: '#0A0A0A' },
+  avatarText: { fontSize: 26, fontWeight: '800', color: '#0A0A0F' },
   levelBadge: {
     position: 'absolute',
     bottom: -2,
@@ -435,16 +446,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#0A0A0A',
+    borderColor: '#0A0A0F',
   },
   levelBadgeEmoji: { fontSize: 12 },
 
-  socialStats: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
+  socialStats: { flex: 1, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
   statItem: { alignItems: 'center', gap: 2 },
-  statValue: { fontSize: 19, fontWeight: '800', color: '#FFF' },
-  statLabel: { fontSize: 11, fontWeight: '500', color: '#6B6B6B' },
+  statValue: { fontSize: 18, fontWeight: '800', color: '#FFF' },
+  statLabel: { fontSize: 10, fontWeight: '500', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 },
+  statDivider: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.06)' },
 
-  bioSection: { paddingHorizontal: 20, paddingBottom: 8, gap: 4 },
+  bioSection: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8, gap: 4 },
   bioNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   bioName: { fontSize: 15, fontWeight: '700', color: '#FFF' },
   levelTag: {
@@ -458,21 +470,21 @@ const styles = StyleSheet.create({
   },
   levelTagEmoji: { fontSize: 12 },
   levelTagText: { fontSize: 11, fontWeight: '700' },
-  bioEmail: { fontSize: 13, color: '#6B6B6B' },
-  bioText: { fontSize: 14, color: '#A0A0A0', marginTop: 4 },
+  bioEmail: { fontSize: 13, color: '#6B7280' },
+  bioText: { fontSize: 14, color: '#9CA3AF', marginTop: 4, lineHeight: 20 },
 
   // Latest post hero
-  latestPostSection: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
+  latestPostSection: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 4 },
   latestLabel: {
     fontSize: 11,
     fontWeight: '700',
     color: '#D4AF37',
-    letterSpacing: 1,
-    marginBottom: 8,
+    letterSpacing: 1.2,
+    marginBottom: 10,
   },
   latestPostCard: {
-    height: 200,
-    borderRadius: 18,
+    height: 210,
+    borderRadius: 20,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -480,7 +492,7 @@ const styles = StyleSheet.create({
   latestPostNoImage: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#1A1A1A',
+    backgroundColor: '#18181E',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -489,16 +501,16 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 16,
-    paddingBottom: 14,
-    paddingTop: 40,
+    paddingHorizontal: 18,
+    paddingBottom: 16,
+    paddingTop: 50,
   },
   latestPostInfo: { gap: 4 },
-  latestDishName: { fontSize: 18, fontWeight: '800', color: '#FFF' },
-  latestCaption: { fontSize: 13, color: 'rgba(255,255,255,0.65)', fontWeight: '500' },
-  latestMeta: { flexDirection: 'row', gap: 14, marginTop: 4 },
+  latestDishName: { fontSize: 20, fontWeight: '800', color: '#FFF' },
+  latestCaption: { fontSize: 13, color: 'rgba(255,255,255,0.60)', fontWeight: '500' },
+  latestMeta: { flexDirection: 'row', gap: 16, marginTop: 6 },
   latestMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  latestMetaText: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.8)' },
+  latestMetaText: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.75)' },
 
   // Badges
   badgesSection: { paddingBottom: 4 },
@@ -518,47 +530,48 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: '#18181E',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.10)',
+    borderColor: 'rgba(212,175,55,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  moreBadgesText: { fontSize: 12, fontWeight: '700', color: '#6B6B6B' },
+  moreBadgesText: { fontSize: 12, fontWeight: '700', color: '#6B7280' },
 
   actionRow: {
     flexDirection: 'row',
     paddingHorizontal: 20,
     gap: 8,
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
   showsBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    borderColor: 'rgba(212,175,55,0.25)',
+    borderColor: 'rgba(212,175,55,0.20)',
     backgroundColor: 'rgba(212,175,55,0.06)',
   },
   editProfileBtn: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: '#1A1A1A',
+    paddingVertical: 11,
+    borderRadius: 12,
+    backgroundColor: '#18181E',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.10)',
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   editProfileText: { fontSize: 14, fontWeight: '700', color: '#FFF' },
 
   /* Creator Section */
   creatorSection: { paddingHorizontal: 20, paddingBottom: 16 },
-  creatorCardUnlocked: { borderRadius: 16, overflow: 'hidden' },
+  creatorCardUnlocked: { borderRadius: 20, overflow: 'hidden' },
   creatorCardInner: {
-    padding: 16,
-    borderRadius: 16,
+    padding: 18,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.20)',
+    borderColor: 'rgba(212,175,55,0.15)',
+    backgroundColor: 'rgba(212,175,55,0.04)',
     gap: 14,
   },
   creatorHeader: {
@@ -578,7 +591,7 @@ const styles = StyleSheet.create({
   creatorStats: { flexDirection: 'row', gap: 24 },
   creatorStatItem: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
   creatorStatVal: { fontSize: 20, fontWeight: '800', color: '#FFF' },
-  creatorStatLbl: { fontSize: 13, color: '#6B6B6B', fontWeight: '500' },
+  creatorStatLbl: { fontSize: 13, color: '#6B7280', fontWeight: '500' },
   creatorCta: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -589,11 +602,11 @@ const styles = StyleSheet.create({
 
   /* Locked */
   creatorCardLocked: {
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: '#151515',
+    padding: 18,
+    borderRadius: 20,
+    backgroundColor: '#111116',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.12)',
+    borderColor: 'rgba(212,175,55,0.10)',
     gap: 14,
   },
   lockHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -601,38 +614,38 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(212,175,55,0.08)',
+    backgroundColor: 'rgba(212,175,55,0.06)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.15)',
+    borderColor: 'rgba(212,175,55,0.12)',
   },
   lockTitleBlock: { flex: 1, gap: 3 },
   lockTitle: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-  lockSubtitle: { fontSize: 13, color: '#A0A0A0', fontWeight: '500', lineHeight: 18 },
+  lockSubtitle: { fontSize: 13, color: '#9CA3AF', fontWeight: '500', lineHeight: 18 },
 
   rewardPreview: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: 'rgba(212,175,55,0.06)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: 'rgba(212,175,55,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.12)',
+    borderColor: 'rgba(212,175,55,0.10)',
   },
   rewardPreviewText: { fontSize: 13, fontWeight: '600', color: '#D4AF37' },
 
   progressSection: { gap: 10 },
   progressItem: { gap: 6 },
   progressLabel: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  progressText: { fontSize: 13, fontWeight: '600', color: '#A0A0A0' },
+  progressText: { fontSize: 13, fontWeight: '600', color: '#9CA3AF' },
   progressCount: { fontSize: 13, fontWeight: '700', color: '#FFF' },
   progressBarBg: {
-    height: 6,
+    height: 5,
     borderRadius: 3,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: '#18181E',
     overflow: 'hidden',
   },
   progressBarFill: { height: '100%', borderRadius: 3 },
@@ -642,9 +655,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(212,175,55,0.10)',
+    borderTopColor: 'rgba(255,255,255,0.04)',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(212,175,55,0.10)',
+    borderBottomColor: 'rgba(255,255,255,0.04)',
   },
   gridTab: {
     paddingVertical: 12,
@@ -657,11 +670,20 @@ const styles = StyleSheet.create({
   gridNoImage: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#1A1A1A',
+    backgroundColor: '#18181E',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyGrid: { alignItems: 'center', paddingTop: 60, gap: 8 },
+  emptyGrid: { alignItems: 'center', paddingTop: 60, gap: 10 },
+  emptyGridIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#111116',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
   emptyGridTitle: { fontSize: 18, fontWeight: '700', color: '#FFF' },
-  emptyGridSub: { fontSize: 14, color: '#6B6B6B' },
+  emptyGridSub: { fontSize: 14, color: '#6B7280' },
 });

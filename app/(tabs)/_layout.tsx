@@ -16,16 +16,16 @@ import OnboardingWalkthrough, { useOnboardingStatus } from '../../components/Onb
 
 function GlowingPlusButton({ focused }: { focused: boolean }) {
   const glowScale = useSharedValue(1);
-  const glowOpacity = useSharedValue(0.25);
+  const glowOpacity = useSharedValue(0.20);
 
   useEffect(() => {
     glowScale.value = withRepeat(
-      withTiming(1.35, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1.4, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
       -1,
       true,
     );
     glowOpacity.value = withRepeat(
-      withTiming(0.55, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+      withTiming(0.50, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
       -1,
       true,
     );
@@ -40,13 +40,15 @@ function GlowingPlusButton({ focused }: { focused: boolean }) {
     <View style={styles.postTabWrap}>
       <Animated.View style={[styles.glowRing, glowStyle]} />
       <LinearGradient
-        colors={focused ? ['#FFD700', '#D4AF37'] : ['#1A1A1A', '#151515']}
+        colors={focused ? ['#FFD700', '#D4AF37'] : ['#1E1E28', '#18181E']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={styles.postTabBtn}
       >
         <MaterialIcons
           name="add"
-          size={32}
-          color={focused ? '#0A0A0A' : '#A0A0A0'}
+          size={30}
+          color={focused ? '#0A0A0F' : '#D4AF37'}
         />
       </LinearGradient>
     </View>
@@ -71,20 +73,20 @@ export default function TabLayout() {
 
   const tabBarStyle = {
     height: Platform.select({
-      ios: insets.bottom + 60,
-      android: insets.bottom + 60,
-      default: 68,
+      ios: insets.bottom + 64,
+      android: insets.bottom + 64,
+      default: 72,
     }),
-    paddingTop: 6,
+    paddingTop: 8,
     paddingBottom: Platform.select({
-      ios: insets.bottom + 6,
-      android: insets.bottom + 6,
-      default: 6,
+      ios: insets.bottom + 8,
+      android: insets.bottom + 8,
+      default: 8,
     }),
-    paddingHorizontal: 32,
-    backgroundColor: '#0A0A0A',
+    paddingHorizontal: 24,
+    backgroundColor: '#0A0A0F',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(212,175,55,0.08)',
+    borderTopColor: 'rgba(212,175,55,0.06)',
   };
 
   return (
@@ -94,11 +96,12 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle,
         tabBarActiveTintColor: '#D4AF37',
-        tabBarInactiveTintColor: '#6B6B6B',
+        tabBarInactiveTintColor: '#4B5563',
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
-          marginTop: 2,
+          marginTop: 3,
+          letterSpacing: 0.2,
         },
       }}
     >
@@ -114,9 +117,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="learn"
         options={{
-          title: 'Learn',
+          title: 'Discover',
           tabBarIcon: ({ color, focused }) => (
-            <MaterialIcons name={focused ? 'school' : 'school'} size={26} color={color} />
+            <MaterialIcons name={focused ? 'explore' : 'explore'} size={26} color={color} />
           ),
         }}
       />
@@ -153,29 +156,29 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   postTabWrap: {
-    marginTop: -24,
+    marginTop: -26,
     alignItems: 'center',
     justifyContent: 'center',
   },
   glowRing: {
     position: 'absolute',
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: 'rgba(212,175,55,0.25)',
+    width: 68,
+    height: 68,
+    borderRadius: 22,
+    backgroundColor: 'rgba(212,175,55,0.22)',
   },
   postTabBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
+    width: 58,
+    height: 58,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(212,175,55,0.35)',
+    borderColor: 'rgba(212,175,55,0.30)',
     shadowColor: '#D4AF37',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    elevation: 10,
   },
 });

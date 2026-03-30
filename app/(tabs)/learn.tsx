@@ -27,7 +27,7 @@ import {
 } from '../../contexts/CreatorContext';
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const CHEF_CARD_W = 130;
+const CHEF_CARD_W = 136;
 const SHOW_CARD_W = SCREEN_W * 0.65;
 
 function getTierInfo(type: string | null) {
@@ -70,13 +70,13 @@ function TrendingChefCard({ creator, rank, isFollowed, onFollow, onPress }: { cr
         <Text style={styles.chefAvatarText}>{creator.avatarInitials}</Text>
         {creator.isVerified ? (
           <View style={styles.verifiedDot}>
-            <MaterialIcons name="verified" size={12} color="#D4AF37" />
+            <MaterialIcons name="verified" size={12} color="#FFD700" />
           </View>
         ) : null}
       </View>
       <Text style={styles.chefName} numberOfLines={1}>@{creator.username}</Text>
       {tier ? (
-        <View style={[styles.chefTierTag, { backgroundColor: `${tier.color}15` }]}>
+        <View style={[styles.chefTierTag, { backgroundColor: `${tier.color}12` }]}>
           <Text style={styles.chefTierEmoji}>{tier.emoji}</Text>
         </View>
       ) : null}
@@ -114,12 +114,12 @@ function LiveNowCard({ session, onPress }: { session: LiveSession; onPress: () =
       {session.coverUri ? (
         <Image source={{ uri: session.coverUri }} style={styles.liveCardImage} contentFit="cover" transition={200} />
       ) : (
-        <View style={[styles.liveCardImage, { backgroundColor: '#1A1A1A', alignItems: 'center', justifyContent: 'center' }]}>
+        <View style={[styles.liveCardImage, { backgroundColor: '#18181E', alignItems: 'center', justifyContent: 'center' }]}>
           <Text style={{ fontSize: 36, opacity: 0.3 }}>🎬</Text>
         </View>
       )}
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.90)']}
+        colors={['transparent', 'rgba(10,10,15,0.92)']}
         style={styles.liveCardOverlay}
       >
         {/* Status badge */}
@@ -137,7 +137,7 @@ function LiveNowCard({ session, onPress }: { session: LiveSession; onPress: () =
         {/* Price */}
         {session.isPaid ? (
           <View style={styles.priceBadge}>
-            <Text style={styles.priceText}>₹{session.price}</Text>
+            <Text style={styles.priceText}>{'\u20B9'}{session.price}</Text>
           </View>
         ) : (
           <View style={styles.freeBadge}>
@@ -151,7 +151,7 @@ function LiveNowCard({ session, onPress }: { session: LiveSession; onPress: () =
           </View>
           <Text style={styles.liveHost}>@{session.hostUsername}</Text>
           <View style={styles.liveDivider} />
-          <MaterialIcons name="people" size={13} color="rgba(255,255,255,0.4)" />
+          <MaterialIcons name="people" size={13} color="rgba(255,255,255,0.35)" />
           <Text style={styles.liveAttendees}>{session.attendeeCount}</Text>
         </View>
         {/* Join button */}
@@ -161,7 +161,7 @@ function LiveNowCard({ session, onPress }: { session: LiveSession; onPress: () =
         >
           {isLive ? (
             <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.joinBtnGrad}>
-              <MaterialIcons name="play-arrow" size={16} color="#0A0A0A" />
+              <MaterialIcons name="play-arrow" size={16} color="#0A0A0F" />
               <Text style={styles.joinBtnTextLive}>Join Now</Text>
             </LinearGradient>
           ) : (
@@ -188,12 +188,12 @@ function PopularShowCard({ show, onPress }: { show: TrendingShow; onPress: () =>
       {show.coverUri ? (
         <Image source={{ uri: show.coverUri }} style={styles.showCardImage} contentFit="cover" transition={200} />
       ) : (
-        <View style={[styles.showCardImage, { backgroundColor: '#1A1A1A', alignItems: 'center', justifyContent: 'center' }]}>
+        <View style={[styles.showCardImage, { backgroundColor: '#18181E', alignItems: 'center', justifyContent: 'center' }]}>
           <Text style={{ fontSize: 28 }}>🎬</Text>
         </View>
       )}
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.92)']}
+        colors={['transparent', 'rgba(10,10,15,0.94)']}
         style={styles.showCardOverlay}
       >
         <View style={styles.showRatingBadge}>
@@ -225,10 +225,10 @@ function NewCreatorCard({ creator, onPress }: { creator: NewCreator; onPress: ()
       {creator.coverUri ? (
         <Image source={{ uri: creator.coverUri }} style={styles.newCreatorCover} contentFit="cover" transition={200} />
       ) : (
-        <View style={[styles.newCreatorCover, { backgroundColor: '#1A1A1A' }]} />
+        <View style={[styles.newCreatorCover, { backgroundColor: '#18181E' }]} />
       )}
       <LinearGradient
-        colors={['transparent', 'rgba(10,10,10,0.95)']}
+        colors={['transparent', 'rgba(10,10,15,0.96)']}
         style={styles.newCreatorOverlay}
       >
         <View style={[styles.newCreatorAvatar, tier ? { borderColor: tier.color } : {}]}>
@@ -266,11 +266,11 @@ export default function LearnScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.container}>
-      {/* Header */}
+      {/* Header — refined */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Learn</Text>
-          <Text style={styles.headerSubtitle}>Discover Home Chefs & Shows</Text>
+          <Text style={styles.headerTitle}>Discover</Text>
+          <Text style={styles.headerSubtitle}>Home Chefs, Shows & Live</Text>
         </View>
         <Pressable
           style={({ pressed }) => [styles.searchBtn, pressed && { opacity: 0.7 }]}
@@ -311,8 +311,7 @@ export default function LearnScreen() {
           <Animated.View entering={FadeInDown.delay(50).duration(350)}>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionTitleRow}>
-                <Text style={styles.sectionIcon}>🔥</Text>
-                <Text style={styles.sectionTitle}>Trending Home Chefs</Text>
+                <Text style={styles.sectionTitle}>Trending Chefs</Text>
               </View>
             </View>
             <ScrollView
@@ -340,7 +339,6 @@ export default function LearnScreen() {
           <Animated.View entering={FadeInDown.delay(100).duration(350)}>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionTitleRow}>
-                <Text style={styles.sectionIcon}>📡</Text>
                 <Text style={styles.sectionTitle}>Live & Upcoming</Text>
               </View>
               <Pressable
@@ -364,7 +362,6 @@ export default function LearnScreen() {
           <Animated.View entering={FadeInDown.delay(200).duration(350)}>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionTitleRow}>
-                <Text style={styles.sectionIcon}>⭐</Text>
                 <Text style={styles.sectionTitle}>Popular Shows</Text>
               </View>
             </View>
@@ -387,7 +384,6 @@ export default function LearnScreen() {
           <Animated.View entering={FadeInDown.delay(300).duration(350)}>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionTitleRow}>
-                <Text style={styles.sectionIcon}>🌱</Text>
                 <Text style={styles.sectionTitle}>New Creators</Text>
               </View>
             </View>
@@ -407,12 +403,9 @@ export default function LearnScreen() {
 
         {/* ─── Become a Creator CTA ─── */}
         <Animated.View entering={FadeInDown.delay(400).duration(350)} style={styles.ctaSection}>
-          <LinearGradient
-            colors={['rgba(212,175,55,0.08)', 'rgba(212,175,55,0.02)']}
-            style={styles.ctaCard}
-          >
+          <View style={styles.ctaCard}>
             <View style={styles.ctaIcon}>
-              <MaterialIcons name="auto-awesome" size={28} color="#D4AF37" />
+              <MaterialIcons name="auto-awesome" size={28} color="#FFD700" />
             </View>
             <Text style={styles.ctaTitle}>Start Your Food Journey</Text>
             <Text style={styles.ctaDesc}>Post 5 meals or maintain a 7-day streak to unlock Creator Mode</Text>
@@ -421,11 +414,11 @@ export default function LearnScreen() {
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/(tabs)/camera'); }}
             >
               <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.ctaBtn}>
-                <MaterialIcons name="camera-alt" size={18} color="#0A0A0A" />
+                <MaterialIcons name="camera-alt" size={18} color="#0A0A0F" />
                 <Text style={styles.ctaBtnText}>Start Posting</Text>
               </LinearGradient>
             </Pressable>
-          </LinearGradient>
+          </View>
         </Animated.View>
       </ScrollView>
     </SafeAreaView>
@@ -433,7 +426,7 @@ export default function LearnScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0A' },
+  container: { flex: 1, backgroundColor: '#0A0A0F' },
 
   // Header
   header: {
@@ -441,20 +434,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
+    paddingTop: 10,
+    paddingBottom: 18,
   },
   headerTitle: { fontSize: 28, fontWeight: '900', color: '#FFF', letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 14, fontWeight: '500', color: '#6B6B6B', marginTop: 2 },
+  headerSubtitle: { fontSize: 13, fontWeight: '500', color: '#6B7280', marginTop: 3 },
   searchBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#151515',
+    backgroundColor: '#111116',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.15)',
+    borderColor: 'rgba(212,175,55,0.12)',
   },
 
   // Section
@@ -463,52 +456,51 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    marginTop: 28,
-    marginBottom: 14,
+    marginTop: 30,
+    marginBottom: 16,
   },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sectionIcon: { fontSize: 18 },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#FFF' },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#FFF', letterSpacing: -0.2 },
   seeAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   seeAllText: { fontSize: 13, fontWeight: '700', color: '#D4AF37' },
 
   // Live banner
-  liveBanner: { marginHorizontal: 20, marginTop: 8, borderRadius: 16, overflow: 'hidden' },
+  liveBanner: { marginHorizontal: 20, marginTop: 8, borderRadius: 18, overflow: 'hidden' },
   liveBannerGrad: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 18,
-    paddingVertical: 16,
+    paddingVertical: 18,
   },
-  liveBannerLeft: { flex: 1, gap: 4, marginRight: 12 },
+  liveBannerLeft: { flex: 1, gap: 5, marginRight: 12 },
   liveBannerDotRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   liveBannerLabel: { fontSize: 12, fontWeight: '800', color: '#FFF', letterSpacing: 1 },
   liveBannerTitle: { fontSize: 17, fontWeight: '800', color: '#FFF' },
   liveBannerHost: { fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.7)' },
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFF' },
 
-  // Chef Card
+  // Chef Card — glass
   chefCard: {
     width: CHEF_CARD_W,
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 18,
     paddingHorizontal: 12,
-    borderRadius: 16,
-    backgroundColor: '#151515',
+    borderRadius: 18,
+    backgroundColor: '#111116',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.10)',
+    borderColor: 'rgba(255,255,255,0.05)',
     gap: 4,
   },
   chefAvatar: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: '#18181E',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(212,175,55,0.20)',
+    borderColor: 'rgba(212,175,55,0.18)',
     marginBottom: 4,
   },
   chefAvatarText: { fontSize: 17, fontWeight: '800', color: '#FFF' },
@@ -516,7 +508,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -1,
     right: -1,
-    backgroundColor: '#0A0A0A',
+    backgroundColor: '#0A0A0F',
     borderRadius: 8,
     padding: 1,
   },
@@ -528,32 +520,32 @@ const styles = StyleSheet.create({
   },
   chefTierEmoji: { fontSize: 12 },
   chefFollowers: { fontSize: 15, fontWeight: '800', color: '#FFF' },
-  chefFollowersLabel: { fontSize: 10, fontWeight: '500', color: '#6B6B6B', marginTop: -2 },
+  chefFollowersLabel: { fontSize: 10, fontWeight: '500', color: '#6B7280', marginTop: -2 },
   chefFollowBtn: {
-    marginTop: 4,
+    marginTop: 6,
     borderRadius: 14,
     overflow: 'hidden',
   },
   chefFollowBtnGrad: {
-    paddingHorizontal: 20,
-    paddingVertical: 7,
+    paddingHorizontal: 22,
+    paddingVertical: 8,
     borderRadius: 14,
   },
-  chefFollowText: { fontSize: 12, fontWeight: '700', color: '#0A0A0A' },
+  chefFollowText: { fontSize: 12, fontWeight: '700', color: '#0A0A0F' },
   chefFollowingBtnInner: {
-    paddingHorizontal: 20,
-    paddingVertical: 7,
+    paddingHorizontal: 22,
+    paddingVertical: 8,
     borderRadius: 14,
-    backgroundColor: 'rgba(212,175,55,0.12)',
+    backgroundColor: 'rgba(212,175,55,0.10)',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.25)',
+    borderColor: 'rgba(212,175,55,0.20)',
   },
   chefFollowingText: { fontSize: 12, fontWeight: '700', color: '#D4AF37' },
 
-  // Live card
+  // Live card — glass
   liveCard: {
-    height: 180,
-    borderRadius: 16,
+    height: 190,
+    borderRadius: 18,
     overflow: 'hidden',
   },
   liveCardImage: {
@@ -564,7 +556,7 @@ const styles = StyleSheet.create({
   liveCardOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    padding: 14,
+    padding: 16,
     gap: 6,
   },
   liveBadge: {
@@ -583,55 +575,55 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(212,175,55,0.15)',
+    backgroundColor: 'rgba(212,175,55,0.12)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.20)',
+    borderColor: 'rgba(212,175,55,0.18)',
   },
   countdownText: { fontSize: 12, fontWeight: '700', color: '#D4AF37' },
   priceBadge: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 14,
+    right: 14,
     backgroundColor: 'rgba(212,175,55,0.90)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
   },
-  priceText: { fontSize: 13, fontWeight: '800', color: '#0A0A0A' },
+  priceText: { fontSize: 13, fontWeight: '800', color: '#0A0A0F' },
   freeBadge: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 14,
+    right: 14,
     backgroundColor: 'rgba(74,222,128,0.85)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
   },
-  freeText: { fontSize: 11, fontWeight: '800', color: '#0A0A0A', letterSpacing: 0.5 },
+  freeText: { fontSize: 11, fontWeight: '800', color: '#0A0A0F', letterSpacing: 0.5 },
   liveTitle: { fontSize: 17, fontWeight: '800', color: '#FFF' },
   liveMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   miniAvatar: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: 'rgba(212,175,55,0.12)',
+    backgroundColor: 'rgba(212,175,55,0.10)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(212,175,55,0.20)',
+    borderColor: 'rgba(212,175,55,0.18)',
   },
   miniAvatarText: { fontSize: 8, fontWeight: '800', color: '#FFF' },
-  liveHost: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
-  liveDivider: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(255,255,255,0.25)' },
-  liveAttendees: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.4)' },
+  liveHost: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.65)' },
+  liveDivider: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(255,255,255,0.20)' },
+  liveAttendees: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.35)' },
   joinBtn: {
     alignSelf: 'flex-start',
     borderRadius: 20,
     overflow: 'hidden',
-    marginTop: 2,
+    marginTop: 4,
   },
   joinBtnLive: {},
   joinBtnGrad: {
@@ -639,8 +631,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingHorizontal: 18,
-    paddingVertical: 9,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderRadius: 20,
   },
   joinBtnInner: {
@@ -648,21 +640,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    backgroundColor: 'rgba(212,175,55,0.12)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(212,175,55,0.10)',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.25)',
+    borderColor: 'rgba(212,175,55,0.20)',
     borderRadius: 20,
   },
   joinBtnText: { fontSize: 13, fontWeight: '700', color: '#D4AF37' },
-  joinBtnTextLive: { fontSize: 13, fontWeight: '700', color: '#0A0A0A' },
+  joinBtnTextLive: { fontSize: 13, fontWeight: '700', color: '#0A0A0F' },
 
   // Show Card
   showCard: {
     width: SHOW_CARD_W,
     height: SHOW_CARD_W * 1.2,
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: 'hidden',
   },
   showCardImage: {
@@ -673,7 +665,7 @@ const styles = StyleSheet.create({
   showCardOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    padding: 14,
+    padding: 16,
     gap: 4,
   },
   showRatingBadge: {
@@ -681,25 +673,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(10,10,15,0.65)',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 10,
     marginBottom: 4,
     borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.20)',
+    borderColor: 'rgba(255,215,0,0.18)',
   },
   showRating: { fontSize: 12, fontWeight: '700', color: '#FFD700' },
   showCardTitle: { fontSize: 16, fontWeight: '800', color: '#FFF' },
   showCardMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
-  showCardHost: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
-  showCardStats: { fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.45)' },
+  showCardHost: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.65)' },
+  showCardStats: { fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.40)' },
 
   // New Creator Card
   newCreatorCard: {
-    width: 140,
-    height: 180,
-    borderRadius: 16,
+    width: 144,
+    height: 190,
+    borderRadius: 18,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -712,7 +704,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     alignItems: 'center',
-    paddingBottom: 14,
+    paddingBottom: 16,
     paddingHorizontal: 10,
     gap: 3,
   },
@@ -720,7 +712,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(212,175,55,0.12)',
+    backgroundColor: 'rgba(212,175,55,0.10)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -729,48 +721,51 @@ const styles = StyleSheet.create({
   },
   newCreatorAvatarText: { fontSize: 14, fontWeight: '800', color: '#FFF' },
   newCreatorName: { fontSize: 12, fontWeight: '700', color: '#FFF', textAlign: 'center' },
-  newCreatorMeta: { fontSize: 10, fontWeight: '500', color: 'rgba(255,255,255,0.5)', textAlign: 'center' },
+  newCreatorMeta: { fontSize: 10, fontWeight: '500', color: 'rgba(255,255,255,0.45)', textAlign: 'center' },
   newCreatorBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 10,
+    right: 10,
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(10,10,10,0.7)',
+    backgroundColor: 'rgba(10,10,15,0.70)',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   // CTA Section
-  ctaSection: { paddingHorizontal: 20, marginTop: 32, marginBottom: 16 },
+  ctaSection: { paddingHorizontal: 20, marginTop: 34, marginBottom: 16 },
   ctaCard: {
-    padding: 24,
-    borderRadius: 20,
+    padding: 28,
+    borderRadius: 22,
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.12)',
+    borderColor: 'rgba(212,175,55,0.10)',
+    backgroundColor: '#111116',
   },
   ctaIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(212,175,55,0.08)',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(212,175,55,0.06)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.12)',
   },
   ctaTitle: { fontSize: 18, fontWeight: '800', color: '#FFF' },
-  ctaDesc: { fontSize: 14, fontWeight: '500', color: '#6B6B6B', textAlign: 'center', lineHeight: 20, maxWidth: 280 },
+  ctaDesc: { fontSize: 14, fontWeight: '500', color: '#6B7280', textAlign: 'center', lineHeight: 20, maxWidth: 280 },
   ctaBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 28,
-    paddingVertical: 14,
-    borderRadius: 16,
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 18,
     marginTop: 8,
   },
-  ctaBtnText: { fontSize: 15, fontWeight: '700', color: '#0A0A0A' },
+  ctaBtnText: { fontSize: 15, fontWeight: '700', color: '#0A0A0F' },
 });

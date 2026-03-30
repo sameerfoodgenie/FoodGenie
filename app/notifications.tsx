@@ -26,14 +26,14 @@ function timeAgo(dateStr: string): string {
 }
 
 const TYPE_ICONS: Record<string, { icon: keyof typeof MaterialIcons.glyphMap; color: string }> = {
-  like: { icon: 'favorite', color: '#D4AF37' },
-  comment: { icon: 'chat-bubble', color: '#FFD700' },
+  like: { icon: 'favorite', color: '#FFD700' },
+  comment: { icon: 'chat-bubble', color: '#D4AF37' },
   follow: { icon: 'person-add', color: '#4ADE80' },
   live_reminder: { icon: 'live-tv', color: '#FF3B30' },
 };
 
 function NotificationItem({ item, onPress }: { item: AppNotification; onPress: () => void }) {
-  const typeInfo = TYPE_ICONS[item.type] || { icon: 'notifications' as const, color: '#A0A0A0' };
+  const typeInfo = TYPE_ICONS[item.type] || { icon: 'notifications' as const, color: '#9CA3AF' };
 
   return (
     <Pressable
@@ -44,7 +44,7 @@ function NotificationItem({ item, onPress }: { item: AppNotification; onPress: (
       ]}
       onPress={onPress}
     >
-      <View style={[styles.notifIcon, { backgroundColor: `${typeInfo.color}15` }]}>
+      <View style={[styles.notifIcon, { backgroundColor: `${typeInfo.color}10` }]}>
         <MaterialIcons name={typeInfo.icon} size={20} color={typeInfo.color} />
       </View>
       <View style={styles.notifContent}>
@@ -105,7 +105,7 @@ export default function NotificationsScreen() {
         ListEmptyComponent={
           <Animated.View entering={FadeIn.duration(400)} style={styles.emptyState}>
             <View style={styles.emptyIcon}>
-              <MaterialIcons name="notifications-none" size={48} color="#6B6B6B" />
+              <MaterialIcons name="notifications-none" size={44} color="#6B7280" />
             </View>
             <Text style={styles.emptyTitle}>No Notifications</Text>
             <Text style={styles.emptySubtitle}>
@@ -119,82 +119,88 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0A' },
+  container: { flex: 1, backgroundColor: '#0A0A0F' },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   backBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#151515',
+    backgroundColor: '#111116',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.10)',
+    borderColor: 'rgba(255,255,255,0.06)',
   },
-  headerTitle: { fontSize: 20, fontWeight: '800', color: '#FFF' },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#FFF', letterSpacing: -0.2 },
   markAllBtn: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 16,
-    backgroundColor: 'rgba(212,175,55,0.10)',
+    backgroundColor: 'rgba(212,175,55,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.12)',
   },
   markAllText: { fontSize: 13, fontWeight: '700', color: '#D4AF37' },
 
   notifItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.04)',
+    borderBottomColor: 'rgba(255,255,255,0.03)',
   },
   notifUnread: {
-    backgroundColor: 'rgba(212,175,55,0.04)',
+    backgroundColor: 'rgba(212,175,55,0.03)',
   },
   notifIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.04)',
   },
-  notifContent: { flex: 1, gap: 3 },
+  notifContent: { flex: 1, gap: 4 },
   notifMessage: { fontSize: 14, fontWeight: '500', color: '#FFF', lineHeight: 20 },
-  notifTime: { fontSize: 12, color: '#6B6B6B' },
+  notifTime: { fontSize: 12, color: '#6B7280' },
   unreadDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#D4AF37',
+    backgroundColor: '#FFD700',
   },
 
   emptyState: {
     alignItems: 'center',
-    paddingTop: 100,
+    paddingTop: 120,
     paddingHorizontal: 40,
-    gap: 12,
+    gap: 14,
   },
   emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#151515',
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: '#111116',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.04)',
   },
   emptyTitle: { fontSize: 20, fontWeight: '800', color: '#FFF' },
   emptySubtitle: {
     fontSize: 14,
-    color: '#6B6B6B',
+    color: '#6B7280',
     textAlign: 'center',
     lineHeight: 20,
   },

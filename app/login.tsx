@@ -17,7 +17,6 @@ import Animated, {
   FadeIn,
   FadeInDown,
   FadeInUp,
-  SlideInRight,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useAuth, useAlert } from '@/template';
@@ -112,9 +111,12 @@ export default function LoginScreen() {
     showAlert('Could not resend', `${lastError}. Please try again in a moment.`);
   };
 
-  // ---- Email / OTP Screen ----
   return (
     <View style={styles.container}>
+      {/* Background gradient orbs */}
+      <View style={styles.bgOrb1} />
+      <View style={styles.bgOrb2} />
+
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -130,11 +132,11 @@ export default function LoginScreen() {
               style={styles.backButton}
               onPress={() => setStage('email')}
             >
-              <MaterialIcons name="arrow-back" size={24} color={theme.textPrimary} />
+              <MaterialIcons name="arrow-back" size={22} color={theme.textPrimary} />
             </Pressable>
             ) : null}
 
-            <Animated.View entering={FadeInDown.duration(400)} style={styles.loginHeader}>
+            <Animated.View entering={FadeInDown.duration(500)} style={styles.loginHeader}>
               <View style={styles.logoContainer}>
                 <Image
                   source={require('../assets/images/icon.png')}
@@ -144,17 +146,18 @@ export default function LoginScreen() {
                 />
               </View>
               <Text style={styles.brandName}>FoodGenie</Text>
+              <Text style={styles.brandTagline}>Share What You Eat</Text>
               <Text style={styles.loginTitle}>
-                {stage === 'otp' ? 'Enter Verification Code' : 'Sign In'}
+                {stage === 'otp' ? 'Enter Verification Code' : 'Welcome Back'}
               </Text>
               <Text style={styles.loginSubtitle}>
                 {stage === 'otp'
                   ? `We sent a 4-digit code to ${email}`
-                  : 'Enter your email to receive a one-time login code'}
+                  : 'Sign in to continue your food journey'}
               </Text>
             </Animated.View>
 
-            <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.form}>
+            <Animated.View entering={FadeInUp.delay(250).duration(450)} style={styles.form}>
               {stage === 'otp' ? (
                 <>
                   <View style={styles.inputGroup}>
@@ -173,11 +176,11 @@ export default function LoginScreen() {
                   </View>
 
                   <Pressable
-                    style={[styles.primaryButton, operationLoading && styles.buttonDisabled]}
+                    style={({ pressed }) => [styles.primaryButton, operationLoading && styles.buttonDisabled, pressed && !operationLoading && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
                     onPress={handleVerifyOTP}
                     disabled={operationLoading}
                   >
-                    <LinearGradient colors={theme.gradients.cameraBtn} style={styles.primaryButtonGradient}>
+                    <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.primaryButtonGradient}>
                       <Text style={styles.primaryButtonText}>
                         {operationLoading ? 'Verifying...' : 'Verify & Sign In'}
                       </Text>
@@ -193,28 +196,37 @@ export default function LoginScreen() {
               ) : (
                 <>
                   <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>Email</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={email}
-                      onChangeText={setEmail}
-                      placeholder="your@email.com"
-                      placeholderTextColor={theme.textMuted}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      autoFocus
-                    />
+                    <Text style={styles.inputLabel}>Email Address</Text>
+                    <View style={styles.inputWrap}>
+                      <MaterialIcons name="email" size={18} color={theme.textMuted} />
+                      <TextInput
+                        style={styles.input}
+                        value={email}
+                        onChangeText={setEmail}
+                        placeholder="your@email.com"
+                        placeholderTextColor={theme.textMuted}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        autoFocus
+                      />
+                    </View>
                   </View>
 
                   <Pressable
-                    style={[styles.primaryButton, operationLoading && styles.buttonDisabled]}
+                    style={({ pressed }) => [styles.primaryButton, operationLoading && styles.buttonDisabled, pressed && !operationLoading && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
                     onPress={handleSendOTP}
                     disabled={operationLoading}
                   >
-                    <LinearGradient colors={theme.gradients.cameraBtn} style={styles.primaryButtonGradient}>
+                    <LinearGradient
+                      colors={['#D4AF37', '#FFD700']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.primaryButtonGradient}
+                    >
                       <Text style={styles.primaryButtonText}>
-                        {operationLoading ? 'Sending Code...' : 'Send Login Code'}
+                        {operationLoading ? 'Sending Code...' : 'Continue with Email'}
                       </Text>
+                      {!operationLoading ? <MaterialIcons name="arrow-forward" size={18} color={theme.textOnPrimary} /> : null}
                     </LinearGradient>
                   </Pressable>
 
@@ -225,7 +237,7 @@ export default function LoginScreen() {
                   </View>
 
                   <Pressable
-                    style={[styles.googleButton, operationLoading && styles.buttonDisabled]}
+                    style={({ pressed }) => [styles.googleButton, operationLoading && styles.buttonDisabled, pressed && !operationLoading && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
                     onPress={handleGoogleLogin}
                     disabled={operationLoading}
                   >
@@ -251,23 +263,56 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   keyboardView: { flex: 1 },
 
+  // Background orbs
+  bgOrb1: {
+    position: 'absolute',
+    top: -80,
+    right: -60,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: 'rgba(212,175,55,0.05)',
+  },
+  bgOrb2: {
+    position: 'absolute',
+    bottom: 100,
+    left: -80,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(212,175,55,0.03)',
+  },
+
   // Login
   logoContainer: {
-    width: 88,
-    height: 88,
-    borderRadius: 22,
+    width: 96,
+    height: 96,
+    borderRadius: 28,
     overflow: 'hidden',
-    marginBottom: 12,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.20)',
+    borderColor: 'rgba(212,175,55,0.18)',
+    shadowColor: '#D4AF37',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 8,
   },
-  loginLogo: { width: 88, height: 88 },
+  loginLogo: { width: 96, height: 96 },
   brandName: {
-    fontSize: 30,
+    fontSize: 34,
     fontWeight: '900',
-    color: '#D4AF37',
+    color: '#FFD700',
     letterSpacing: 0.5,
-    marginBottom: 4,
+    marginBottom: 2,
+  },
+  brandTagline: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'rgba(212,175,55,0.60)',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginBottom: 28,
   },
   loginScroll: { paddingHorizontal: 24, paddingBottom: 40 },
   backButton: {
@@ -280,42 +325,55 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: theme.glass.border,
   },
-  loginHeader: { alignItems: 'center', marginBottom: 32 },
+  loginHeader: { alignItems: 'center', marginBottom: 36 },
 
   loginTitle: { fontSize: 24, fontWeight: '700', color: theme.textPrimary, marginBottom: 8 },
   loginSubtitle: { fontSize: 14, color: theme.textSecondary, textAlign: 'center', lineHeight: 20 },
   form: { gap: 16 },
-  inputGroup: { gap: 6 },
-  inputLabel: { fontSize: 13, fontWeight: '600', color: theme.textSecondary, marginLeft: 4 },
-  input: {
+  inputGroup: { gap: 8 },
+  inputLabel: { fontSize: 13, fontWeight: '600', color: theme.textSecondary, marginLeft: 4, letterSpacing: 0.3 },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     backgroundColor: theme.surface,
-    borderRadius: 14,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 15,
+    borderWidth: 1,
+    borderColor: theme.glass.border,
+  },
+  input: {
+    flex: 1,
     fontSize: 16,
     color: theme.textPrimary,
-    borderWidth: 1,
-    borderColor: theme.border,
+    padding: 0,
   },
-  primaryButton: { borderRadius: 16, overflow: 'hidden', marginTop: 8 },
-  primaryButtonGradient: { paddingVertical: 16, alignItems: 'center' },
+  primaryButton: { borderRadius: 18, overflow: 'hidden', marginTop: 8 },
+  primaryButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 17,
+  },
   primaryButtonText: { fontSize: 16, fontWeight: '700', color: theme.textOnPrimary },
-  buttonDisabled: { opacity: 0.6 },
+  buttonDisabled: { opacity: 0.5 },
   divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 8 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: theme.border },
+  dividerLine: { flex: 1, height: 1, backgroundColor: theme.glass.border },
   dividerText: { fontSize: 13, color: theme.textMuted, marginHorizontal: 16 },
   googleButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    paddingVertical: 14,
-    borderRadius: 16,
+    paddingVertical: 15,
+    borderRadius: 18,
     backgroundColor: theme.surface,
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: theme.glass.border,
   },
   googleButtonText: { fontSize: 15, fontWeight: '600', color: theme.textPrimary },
   resendLink: { alignItems: 'center', paddingVertical: 12 },
@@ -323,15 +381,15 @@ const styles = StyleSheet.create({
   resendHighlight: { color: theme.primary, fontWeight: '700' },
   otpInput: {
     backgroundColor: theme.surface,
-    borderRadius: 14,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 18,
-    fontSize: 28,
+    paddingVertical: 20,
+    fontSize: 30,
     fontWeight: '700',
     color: theme.textPrimary,
     borderWidth: 1,
-    borderColor: theme.border,
-    letterSpacing: 12,
+    borderColor: theme.glass.borderGold,
+    letterSpacing: 14,
   },
-  otpNote: { fontSize: 13, color: theme.textMuted, textAlign: 'center', lineHeight: 18, marginTop: 4 },
+  otpNote: { fontSize: 13, color: theme.textMuted, textAlign: 'center', lineHeight: 18, marginTop: 6 },
 });
