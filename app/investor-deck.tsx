@@ -31,7 +31,10 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { theme } from '../constants/theme';
+import { generateInvestorDeckHTML } from '../services/investorDeckPdf';
 
 function getSafeWidth() {
   try {
@@ -497,6 +500,31 @@ export default function InvestorDeckScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [screenW, setScreenW] = useState(getSafeWidth);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportPDF = useCallback(async () => {
+    try {
+      setExporting(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const html = generateInvestorDeckHTML();
+      const { uri } = await Print.printToFileAsync({
+        html,
+        base64: false,
+      });
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: 'FoodGenie Investor Deck',
+          UTI: 'com.adobe.pdf',
+        });
+      }
+    } catch (e: any) {
+      console.log('PDF export error:', e);
+    } finally {
+      setExporting(false);
+    }
+  }, []);
 
   useEffect(() => {
     const update = () => {
@@ -522,7 +550,22 @@ export default function InvestorDeckScreen() {
             <MaterialIcons name="arrow-back" size={22} color="#FFF" />
           </Pressable>
           <Text style={styles.headerTitle}>Investor Deck</Text>
-          <View style={{ width: 44 }} />
+          <Pressable
+            style={({ pressed }) => [styles.exportBtn, pressed && { opacity: 0.7 }, exporting && { opacity: 0.5 }]}
+            onPress={handleExportPDF}
+            disabled={exporting}
+          >
+            {exporting ? (
+              <View style={styles.exportBtnInner}>
+                <Text style={styles.exportBtnText}>...</Text>
+              </View>
+            ) : (
+              <View style={styles.exportBtnInner}>
+                <MaterialIcons name="file-download" size={18} color="#D4AF37" />
+                <Text style={styles.exportBtnText}>PDF</Text>
+              </View>
+            )}
+          </Pressable>
         </View>
 
         <ScrollView
@@ -952,6 +995,26 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.06)',
   },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#FFF', letterSpacing: -0.2 },
+  exportBtn: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  exportBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: 'rgba(212,175,55,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.15)',
+  },
+  exportBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#D4AF37',
+  },
 
   // ═══ HERO ═══
   heroSection: {
