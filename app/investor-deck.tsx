@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   ScrollView,
   Dimensions,
   Platform,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,6 +30,7 @@ import Animated, {
   Easing,
   interpolate,
 } from 'react-native-reanimated';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { theme } from '../constants/theme';
 
 function getSafeWidth() {
@@ -119,6 +122,228 @@ const TECH_STACK = [
   { name: 'Push Notifications', desc: 'Expo Push API', icon: 'notifications' },
   { name: 'AI Integration', desc: 'Food analysis', icon: 'psychology' },
 ];
+
+// ─── Video Showcase Data ───
+const SHOWCASE_VIDEOS = [
+  {
+    id: 'feed',
+    title: 'Social Feed',
+    subtitle: 'Vertical reels experience with real-time engagement',
+    icon: 'dynamic-feed' as const,
+    color: '#FFD700',
+    uri: 'https://videos.pexels.com/video-files/3195394/3195394-sd_640_360_25fps.mp4',
+    poster: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80',
+    stats: [{ label: 'Avg Session', value: '8.5 min' }, { label: 'Scroll Depth', value: '92%' }],
+  },
+  {
+    id: 'camera',
+    title: 'Capture & Create',
+    subtitle: 'Photo and video with instant post flow',
+    icon: 'camera-alt' as const,
+    color: '#D4AF37',
+    uri: 'https://videos.pexels.com/video-files/3327312/3327312-sd_640_360_25fps.mp4',
+    poster: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600&q=80',
+    stats: [{ label: 'Posts / Day', value: '12K+' }, { label: 'Avg Upload', value: '< 3s' }],
+  },
+  {
+    id: 'creator',
+    title: 'Creator Dashboard',
+    subtitle: 'Tiers, badges, analytics and growth tracking',
+    icon: 'auto-awesome' as const,
+    color: '#FFC107',
+    uri: 'https://videos.pexels.com/video-files/3298572/3298572-sd_640_360_25fps.mp4',
+    poster: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80',
+    stats: [{ label: 'Creators', value: '2.5K' }, { label: 'Badges Earned', value: '10K+' }],
+  },
+];
+
+// ─── Video Showcase Card ───
+function VideoShowcaseCard({ video, index, cardWidth }: {
+  video: typeof SHOWCASE_VIDEOS[0];
+  index: number;
+  cardWidth: number;
+}) {
+  const [hasError, setHasError] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+
+  const player = useVideoPlayer(video.uri, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
+
+  // Pulsing border glow
+  const glowOpacity = useSharedValue(0.3);
+  useEffect(() => {
+    glowOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.7, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.3, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+      ), -1, false,
+    );
+  }, []);
+  const glowStyle = useAnimatedStyle(() => ({
+    borderColor: `rgba(212,175,55,${glowOpacity.value * 0.3})`,
+  }));
+
+  return (
+    <Animated.View
+      entering={FadeInRight.delay(index * 150).duration(500)}
+      style={[styles.videoCard, { width: cardWidth }, glowStyle]}
+    >
+      {/* Video player area */}
+      <View style={styles.videoPlayerWrap}>
+        {!hasError ? (
+          <VideoView
+            player={player}
+            style={styles.videoPlayer}
+            contentFit="cover"
+            nativeControls={false}
+          />
+        ) : (
+          <Image
+            source={{ uri: video.poster }}
+            style={styles.videoPlayer}
+            contentFit="cover"
+            transition={200}
+          />
+        )}
+
+        {/* Gradient overlay */}
+        <LinearGradient
+          colors={['rgba(10,10,15,0.15)', 'rgba(10,10,15,0.0)', 'rgba(10,10,15,0.75)', 'rgba(10,10,15,0.95)']}
+          locations={[0, 0.3, 0.7, 1]}
+          style={StyleSheet.absoluteFillObject}
+        />
+
+        {/* Top-left badge */}
+        <View style={styles.videoTopBadge}>
+          <View style={[styles.videoIconCircle, { backgroundColor: `${video.color}18` }]}>
+            <MaterialIcons name={video.icon} size={16} color={video.color} />
+          </View>
+          <View style={styles.videoLiveDot} />
+          <Text style={styles.videoLiveText}>DEMO</Text>
+        </View>
+
+        {/* Play indicator (pulsing) */}
+        <View style={styles.videoPlayIndicator}>
+          <View style={styles.videoPlayCircle}>
+            <MaterialIcons name="play-arrow" size={20} color="#FFD700" />
+          </View>
+        </View>
+
+        {/* Bottom info overlay */}
+        <View style={styles.videoBottomInfo}>
+          <Text style={styles.videoCardTitle}>{video.title}</Text>
+          <Text style={styles.videoCardSubtitle} numberOfLines={2}>{video.subtitle}</Text>
+        </View>
+      </View>
+
+      {/* Stats row below video */}
+      <View style={styles.videoStatsRow}>
+        {video.stats.map((stat, i) => (
+          <View key={stat.label} style={[
+            styles.videoStatItem,
+            i < video.stats.length - 1 && styles.videoStatDivider,
+          ]}>
+            <Text style={[styles.videoStatValue, { color: video.color }]}>{stat.value}</Text>
+            <Text style={styles.videoStatLabel}>{stat.label}</Text>
+          </View>
+        ))}
+      </View>
+    </Animated.View>
+  );
+}
+
+// ─── Video Showcase Section ───
+function VideoShowcaseSection({ screenW }: { screenW: number }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const cardWidth = Math.max(1, screenW * 0.78);
+  const cardGap = 14;
+
+  const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / (cardWidth + cardGap));
+    const clamped = Math.max(0, Math.min(index, SHOWCASE_VIDEOS.length - 1));
+    if (clamped !== activeIndex) setActiveIndex(clamped);
+  }, [activeIndex, cardWidth]);
+
+  return (
+    <Animated.View entering={FadeInDown.delay(250).duration(500)} style={styles.videoSection}>
+      <View style={styles.videoSectionHeader}>
+        <Text style={styles.sectionLabel}>APP WALKTHROUGH</Text>
+        <Text style={styles.sectionTitle}>See It in Action</Text>
+        <Text style={styles.videoSectionDesc}>Auto-playing demo of the core FoodGenie experience</Text>
+      </View>
+
+      {/* Horizontal video carousel */}
+      <ScrollView
+        horizontal
+        pagingEnabled={false}
+        decelerationRate="fast"
+        snapToInterval={cardWidth + cardGap}
+        snapToAlignment="start"
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={{
+          paddingHorizontal: 24,
+          gap: cardGap,
+          paddingRight: screenW - cardWidth - 24 + cardGap,
+        }}
+      >
+        {SHOWCASE_VIDEOS.map((video, i) => (
+          <VideoShowcaseCard
+            key={video.id}
+            video={video}
+            index={i}
+            cardWidth={cardWidth}
+          />
+        ))}
+      </ScrollView>
+
+      {/* Dot indicators */}
+      <View style={styles.videoDotRow}>
+        {SHOWCASE_VIDEOS.map((v, i) => (
+          <View
+            key={v.id}
+            style={[
+              styles.videoDot,
+              i === activeIndex && styles.videoDotActive,
+              i === activeIndex && { backgroundColor: SHOWCASE_VIDEOS[i].color },
+            ]}
+          />
+        ))}
+      </View>
+
+      {/* Flow step labels */}
+      <View style={styles.videoFlowRow}>
+        {SHOWCASE_VIDEOS.map((v, i) => (
+          <View key={v.id} style={styles.videoFlowItem}>
+            <View style={[
+              styles.videoFlowStep,
+              i === activeIndex && { backgroundColor: `${v.color}20`, borderColor: `${v.color}35` },
+            ]}>
+              <Text style={[
+                styles.videoFlowNumber,
+                i === activeIndex && { color: v.color },
+              ]}>{i + 1}</Text>
+            </View>
+            <Text style={[
+              styles.videoFlowLabel,
+              i === activeIndex && { color: '#FFF' },
+            ]}>{v.title}</Text>
+            {i < SHOWCASE_VIDEOS.length - 1 ? (
+              <View style={styles.videoFlowConnector}>
+                <MaterialIcons name="chevron-right" size={14} color="#3F3F46" />
+              </View>
+            ) : null}
+          </View>
+        ))}
+      </View>
+    </Animated.View>
+  );
+}
 
 // ─── Animated Counter ───
 function AnimatedCounter({ value, delay = 0 }: { value: string; delay?: number }) {
@@ -433,6 +658,11 @@ export default function InvestorDeckScreen() {
               </View>
             </View>
           </Animated.View>
+
+          {/* ═══════════════════════════════════════════
+              VIDEO SHOWCASE — App Walkthrough
+              ═══════════════════════════════════════════ */}
+          <VideoShowcaseSection screenW={screenW} />
 
           {/* ═══════════════════════════════════════════
               FEATURE DEEP DIVES
@@ -1291,6 +1521,184 @@ const styles = StyleSheet.create({
   },
   ctaButtonText: { fontSize: 16, fontWeight: '800', color: '#0A0A0F' },
   ctaContact: { fontSize: 13, fontWeight: '500', color: '#6B7280', marginTop: 16 },
+
+  // ═══ VIDEO SHOWCASE ═══
+  videoSection: { paddingBottom: 32 },
+  videoSectionHeader: { paddingHorizontal: 24, marginBottom: 18 },
+  videoSectionDesc: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginTop: 6,
+    lineHeight: 20,
+  },
+  videoCard: {
+    borderRadius: 22,
+    backgroundColor: '#111116',
+    borderWidth: 1.5,
+    borderColor: 'rgba(212,175,55,0.10)',
+    overflow: 'hidden',
+    ...theme.shadows.card,
+  },
+  videoPlayerWrap: {
+    height: 320,
+    position: 'relative',
+    overflow: 'hidden',
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+  },
+  videoPlayer: {
+    width: '100%',
+    height: '100%',
+  },
+  videoTopBadge: {
+    position: 'absolute',
+    top: 14,
+    left: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(10,10,15,0.70)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  videoIconCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoLiveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#4ADE80',
+  },
+  videoLiveText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#4ADE80',
+    letterSpacing: 1,
+  },
+  videoPlayIndicator: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginTop: -22,
+    marginLeft: -22,
+  },
+  videoPlayCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(10,10,15,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,215,0,0.30)',
+  },
+  videoBottomInfo: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 18,
+    paddingBottom: 16,
+    paddingTop: 24,
+    gap: 4,
+  },
+  videoCardTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFF',
+    letterSpacing: -0.3,
+  },
+  videoCardSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.60)',
+    lineHeight: 18,
+  },
+  videoStatsRow: {
+    flexDirection: 'row',
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+  },
+  videoStatItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
+  },
+  videoStatDivider: {
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(255,255,255,0.04)',
+  },
+  videoStatValue: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  videoStatLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  videoDotRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 18,
+  },
+  videoDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#2A2A32',
+  },
+  videoDotActive: {
+    width: 24,
+    borderRadius: 4,
+  },
+  videoFlowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    paddingHorizontal: 24,
+    gap: 4,
+  },
+  videoFlowItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  videoFlowStep: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#18181E',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  videoFlowNumber: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#6B7280',
+  },
+  videoFlowLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  videoFlowConnector: {
+    marginHorizontal: 2,
+  },
 
   // ─── Feed Preview Grid (unused but kept for potential) ───
   feedPreviewCard: {
