@@ -62,7 +62,61 @@ const DEFAULT_BLURHASH = 'L6Pj0^jE.AyE_3t7t7R**0LMt7xu';
 // ─── Progressive Image ───
 function ProgressiveImage({ fullUri, thumbnailUri, style }: { fullUri: string; thumbnailUri: string | null; style: any }) {
   const [fullLoaded, setFullLoaded] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(false);
 
+  // Detect aspect ratio to choose display mode
+  useEffect(() => {
+    const uri = thumbnailUri || fullUri;
+    if (!uri || Platform.OS === 'web') return;
+    const RNImage = require('react-native').Image;
+    RNImage.getSize(
+      uri,
+      (w: number, h: number) => setIsLandscape(w / h > 1.15),
+      () => {},
+    );
+  }, [fullUri, thumbnailUri]);
+
+  // ─── Landscape: ambient blurred background + centered contain ───
+  if (isLandscape) {
+    return (
+      <View style={style}>
+        {/* Ambient background — upscaled thumbnail creates natural blur */}
+        <Image
+          source={{ uri: thumbnailUri || fullUri }}
+          style={[StyleSheet.absoluteFillObject, { opacity: 0.55 }]}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          placeholder={{ blurhash: DEFAULT_BLURHASH }}
+          placeholderContentFit="cover"
+        />
+        {/* Dark overlay for depth */}
+        <View
+          style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(10,10,15,0.50)' }]}
+          pointerEvents="none"
+        />
+
+        {/* Progressive centered sharp image */}
+        {thumbnailUri && !fullLoaded ? (
+          <Image
+            source={{ uri: thumbnailUri }}
+            style={StyleSheet.absoluteFillObject}
+            contentFit="contain"
+            cachePolicy="memory-disk"
+          />
+        ) : null}
+        <Image
+          source={{ uri: fullUri }}
+          style={[StyleSheet.absoluteFillObject, !fullLoaded && { opacity: 0 }]}
+          contentFit="contain"
+          transition={300}
+          cachePolicy="memory-disk"
+          onLoad={() => setFullLoaded(true)}
+        />
+      </View>
+    );
+  }
+
+  // ─── Portrait / Square: full-bleed cover (original) ───
   return (
     <View style={style}>
       {thumbnailUri && !fullLoaded ? (
