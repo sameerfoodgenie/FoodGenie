@@ -553,7 +553,7 @@ export default function HomeScreen() {
               }}
               tintColor="#D4AF37"
               colors={['#D4AF37']}
-              progressBackgroundColor="#18181E"
+              progressBackgroundColor="#F4F4F8"
             />
           }
           ListEmptyComponent={
@@ -642,7 +642,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0A0F',
+    backgroundColor: '#FFFFFF',
   },
 
   // Header — glass effect
@@ -704,7 +704,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 4,
     borderWidth: 1.5,
-    borderColor: '#0A0A0F',
+    borderColor: '#FFFFFF',
   },
   notifBadgeText: {
     fontSize: 10,
@@ -944,13 +944,13 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     backgroundColor: 'rgba(212,175,55,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.15)',
+    borderColor: 'rgba(212,175,55,0.18)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
   },
-  emptyTitle: { fontSize: 22, fontWeight: '800', color: '#FFF' },
-  emptySub: { fontSize: 15, color: 'rgba(255,255,255,0.40)', textAlign: 'center', lineHeight: 22 },
+  emptyTitle: { fontSize: 22, fontWeight: '800', color: '#1A1A2E' },
+  emptySub: { fontSize: 15, color: '#9CA3AF', textAlign: 'center', lineHeight: 22 },
   emptyBtn: { marginTop: 12, borderRadius: 18, overflow: 'hidden' },
   emptyBtnGrad: {
     flexDirection: 'row',
@@ -960,7 +960,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 18,
   },
-  emptyBtnText: { fontSize: 16, fontWeight: '700', color: '#0A0A0F' },
+  emptyBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
 
   // Shimmer loading
   shimmerContainer: {
@@ -968,7 +968,7 @@ const styles = StyleSheet.create({
   },
   shimmerImage: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#111116',
+    backgroundColor: '#F0F0F4',
   },
   shimmerBottom: {
     position: 'absolute',
@@ -981,7 +981,7 @@ const styles = StyleSheet.create({
     height: 14,
     width: '80%',
     borderRadius: 7,
-    backgroundColor: '#1A1A22',
+    backgroundColor: '#E5E5EA',
   },
   shimmerTagsRow: {
     flexDirection: 'row',
@@ -992,7 +992,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#18181E',
+    backgroundColor: '#E5E5EA',
   },
   shimmerActionBar: {
     position: 'absolute',
@@ -1005,7 +1005,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: '#18181E',
+    backgroundColor: '#E5E5EA',
   },
 
   // Comment bar
@@ -1019,20 +1019,20 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingTop: 12,
-    backgroundColor: 'rgba(10,10,15,0.92)',
+    backgroundColor: 'rgba(255,255,255,0.95)',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(212,175,55,0.08)',
+    borderTopColor: 'rgba(0,0,0,0.06)',
   },
   commentInput: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#F4F4F8',
     borderRadius: 24,
     paddingHorizontal: 18,
     paddingVertical: 11,
     fontSize: 15,
-    color: '#FFF',
+    color: '#1A1A2E',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.10)',
+    borderColor: 'rgba(0,0,0,0.06)',
   },
   commentSendBtn: { padding: 8 },
   commentCloseBtn: { padding: 8 },
@@ -1051,9 +1051,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 18,
-    backgroundColor: 'rgba(26,26,34,0.85)',
+    backgroundColor: 'rgba(255,255,255,0.92)',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.12)',
+    borderColor: 'rgba(0,0,0,0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   taskBannerIcon: {
     width: 40,
@@ -1064,13 +1069,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   taskBannerContent: { flex: 1, gap: 2 },
-  taskBannerTitle: { fontSize: 15, fontWeight: '700', color: '#FFF' },
+  taskBannerTitle: { fontSize: 15, fontWeight: '700', color: '#1A1A2E' },
   taskBannerDesc: { fontSize: 12, fontWeight: '500', color: '#9CA3AF' },
   taskBannerClose: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(0,0,0,0.04)',
     alignItems: 'center',
     justifyContent: 'center',
   },

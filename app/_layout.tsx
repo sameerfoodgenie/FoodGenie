@@ -17,7 +17,7 @@ export default function RootLayout() {
             <MealProvider>
               <PostProvider>
                 <CreatorProvider>
-                <StatusBar style="light" />
+                <StatusBar style="dark" />
                 <View style={styles.root}>
                   <Stack screenOptions={{ headerShown: false }}>
                     <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -79,6 +79,5 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0A0A0F' },
-  // Ensures deep black background throughout app
+  root: { flex: 1, backgroundColor: '#FFFFFF' }
 });

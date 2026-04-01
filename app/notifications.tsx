@@ -77,7 +77,7 @@ export default function NotificationsScreen() {
           style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
           onPress={() => { Haptics.selectionAsync(); router.back(); }}
         >
-          <MaterialIcons name="arrow-back" size={22} color="#FFF" />
+          <MaterialIcons name="arrow-back" size={22} color="#1A1A2E" />
         </Pressable>
         <Text style={styles.headerTitle}>Notifications</Text>
         {unreadCount > 0 ? (
@@ -119,7 +119,7 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0F' },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
 
   header: {
     flexDirection: 'row',
@@ -132,20 +132,20 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#111116',
+    backgroundColor: '#F4F4F8',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(0,0,0,0.06)',
   },
-  headerTitle: { fontSize: 20, fontWeight: '800', color: '#FFF', letterSpacing: -0.2 },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#1A1A2E', letterSpacing: -0.2 },
   markAllBtn: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 16,
-    backgroundColor: 'rgba(212,175,55,0.08)',
+    backgroundColor: 'rgba(212,175,55,0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.12)',
+    borderColor: 'rgba(212,175,55,0.15)',
   },
   markAllText: { fontSize: 13, fontWeight: '700', color: '#D4AF37' },
 
@@ -156,10 +156,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.03)',
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   notifUnread: {
-    backgroundColor: 'rgba(212,175,55,0.03)',
+    backgroundColor: 'rgba(212,175,55,0.05)',
   },
   notifIcon: {
     width: 46,
@@ -168,10 +168,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(0,0,0,0.06)',
   },
   notifContent: { flex: 1, gap: 4 },
-  notifMessage: { fontSize: 14, fontWeight: '500', color: '#FFF', lineHeight: 20 },
+  notifMessage: { fontSize: 14, fontWeight: '500', color: '#1A1A2E', lineHeight: 20 },
   notifTime: { fontSize: 12, color: '#6B7280' },
   unreadDot: {
     width: 8,
@@ -190,14 +190,14 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: '#111116',
+    backgroundColor: '#F4F4F8',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(0,0,0,0.06)',
   },
-  emptyTitle: { fontSize: 20, fontWeight: '800', color: '#FFF' },
+  emptyTitle: { fontSize: 20, fontWeight: '800', color: '#1A1A2E' },
   emptySubtitle: {
     fontSize: 14,
     color: '#6B7280',

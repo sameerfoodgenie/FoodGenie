@@ -40,7 +40,7 @@ function GlowingPlusButton({ focused }: { focused: boolean }) {
     <View style={styles.postTabWrap}>
       <Animated.View style={[styles.glowRing, glowStyle]} />
       <LinearGradient
-        colors={focused ? ['#FFD700', '#D4AF37'] : ['#1E1E28', '#18181E']}
+        colors={focused ? ['#FFD700', '#D4AF37'] : ['#F4F4F8', '#ECECF0']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.postTabBtn}
@@ -48,7 +48,7 @@ function GlowingPlusButton({ focused }: { focused: boolean }) {
         <MaterialIcons
           name="add"
           size={30}
-          color={focused ? '#0A0A0F' : '#D4AF37'}
+          color={focused ? '#FFFFFF' : '#D4AF37'}
         />
       </LinearGradient>
     </View>
@@ -84,9 +84,9 @@ export default function TabLayout() {
       default: 8,
     }),
     paddingHorizontal: 24,
-    backgroundColor: '#0A0A0F',
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(212,175,55,0.06)',
+    borderTopColor: 'rgba(0,0,0,0.06)',
   };
 
   return (
@@ -96,7 +96,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle,
         tabBarActiveTintColor: '#D4AF37',
-        tabBarInactiveTintColor: '#4B5563',
+        tabBarInactiveTintColor: '#9CA3AF',
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 22,
-    backgroundColor: 'rgba(212,175,55,0.22)',
+    backgroundColor: 'rgba(212,175,55,0.18)',
   },
   postTabBtn: {
     width: 58,
@@ -174,11 +174,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(212,175,55,0.30)',
+    borderColor: 'rgba(212,175,55,0.25)',
     shadowColor: '#D4AF37',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.20,
+    shadowRadius: 12,
+    elevation: 6,
   },
 });

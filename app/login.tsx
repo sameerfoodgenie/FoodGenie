@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     width: 240,
     height: 240,
     borderRadius: 120,
-    backgroundColor: 'rgba(212,175,55,0.05)',
+    backgroundColor: 'rgba(212,175,55,0.06)',
   },
   bgOrb2: {
     position: 'absolute',
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: 'rgba(212,175,55,0.03)',
+    backgroundColor: 'rgba(212,175,55,0.04)',
   },
 
   // Login

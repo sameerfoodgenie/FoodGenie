@@ -131,7 +131,7 @@ export default function ProfileScreen() {
               <Text style={styles.title}>{name}</Text>
               <View style={styles.headerActions}>
                 <Pressable style={styles.headerIconBtn} onPress={() => router.push('/(tabs)/camera')}>
-                  <MaterialIcons name="add-box" size={24} color="#FFF" />
+                  <MaterialIcons name="add-box" size={24} color="#1A1A2E" />
                 </Pressable>
                 <Pressable style={styles.headerIconBtn} onPress={() => { Haptics.selectionAsync(); router.push('/admin' as any); }}>
                   <MaterialIcons name="admin-panel-settings" size={22} color="#D4AF37" />
@@ -401,7 +401,7 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0F' },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
 
   header: {
     flexDirection: 'row',
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 14,
   },
-  title: { fontSize: 22, fontWeight: '800', color: '#FFF', letterSpacing: -0.3 },
+  title: { fontSize: 22, fontWeight: '800', color: '#1A1A2E', letterSpacing: -0.3 },
   headerActions: { flexDirection: 'row', gap: 14 },
   headerIconBtn: { padding: 6 },
 
@@ -425,9 +425,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderRadius: 20,
-    backgroundColor: 'rgba(26,26,34,0.70)',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(0,0,0,0.06)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
     gap: 18,
   },
   avatarWrap: { position: 'relative' },
@@ -438,7 +443,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 26, fontWeight: '800', color: '#0A0A0F' },
+  avatarText: { fontSize: 26, fontWeight: '800', color: '#FFFFFF' },
   levelBadge: {
     position: 'absolute',
     bottom: -2,
@@ -449,19 +454,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#0A0A0F',
+    borderColor: '#FFFFFF',
   },
   levelBadgeEmoji: { fontSize: 12 },
 
   socialStats: { flex: 1, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
   statItem: { alignItems: 'center', gap: 2 },
-  statValue: { fontSize: 18, fontWeight: '800', color: '#FFF' },
+  statValue: { fontSize: 18, fontWeight: '800', color: '#1A1A2E' },
   statLabel: { fontSize: 10, fontWeight: '500', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 },
-  statDivider: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.06)' },
+  statDivider: { width: 1, height: 28, backgroundColor: 'rgba(0,0,0,0.08)' },
 
   bioSection: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8, gap: 4 },
   bioNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  bioName: { fontSize: 15, fontWeight: '700', color: '#FFF' },
+  bioName: { fontSize: 15, fontWeight: '700', color: '#1A1A2E' },
   levelTag: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -509,7 +514,7 @@ const styles = StyleSheet.create({
     paddingTop: 50,
   },
   latestPostInfo: { gap: 4 },
-  latestDishName: { fontSize: 20, fontWeight: '800', color: '#FFF' },
+  latestDishName: { fontSize: 20, fontWeight: '800', color: '#FFF' },  // keep white on overlay
   latestCaption: { fontSize: 13, color: 'rgba(255,255,255,0.60)', fontWeight: '500' },
   latestMeta: { flexDirection: 'row', gap: 16, marginTop: 6 },
   latestMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -533,9 +538,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: '#18181E',
+    backgroundColor: '#F4F4F8',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.08)',
+    borderColor: 'rgba(0,0,0,0.06)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -552,7 +557,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    borderColor: 'rgba(212,175,55,0.20)',
+    borderColor: 'rgba(212,175,55,0.25)',
     backgroundColor: 'rgba(212,175,55,0.06)',
   },
   editProfileBtn: {
@@ -560,11 +565,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 11,
     borderRadius: 12,
-    backgroundColor: '#18181E',
+    backgroundColor: '#F4F4F8',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(0,0,0,0.06)',
   },
-  editProfileText: { fontSize: 14, fontWeight: '700', color: '#FFF' },
+  editProfileText: { fontSize: 14, fontWeight: '700', color: '#1A1A2E' },
 
   /* Creator Section */
   creatorSection: { paddingHorizontal: 20, paddingBottom: 16 },
@@ -573,7 +578,7 @@ const styles = StyleSheet.create({
     padding: 18,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.15)',
+    borderColor: 'rgba(212,175,55,0.18)',
     backgroundColor: 'rgba(212,175,55,0.04)',
     gap: 14,
   },
@@ -583,7 +588,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   creatorTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  creatorTitle: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+  creatorTitle: { fontSize: 16, fontWeight: '700', color: '#1A1A2E' },
   creatorBadgeTag: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -593,7 +598,7 @@ const styles = StyleSheet.create({
   creatorBadgeText: { fontSize: 12, fontWeight: '700', color: '#D4AF37' },
   creatorStats: { flexDirection: 'row', gap: 24 },
   creatorStatItem: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
-  creatorStatVal: { fontSize: 20, fontWeight: '800', color: '#FFF' },
+  creatorStatVal: { fontSize: 20, fontWeight: '800', color: '#1A1A2E' },
   creatorStatLbl: { fontSize: 13, color: '#6B7280', fontWeight: '500' },
   creatorCta: {
     flexDirection: 'row',
@@ -607,9 +612,9 @@ const styles = StyleSheet.create({
   creatorCardLocked: {
     padding: 18,
     borderRadius: 20,
-    backgroundColor: '#111116',
+    backgroundColor: '#F8F8FA',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.10)',
+    borderColor: 'rgba(0,0,0,0.06)',
     gap: 14,
   },
   lockHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -617,14 +622,14 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(212,175,55,0.06)',
+    backgroundColor: 'rgba(212,175,55,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.12)',
+    borderColor: 'rgba(212,175,55,0.15)',
   },
   lockTitleBlock: { flex: 1, gap: 3 },
-  lockTitle: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+  lockTitle: { fontSize: 16, fontWeight: '700', color: '#1A1A2E' },
   lockSubtitle: { fontSize: 13, color: '#9CA3AF', fontWeight: '500', lineHeight: 18 },
 
   rewardPreview: {
@@ -644,11 +649,11 @@ const styles = StyleSheet.create({
   progressItem: { gap: 6 },
   progressLabel: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   progressText: { fontSize: 13, fontWeight: '600', color: '#9CA3AF' },
-  progressCount: { fontSize: 13, fontWeight: '700', color: '#FFF' },
+  progressCount: { fontSize: 13, fontWeight: '700', color: '#1A1A2E' },
   progressBarBg: {
     height: 5,
     borderRadius: 3,
-    backgroundColor: '#18181E',
+    backgroundColor: '#E5E7EB',
     overflow: 'hidden',
   },
   progressBarFill: { height: '100%', borderRadius: 3 },
@@ -658,9 +663,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.04)',
+    borderTopColor: 'rgba(0,0,0,0.06)',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.04)',
+    borderBottomColor: 'rgba(0,0,0,0.06)',
   },
   gridTab: {
     paddingVertical: 12,
@@ -673,7 +678,7 @@ const styles = StyleSheet.create({
   gridNoImage: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#18181E',
+    backgroundColor: '#F4F4F8',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -682,11 +687,11 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#111116',
+    backgroundColor: '#F4F4F8',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
-  emptyGridTitle: { fontSize: 18, fontWeight: '700', color: '#FFF' },
+  emptyGridTitle: { fontSize: 18, fontWeight: '700', color: '#1A1A2E' },
   emptyGridSub: { fontSize: 14, color: '#6B7280' },
 });

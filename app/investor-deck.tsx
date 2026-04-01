@@ -972,7 +972,7 @@ export default function InvestorDeckScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0F' },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
 
   // Header
   header: {
@@ -988,13 +988,13 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#111116',
+    backgroundColor: '#F4F4F8',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(0,0,0,0.06)',
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#FFF', letterSpacing: -0.2 },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#1A1A2E', letterSpacing: -0.2 },
   exportBtn: {
     borderRadius: 16,
     overflow: 'hidden',
@@ -1008,7 +1008,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: 'rgba(212,175,55,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.15)',
+    borderColor: 'rgba(212,175,55,0.20)',
   },
   exportBtnText: {
     fontSize: 13,
@@ -1031,7 +1031,7 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 100,
     borderWidth: 2,
-    borderColor: 'rgba(212,175,55,0.15)',
+    borderColor: 'rgba(212,175,55,0.10)',
   },
   heroLogoWrap: { marginBottom: 20 },
   heroLogoRing: {
@@ -1047,11 +1047,11 @@ const styles = StyleSheet.create({
     width: 94,
     height: 94,
     borderRadius: 47,
-    backgroundColor: '#111116',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.15)',
+    borderColor: 'rgba(212,175,55,0.18)',
   },
   heroLogoImg: { width: 60, height: 60 },
   heroAppName: {
@@ -1073,7 +1073,7 @@ const styles = StyleSheet.create({
   heroDesc: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#9CA3AF',
+    color: '#6B7280',
     textAlign: 'center',
     lineHeight: 22,
     marginTop: 12,
@@ -1099,7 +1099,7 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     borderWidth: 2,
-    borderColor: '#0A0A0F',
+    borderColor: '#FFFFFF',
   },
   storyMoreBadge: {
     paddingHorizontal: 14,
@@ -1124,7 +1124,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#FFF',
+    color: '#1A1A2E',
     letterSpacing: -0.3,
     marginBottom: 6,
   },
@@ -1145,9 +1145,14 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     paddingHorizontal: 8,
     borderRadius: 18,
-    backgroundColor: '#111116',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(0,0,0,0.06)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
     gap: 6,
   },
   metricIconWrap: {
@@ -1157,7 +1162,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  metricValue: { fontSize: 20, fontWeight: '900', color: '#FFF' },
+  metricValue: { fontSize: 20, fontWeight: '900', color: '#1A1A2E' },
   metricLabel: { fontSize: 10, fontWeight: '600', color: '#6B7280', textAlign: 'center' },
 
   // ═══ FEED PREVIEW ═══
@@ -1165,7 +1170,7 @@ const styles = StyleSheet.create({
   phoneFrame: {
     marginTop: 18,
     borderRadius: 28,
-    backgroundColor: '#111116',
+    backgroundColor: '#1A1A2E',
     borderWidth: 2,
     borderColor: 'rgba(212,175,55,0.12)',
     overflow: 'hidden',
@@ -1176,7 +1181,7 @@ const styles = StyleSheet.create({
     height: 28,
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
-    backgroundColor: '#0A0A0F',
+    backgroundColor: '#111116',
     alignSelf: 'center',
   },
   phoneFeedHeader: {
@@ -1207,7 +1212,7 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     borderWidth: 2,
-    borderColor: '#111116',
+    borderColor: '#1A1A2E',
   },
   phoneStoryName: { fontSize: 9, fontWeight: '600', color: '#6B7280' },
   phoneFeedPost: {
@@ -1253,7 +1258,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 24,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.03)',
+    borderTopColor: 'rgba(0,0,0,0.04)',
   },
   featureHeader: {
     flexDirection: 'row',
@@ -1271,7 +1276,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(212,175,55,0.10)',
   },
   featureTitleBlock: { flex: 1, gap: 2 },
-  featureTitle: { fontSize: 20, fontWeight: '800', color: '#FFF' },
+  featureTitle: { fontSize: 20, fontWeight: '800', color: '#1A1A2E' },
   featureSubtitle: { fontSize: 13, fontWeight: '500', color: '#6B7280' },
   featureImageGrid: {
     flexDirection: 'row',
@@ -1314,7 +1319,7 @@ const styles = StyleSheet.create({
   featureDesc: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#9CA3AF',
+    color: '#6B7280',
     lineHeight: 21,
     marginBottom: 14,
   },
@@ -1330,12 +1335,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: '#111116',
+    backgroundColor: '#F4F4F8',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(0,0,0,0.04)',
   },
   highlightDot: { width: 6, height: 6, borderRadius: 3 },
-  highlightText: { fontSize: 12, fontWeight: '600', color: '#FFF' },
+  highlightText: { fontSize: 12, fontWeight: '600', color: '#1A1A2E' },
 
   // ═══ CREATOR SHOWCASE ═══
   creatorShowcase: { paddingHorizontal: 24, paddingVertical: 32 },
@@ -1346,8 +1351,13 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     paddingHorizontal: 8,
     borderRadius: 18,
-    backgroundColor: '#111116',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
     gap: 6,
   },
   tierEmojiWrap: {
@@ -1365,9 +1375,14 @@ const styles = StyleSheet.create({
 
   creatorStatsPreview: {
     borderRadius: 18,
-    backgroundColor: '#111116',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.08)',
+    borderColor: 'rgba(0,0,0,0.06)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
     overflow: 'hidden',
   },
   creatorStatRow: {
@@ -1377,9 +1392,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 14,
   },
-  creatorStatLabel: { fontSize: 14, fontWeight: '500', color: '#9CA3AF' },
+  creatorStatLabel: { fontSize: 14, fontWeight: '500', color: '#6B7280' },
   creatorStatValue: { fontSize: 16, fontWeight: '800', color: '#FFD700' },
-  creatorStatDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.03)' },
+  creatorStatDivider: { height: 1, backgroundColor: 'rgba(0,0,0,0.04)' },
 
   // ═══ FOOD GRID ═══
   foodGridSection: { paddingBottom: 32 },
@@ -1421,10 +1436,15 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderRadius: 16,
-    backgroundColor: '#111116',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(0,0,0,0.06)',
     marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
   },
   monetizationLeft: { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
   monetizationIconWrap: {
@@ -1436,7 +1456,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   monetizationInfo: { flex: 1, gap: 2 },
-  monetizationTitle: { fontSize: 15, fontWeight: '700', color: '#FFF' },
+  monetizationTitle: { fontSize: 15, fontWeight: '700', color: '#1A1A2E' },
   monetizationDesc: { fontSize: 12, fontWeight: '500', color: '#6B7280' },
   monetizationValueWrap: {
     paddingHorizontal: 14,
@@ -1462,10 +1482,15 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     paddingHorizontal: 12,
     borderRadius: 16,
-    backgroundColor: '#111116',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(0,0,0,0.06)',
     gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
   },
   techIconWrap: {
     width: 40,
@@ -1475,7 +1500,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  techName: { fontSize: 13, fontWeight: '700', color: '#FFF' },
+  techName: { fontSize: 13, fontWeight: '700', color: '#1A1A2E' },
   techDesc: { fontSize: 11, fontWeight: '500', color: '#6B7280' },
 
   // ═══ GROWTH ═══
@@ -1498,7 +1523,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 120,
     borderRadius: 8,
-    backgroundColor: '#111116',
+    backgroundColor: '#F4F4F8',
     overflow: 'hidden',
     justifyContent: 'flex-end',
   },
@@ -1513,10 +1538,15 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderRadius: 16,
-    backgroundColor: '#111116',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(0,0,0,0.06)',
     marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
   },
   advantageIconWrap: {
     width: 48,
@@ -1529,7 +1559,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(212,175,55,0.10)',
   },
   advantageContent: { flex: 1, gap: 4 },
-  advantageTitle: { fontSize: 15, fontWeight: '700', color: '#FFF' },
+  advantageTitle: { fontSize: 15, fontWeight: '700', color: '#1A1A2E' },
   advantageDesc: { fontSize: 13, fontWeight: '500', color: '#6B7280', lineHeight: 19 },
 
   // ═══ CTA FOOTER ═══
@@ -1551,7 +1581,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#111116',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -1570,9 +1600,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   ctaStatItem: { alignItems: 'center', gap: 2 },
-  ctaStatValue: { fontSize: 22, fontWeight: '900', color: '#FFF' },
+  ctaStatValue: { fontSize: 22, fontWeight: '900', color: '#1A1A2E' },
   ctaStatLabel: { fontSize: 11, fontWeight: '600', color: '#6B7280' },
-  ctaStatDivider: { width: 1, height: 30, backgroundColor: 'rgba(255,255,255,0.06)' },
+  ctaStatDivider: { width: 1, height: 30, backgroundColor: 'rgba(0,0,0,0.08)' },
   ctaButton: { borderRadius: 20, overflow: 'hidden' },
   ctaButtonInner: {
     flexDirection: 'row',
@@ -1582,7 +1612,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 20,
   },
-  ctaButtonText: { fontSize: 16, fontWeight: '800', color: '#0A0A0F' },
+  ctaButtonText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
   ctaContact: { fontSize: 13, fontWeight: '500', color: '#6B7280', marginTop: 16 },
 
   // ═══ VIDEO SHOWCASE ═══
@@ -1597,11 +1627,15 @@ const styles = StyleSheet.create({
   },
   videoCard: {
     borderRadius: 22,
-    backgroundColor: '#111116',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: 'rgba(212,175,55,0.10)',
+    borderColor: 'rgba(0,0,0,0.06)',
     overflow: 'hidden',
-    ...theme.shadows.card,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
   videoPlayerWrap: {
     height: 320,
@@ -1698,7 +1732,7 @@ const styles = StyleSheet.create({
   },
   videoStatDivider: {
     borderRightWidth: 1,
-    borderRightColor: 'rgba(255,255,255,0.04)',
+    borderRightColor: 'rgba(0,0,0,0.06)',
   },
   videoStatValue: {
     fontSize: 16,
@@ -1720,7 +1754,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#2A2A32',
+    backgroundColor: '#E5E7EB',
   },
   videoDotActive: {
     width: 24,
@@ -1743,11 +1777,11 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#18181E',
+    backgroundColor: '#F4F4F8',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(0,0,0,0.06)',
   },
   videoFlowNumber: {
     fontSize: 12,
