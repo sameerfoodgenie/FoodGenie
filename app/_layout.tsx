@@ -66,6 +66,7 @@ export default function RootLayout() {
                     <Stack.Screen name="privacy-policy" options={{ headerShown: false, animation: 'slide_from_right' }} />
                     <Stack.Screen name="app-info" options={{ headerShown: false, animation: 'slide_from_right' }} />
                     <Stack.Screen name="investor-deck" options={{ headerShown: false, animation: 'fade' }} />
+                    <Stack.Screen name="photo-editor" options={{ headerShown: false, animation: 'slide_from_right' }} />
                   </Stack>
                 </View>
                 </CreatorProvider>

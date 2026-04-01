@@ -30,10 +30,117 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { theme } from '../../constants/theme';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 const IS_WEB = Platform.OS === 'web';
 const MAX_RECORD_SEC = 120;
 
 type CameraMode = 'photo' | 'video' | 'live';
+
+// ─── Frame Guide Overlay ───
+function FrameGuide({ showGrid, aspectRatio }: { showGrid: boolean; aspectRatio: number }) {
+  // Calculate frame area based on aspect ratio within full-screen camera
+  const screenRatio = SCREEN_WIDTH / SCREEN_HEIGHT;
+  let frameW = SCREEN_WIDTH;
+  let frameH = SCREEN_WIDTH / aspectRatio;
+
+  if (frameH > SCREEN_HEIGHT) {
+    frameH = SCREEN_HEIGHT;
+    frameW = SCREEN_HEIGHT * aspectRatio;
+  }
+
+  const topBar = Math.max(0, (SCREEN_HEIGHT - frameH) / 2);
+  const sideBar = Math.max(0, (SCREEN_WIDTH - frameW) / 2);
+
+  return (
+    <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+      {/* Darkened areas outside frame */}
+      {topBar > 0 ? (
+        <>
+          <View style={[frameStyles.bar, { top: 0, left: 0, right: 0, height: topBar }]} />
+          <View style={[frameStyles.bar, { bottom: 0, left: 0, right: 0, height: topBar }]} />
+        </>
+      ) : null}
+      {sideBar > 0 ? (
+        <>
+          <View style={[frameStyles.bar, { top: topBar, left: 0, width: sideBar, bottom: topBar }]} />
+          <View style={[frameStyles.bar, { top: topBar, right: 0, width: sideBar, bottom: topBar }]} />
+        </>
+      ) : null}
+
+      {/* Frame border */}
+      <View style={[
+        frameStyles.frameBorder,
+        { top: topBar, left: sideBar, width: frameW, height: frameH },
+      ]}>
+        {/* Corner marks */}
+        <View style={[frameStyles.corner, frameStyles.cornerTL]} />
+        <View style={[frameStyles.corner, frameStyles.cornerTR]} />
+        <View style={[frameStyles.corner, frameStyles.cornerBL]} />
+        <View style={[frameStyles.corner, frameStyles.cornerBR]} />
+
+        {/* Grid lines (rule of thirds) */}
+        {showGrid ? (
+          <>
+            <View style={[frameStyles.gridV, { left: '33.33%' }]} />
+            <View style={[frameStyles.gridV, { left: '66.66%' }]} />
+            <View style={[frameStyles.gridH, { top: '33.33%' }]} />
+            <View style={[frameStyles.gridH, { top: '66.66%' }]} />
+            <View style={frameStyles.centerDot} />
+          </>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+const frameStyles = StyleSheet.create({
+  bar: {
+    position: 'absolute',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  frameBorder: {
+    position: 'absolute',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.50)',
+  },
+  corner: {
+    position: 'absolute',
+    width: 24,
+    height: 24,
+    borderColor: '#D4AF37',
+  },
+  cornerTL: { top: -1, left: -1, borderTopWidth: 3, borderLeftWidth: 3 },
+  cornerTR: { top: -1, right: -1, borderTopWidth: 3, borderRightWidth: 3 },
+  cornerBL: { bottom: -1, left: -1, borderBottomWidth: 3, borderLeftWidth: 3 },
+  cornerBR: { bottom: -1, right: -1, borderBottomWidth: 3, borderRightWidth: 3 },
+  gridV: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 0.5,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+  },
+  gridH: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 0.5,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+  },
+  centerDot: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginTop: -3,
+    marginLeft: -3,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(212,175,55,0.60)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.40)',
+  },
+});
 
 export default function CameraScreen() {
   const router = useRouter();
@@ -49,6 +156,10 @@ export default function CameraScreen() {
 
   // Mode toggle
   const [mode, setMode] = useState<CameraMode>('photo');
+
+  // Camera frame guide
+  const [showFrameGrid, setShowFrameGrid] = useState(true);
+  const [frameAspect, setFrameAspect] = useState(4 / 5); // 4:5 for feed
 
   // Video recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -121,9 +232,9 @@ export default function CameraScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.85 });
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.92 });
       if (photo?.uri) {
-        router.push({ pathname: '/create-post', params: { imageUri: photo.uri } });
+        router.push({ pathname: '/photo-editor', params: { imageUri: photo.uri } });
       }
     } catch (e) {
       console.log('Capture error:', e);
@@ -251,7 +362,7 @@ export default function CameraScreen() {
         if (mode === 'video') {
           setRecordedVideoUri(result.assets[0].uri);
         } else {
-          router.push({ pathname: '/create-post', params: { imageUri: result.assets[0].uri } });
+          router.push({ pathname: '/photo-editor', params: { imageUri: result.assets[0].uri } });
         }
       }
     } catch (e) {
@@ -453,6 +564,11 @@ export default function CameraScreen() {
         </View>
       )}
 
+      {/* Frame guide overlay for photo mode */}
+      {mode === 'photo' && permission?.granted ? (
+        <FrameGuide showGrid={showFrameGrid} aspectRatio={frameAspect} />
+      ) : null}
+
       {/* Recording progress bar at top */}
       {isRecording ? (
         <View style={styles.recordProgressBar}>
@@ -482,12 +598,20 @@ export default function CameraScreen() {
           </View>
           <View style={styles.topActions}>
             {!isRecording ? (
-              <Pressable
-                style={({ pressed }) => [styles.topBtn, flash && styles.topBtnActive, pressed && { opacity: 0.7 }]}
-                onPress={handleFlash}
-              >
-                <MaterialIcons name={flash ? 'flash-on' : 'flash-off'} size={22} color={flash ? theme.textOnPrimary : '#FFF'} />
-              </Pressable>
+              <>
+                <Pressable
+                  style={({ pressed }) => [styles.topBtn, showFrameGrid && styles.topBtnGridActive, pressed && { opacity: 0.7 }]}
+                  onPress={() => { Haptics.selectionAsync(); setShowFrameGrid(g => !g); }}
+                >
+                  <MaterialIcons name="grid-on" size={20} color={showFrameGrid ? '#D4AF37' : 'rgba(255,255,255,0.6)'} />
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [styles.topBtn, flash && styles.topBtnActive, pressed && { opacity: 0.7 }]}
+                  onPress={handleFlash}
+                >
+                  <MaterialIcons name={flash ? 'flash-on' : 'flash-off'} size={22} color={flash ? theme.textOnPrimary : '#FFF'} />
+                </Pressable>
+              </>
             ) : null}
           </View>
         </View>
@@ -662,6 +786,10 @@ const styles = StyleSheet.create({
   topBtnActive: {
     backgroundColor: theme.primary,
     borderColor: theme.primary,
+  },
+  topBtnGridActive: {
+    backgroundColor: 'rgba(212,175,55,0.20)',
+    borderColor: 'rgba(212,175,55,0.35)',
   },
 
   // Recording indicator — REC badge + timer
