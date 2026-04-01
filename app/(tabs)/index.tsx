@@ -115,9 +115,10 @@ function ShimmerCard({ cardHeight }: { cardHeight: number }) {
   }));
 
   return (
-    <View style={[styles.reelCard, { height: cardHeight, backgroundColor: '#0A0A0F' }]}>
+    <View style={[styles.reelCard, { height: cardHeight, backgroundColor: '#FFFFFF' }]}>
       <Animated.View style={[styles.shimmerContainer, shimmerStyle]}>
-        <View style={styles.shimmerImage} />
+        {/* Card-based shimmer image area */}
+        <View style={styles.shimmerImageCard} />
         <View style={styles.shimmerBottom}>
           <View style={styles.shimmerLine} />
           <View style={[styles.shimmerLine, { width: '60%', marginTop: 8 }]} />
@@ -225,7 +226,13 @@ function ReelCard({
         />
       ) : (
         <View style={styles.reelNoImage}>
-          <Text style={{ fontSize: 80, opacity: 0.3 }}>🍽</Text>
+          <View style={styles.noImageCard}>
+            <View style={styles.noImageIconWrap}>
+              <MaterialIcons name="restaurant" size={40} color="#D4AF37" />
+            </View>
+            <Text style={styles.noImageDish}>{post.dishName}</Text>
+            <Text style={styles.noImageCaption}>{post.caption || 'No photo for this meal'}</Text>
+          </View>
         </View>
       )}
 
@@ -725,9 +732,52 @@ const styles = StyleSheet.create({
   },
   reelNoImage: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0A0A0F',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 20,
+  },
+  noImageCard: {
+    width: '100%',
+    flex: 1,
+    borderRadius: 24,
+    backgroundColor: '#FAFAFA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    paddingHorizontal: 32,
+  },
+  noImageIconWrap: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: 'rgba(212,175,55,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.15)',
+    marginBottom: 4,
+  },
+  noImageDish: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1A1A2E',
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
+  noImageCaption: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#9CA3AF',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 
   // Gradients
@@ -935,45 +985,58 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: 24,
     gap: 14,
   },
   emptyIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(212,175,55,0.08)',
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(212,175,55,0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.18)',
+    borderColor: 'rgba(212,175,55,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
+    shadowColor: '#D4AF37',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 2,
   },
-  emptyTitle: { fontSize: 22, fontWeight: '800', color: '#1A1A2E' },
-  emptySub: { fontSize: 15, color: '#9CA3AF', textAlign: 'center', lineHeight: 22 },
-  emptyBtn: { marginTop: 12, borderRadius: 18, overflow: 'hidden' },
+  emptyTitle: { fontSize: 24, fontWeight: '800', color: '#1A1A2E', letterSpacing: -0.3 },
+  emptySub: { fontSize: 15, color: '#9CA3AF', textAlign: 'center', lineHeight: 22, maxWidth: 280 },
+  emptyBtn: { marginTop: 16, borderRadius: 20, overflow: 'hidden' },
   emptyBtnGrad: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 18,
+    paddingHorizontal: 36,
+    paddingVertical: 17,
+    borderRadius: 20,
   },
   emptyBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
 
-  // Shimmer loading
+  // Shimmer loading — white card design
   shimmerContainer: {
     ...StyleSheet.absoluteFillObject,
+    padding: 16,
   },
-  shimmerImage: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#F0F0F4',
+  shimmerImageCard: {
+    flex: 1,
+    borderRadius: 24,
+    backgroundColor: '#F4F4F8',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
   shimmerBottom: {
     position: 'absolute',
     bottom: 28,
-    left: 18,
+    left: 24,
     right: 80,
     gap: 4,
   },
@@ -981,7 +1044,7 @@ const styles = StyleSheet.create({
     height: 14,
     width: '80%',
     borderRadius: 7,
-    backgroundColor: '#E5E5EA',
+    backgroundColor: '#E8E8ED',
   },
   shimmerTagsRow: {
     flexDirection: 'row',
@@ -992,11 +1055,11 @@ const styles = StyleSheet.create({
     width: 72,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#E5E5EA',
+    backgroundColor: '#E8E8ED',
   },
   shimmerActionBar: {
     position: 'absolute',
-    right: 14,
+    right: 20,
     bottom: 120,
     alignItems: 'center',
     gap: 22,
@@ -1005,7 +1068,12 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: '#E5E5EA',
+    backgroundColor: '#EDEDF0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
 
   // Comment bar
