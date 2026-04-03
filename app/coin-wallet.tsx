@@ -127,7 +127,6 @@ export default function CoinWalletScreen() {
     }
   }, [referralCode, generateReferral]);
 
-  const coinValue = (balance / 100 * 10).toFixed(0);
 
   return (
     <View style={styles.container}>
@@ -174,7 +173,7 @@ export default function CoinWalletScreen() {
                     <View style={styles.balanceTextBlock}>
                       <Text style={styles.balanceLabel}>Total Balance</Text>
                       <Text style={styles.balanceValue}>{balance.toLocaleString()}</Text>
-                      <Text style={styles.balanceRupee}>= ₹{coinValue} value</Text>
+
                     </View>
                   </View>
 
@@ -350,7 +349,6 @@ const styles = StyleSheet.create({
   balanceTextBlock: { flex: 1, gap: 2 },
   balanceLabel: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.50)' },
   balanceValue: { fontSize: 42, fontWeight: '900', color: '#FFD700', letterSpacing: -1 },
-  balanceRupee: { fontSize: 13, fontWeight: '600', color: 'rgba(212,175,55,0.60)' },
 
   balanceStats: { flexDirection: 'row', justifyContent: 'space-around' },
   balanceStat: { alignItems: 'center', gap: 4 },

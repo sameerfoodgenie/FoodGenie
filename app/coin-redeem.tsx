@@ -159,11 +159,7 @@ export default function CoinRedeemScreen() {
             );
           })}
 
-          {/* Conversion info */}
-          <View style={styles.conversionCard}>
-            <MaterialIcons name="info-outline" size={18} color="#D4AF37" />
-            <Text style={styles.conversionText}>100 Genie Coins = ₹10 value</Text>
-          </View>
+
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -245,12 +241,5 @@ const styles = StyleSheet.create({
   },
   redeemBtnText: { fontSize: 13, fontWeight: '700', color: '#FFF' },
 
-  conversionCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    marginTop: 16, paddingVertical: 14, paddingHorizontal: 18,
-    borderRadius: 16, backgroundColor: 'rgba(212,175,55,0.05)',
-    borderWidth: 1, borderColor: 'rgba(212,175,55,0.12)',
-    justifyContent: 'center',
-  },
-  conversionText: { fontSize: 14, fontWeight: '600', color: '#D4AF37' },
+
 });
