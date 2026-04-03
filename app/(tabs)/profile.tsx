@@ -22,6 +22,7 @@ import { useCreator } from '../../contexts/CreatorContext';
 import { useAlert, useAuth } from '@/template';
 import { useRouter } from 'expo-router';
 import { fetchProfile, UserProfile } from '../../services/profileService';
+import { useCoin } from '../../hooks/useCoin';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_GAP = 2;
@@ -44,6 +45,7 @@ export default function ProfileScreen() {
   const { todayMeals } = useMeals();
   const { showAlert } = useAlert();
   const { user, logout } = useAuth();
+  const { balance: coinBalance, currentStreak: coinStreak } = useCoin();
   const {
     currentLevel,
     isCreatorUnlocked,
@@ -139,6 +141,9 @@ export default function ProfileScreen() {
                 <Pressable style={styles.headerIconBtn} onPress={() => { Haptics.selectionAsync(); router.push('/investor-deck' as any); }}>
                   <MaterialIcons name="slideshow" size={20} color="#FFD700" />
                 </Pressable>
+                <Pressable style={styles.headerIconBtn} onPress={() => { Haptics.selectionAsync(); router.push('/coin-wallet' as any); }}>
+                  <Image source={require('../../assets/images/genie-coin.png')} style={{ width: 20, height: 20 }} contentFit="contain" />
+                </Pressable>
                 <Pressable style={styles.headerIconBtn} onPress={() => { Haptics.selectionAsync(); router.push('/app-info' as any); }}>
                   <MaterialIcons name="info-outline" size={20} color="#6B7280" />
                 </Pressable>
@@ -175,10 +180,10 @@ export default function ProfileScreen() {
                     <Text style={styles.statLabel}>Following</Text>
                   </View>
                   <View style={styles.statDivider} />
-                  <View style={styles.statItem}>
-                    <Text style={[styles.statValue, { color: '#FFD700' }]}>{totalLikes}</Text>
-                    <Text style={styles.statLabel}>Likes</Text>
-                  </View>
+                  <Pressable style={styles.statItem} onPress={() => router.push('/coin-wallet')}>
+                    <Text style={[styles.statValue, { color: '#FFD700' }]}>{coinBalance}</Text>
+                    <Text style={styles.statLabel}>Coins</Text>
+                  </Pressable>
                 </View>
               </View>
             </Animated.View>

@@ -23,6 +23,8 @@ import { useCreator } from '../contexts/CreatorContext';
 import { useAuth, useAlert } from '@/template';
 import { POPULAR_DISHES, ORDER_PLATFORMS } from '../services/mealInsights';
 import { uploadImage, uploadThumbnail } from '../services/storageService';
+import { useCoin } from '../hooks/useCoin';
+import { COIN_RULES } from '../services/coinService';
 
 type MealSource = 'home_cooked' | 'restaurant' | 'online_order';
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
@@ -51,6 +53,7 @@ export default function CreatePostScreen() {
   const { isCreatorUnlocked, postsNeeded } = useCreator();
   const { user } = useAuth();
   const { showAlert } = useAlert();
+  const { earnCoins } = useCoin();
 
   const [dishName, setDishName] = useState('');
   const [caption, setCaption] = useState('');
@@ -135,6 +138,9 @@ export default function CreatePostScreen() {
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      // Earn coins for posting
+      await earnCoins(COIN_RULES.post_food.amount, 'post_food');
 
       if (!isCreatorUnlocked && postsNeeded > 0) {
         showAlert('Posted!', `+1 step closer to Creator Mode! ${postsNeeded - 1} post${postsNeeded - 1 !== 1 ? 's' : ''} to go`);

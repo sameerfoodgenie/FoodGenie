@@ -6,6 +6,8 @@ import { AppProvider } from '../contexts/AppContext';
 import { MealProvider } from '../contexts/MealContext';
 import { PostProvider } from '../contexts/PostContext';
 import { CreatorProvider } from '../contexts/CreatorContext';
+import { CoinProvider } from '../contexts/CoinContext';
+import CoinEarnedPopup from '../components/CoinEarnedPopup';
 import { AlertProvider, AuthProvider } from '@/template';
 
 export default function RootLayout() {
@@ -17,6 +19,8 @@ export default function RootLayout() {
             <MealProvider>
               <PostProvider>
                 <CreatorProvider>
+                <CoinProvider>
+                <CoinEarnedPopup />
                 <StatusBar style="dark" />
                 <View style={styles.root}>
                   <Stack screenOptions={{ headerShown: false }}>
@@ -67,8 +71,12 @@ export default function RootLayout() {
                     <Stack.Screen name="app-info" options={{ headerShown: false, animation: 'slide_from_right' }} />
                     <Stack.Screen name="investor-deck" options={{ headerShown: false, animation: 'fade' }} />
                     <Stack.Screen name="photo-editor" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                    <Stack.Screen name="coin-wallet" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
+                    <Stack.Screen name="coin-redeem" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                    <Stack.Screen name="coin-leaderboard" options={{ headerShown: false, animation: 'slide_from_right' }} />
                   </Stack>
                 </View>
+                </CoinProvider>
                 </CreatorProvider>
               </PostProvider>
             </MealProvider>

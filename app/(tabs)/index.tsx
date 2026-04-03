@@ -28,6 +28,8 @@ import { useCreator } from '../../contexts/CreatorContext';
 import { CREATOR_TIERS } from '../../contexts/CreatorContext';
 import { useAuth } from '@/template';
 import { useNotifications } from '../../hooks/useNotifications';
+import { useCoin } from '../../hooks/useCoin';
+import { COIN_RULES } from '../../services/coinService';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -454,6 +456,7 @@ export default function HomeScreen() {
   }, [feedLoading, initialLoad]);
   const { user } = useAuth();
   const { unreadCount } = useNotifications(user?.id || null);
+  const { balance, earnCoins, canEarnLikeCoins, recordLikeCoinEarned } = useCoin();
   const [commentingPostId, setCommentingPostId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const commentInputRef = useRef<TextInput>(null);
@@ -481,10 +484,16 @@ export default function HomeScreen() {
   });
   const cardHeight = SCREEN_H - tabBarHeight;
 
-  const handleLike = useCallback((postId: string) => {
+  const handleLike = useCallback(async (postId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     toggleLike(postId);
-  }, [toggleLike]);
+    // Earn coins for liking (with daily limit)
+    const canEarn = await canEarnLikeCoins();
+    if (canEarn) {
+      await earnCoins(COIN_RULES.like_post.amount, 'like_post');
+      await recordLikeCoinEarned();
+    }
+  }, [toggleLike, canEarnLikeCoins, earnCoins, recordLikeCoinEarned]);
 
   const handleSave = useCallback((postId: string) => {
     Haptics.selectionAsync();
@@ -500,11 +509,14 @@ export default function HomeScreen() {
   const handleShare = useCallback(async (post: FoodPost) => {
     Haptics.selectionAsync();
     try {
-      await Share.share({
+      const result = await Share.share({
         message: `Check out ${post.dishName} by @${post.username} on FoodGenie!`,
       });
+      if (result.action === Share.sharedAction) {
+        await earnCoins(COIN_RULES.share_post.amount, 'share_post');
+      }
     } catch { /* ignore */ }
-  }, []);
+  }, [earnCoins]);
 
   const handleSubmitComment = useCallback(() => {
     if (!commentingPostId || !commentText.trim()) return;
@@ -522,10 +534,14 @@ export default function HomeScreen() {
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
 
-  const handleFollowChef = useCallback((userId: string) => {
+  const handleFollowChef = useCallback(async (userId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     toggleFollow(userId);
-  }, [toggleFollow]);
+    // Earn coins for following
+    if (!isFollowing(userId)) {
+      await earnCoins(COIN_RULES.follow_creator.amount, 'follow_creator');
+    }
+  }, [toggleFollow, isFollowing, earnCoins]);
 
   const renderReel = useCallback(({ item }: { item: FoodPost }) => (
     <ReelCard
@@ -562,6 +578,17 @@ export default function HomeScreen() {
           <Text style={styles.appTitle}>FoodGenie</Text>
         </View>
         <View style={styles.headerRight}>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); router.push('/coin-wallet'); }}
+            style={({ pressed }) => [styles.coinHeaderBtn, pressed && { opacity: 0.7 }]}
+          >
+            <Image
+              source={require('../../assets/images/genie-coin.png')}
+              style={styles.coinHeaderImg}
+              contentFit="contain"
+            />
+            <Text style={styles.coinHeaderText}>{balance >= 1000 ? `${(balance/1000).toFixed(1)}K` : balance}</Text>
+          </Pressable>
           <Pressable
             onPress={() => { Haptics.selectionAsync(); router.push('/notifications'); }}
             style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
@@ -743,6 +770,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  coinHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: 'rgba(212,175,55,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.25)',
+  },
+  coinHeaderImg: { width: 18, height: 18 },
+  coinHeaderText: { fontSize: 13, fontWeight: '800', color: '#FFD700' },
   headerBtn: {
     width: 40,
     height: 40,
