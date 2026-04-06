@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import {
   View,
@@ -16,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../constants/theme';
+import { useTheme } from '../../hooks/useTheme';
 import { usePosts } from '../../contexts/PostContext';
 import {
   useCreator,
@@ -29,6 +31,100 @@ import {
 const { width: SCREEN_W } = Dimensions.get('window');
 const CHEF_CARD_W = 136;
 const SHOW_CARD_W = SCREEN_W * 0.65;
+const FOOD_CARD_W = SCREEN_W * 0.72;
+const FOOD_CARD_H = FOOD_CARD_W * 1.25;
+
+// ── Emotion types ──
+type EmotionType = 'craving' | 'must_try' | 'loved';
+
+interface EmotionDef {
+  id: EmotionType;
+  emoji: string;
+  label: string;
+  color: string;
+}
+
+const EMOTIONS: EmotionDef[] = [
+  { id: 'craving', emoji: '🤤', label: 'Craving', color: '#FFB347' },
+  { id: 'must_try', emoji: '🔥', label: 'Must Try', color: '#FF6B6B' },
+  { id: 'loved', emoji: '😍', label: 'Loved It', color: '#FF69B4' },
+];
+
+interface FoodCard {
+  id: string;
+  dishName: string;
+  creator: string;
+  creatorAvatar: string;
+  imageUri: string;
+  description: string;
+  tags: string[];
+  cookTime: string;
+  difficulty: string;
+  emotions: Record<EmotionType, number>;
+}
+
+const TRENDING_FOOD_CARDS: FoodCard[] = [
+  {
+    id: 'fc_1',
+    dishName: 'Paneer Tikka Masala',
+    creator: 'chef_aarav',
+    creatorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80',
+    imageUri: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=800&q=80',
+    description: 'Smoky, spiced paneer cubes grilled to perfection and tossed in rich tomato-cream gravy.',
+    tags: ['north-indian', 'paneer'],
+    cookTime: '25 min',
+    difficulty: 'Easy',
+    emotions: { craving: 342, must_try: 189, loved: 267 },
+  },
+  {
+    id: 'fc_2',
+    dishName: 'Acai Smoothie Bowl',
+    creator: 'priya_vegan',
+    creatorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80',
+    imageUri: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=800&q=80',
+    description: 'Thick, creamy acai blended with frozen bananas, topped with granola and fresh berries.',
+    tags: ['healthy', 'vegan'],
+    cookTime: '10 min',
+    difficulty: 'Easy',
+    emotions: { craving: 198, must_try: 156, loved: 312 },
+  },
+  {
+    id: 'fc_3',
+    dishName: 'Masala Street Chaat',
+    creator: 'rohan_streetfood',
+    creatorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80',
+    imageUri: 'https://images.unsplash.com/photo-1606491956689-2ea866880049?w=800&q=80',
+    description: 'Crispy papdi, tangy tamarind, cool yogurt, and a burst of spices.',
+    tags: ['street-food', 'chaat'],
+    cookTime: '15 min',
+    difficulty: 'Easy',
+    emotions: { craving: 456, must_try: 287, loved: 198 },
+  },
+  {
+    id: 'fc_4',
+    dishName: 'Belgian Dessert Waffles',
+    creator: 'ananya_desserts',
+    creatorAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    imageUri: 'https://images.unsplash.com/photo-1562376552-0d160a2f238d?w=800&q=80',
+    description: 'Crispy on the outside, fluffy inside. Loaded with Nutella and fresh strawberries.',
+    tags: ['dessert', 'sweet'],
+    cookTime: '20 min',
+    difficulty: 'Medium',
+    emotions: { craving: 523, must_try: 345, loved: 412 },
+  },
+  {
+    id: 'fc_5',
+    dishName: 'Rainbow Power Salad',
+    creator: 'priya_vegan',
+    creatorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80',
+    imageUri: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&q=80',
+    description: 'A vibrant mix of fresh greens, roasted chickpeas, avocado, and quinoa.',
+    tags: ['healthy', 'salad'],
+    cookTime: '20 min',
+    difficulty: 'Easy',
+    emotions: { craving: 134, must_try: 267, loved: 189 },
+  },
+];
 
 function getTierInfo(type: string | null) {
   return CREATOR_TIERS.find(t => t.id === type) || null;
@@ -213,6 +309,97 @@ function PopularShowCard({ show, onPress }: { show: TrendingShow; onPress: () =>
   );
 }
 
+// ─── Trending Food Card ───
+function TrendingFoodCard({ card, index, userEmotion, onEmotion, onPress, colors }: {
+  card: FoodCard;
+  index: number;
+  userEmotion: EmotionType | null;
+  onEmotion: (cardId: string, emotion: EmotionType) => void;
+  onPress: () => void;
+  colors: any;
+}) {
+  const totalEmotions = card.emotions.craving + card.emotions.must_try + card.emotions.loved;
+
+  return (
+    <Animated.View entering={FadeInRight.delay(index * 80).duration(350)}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.foodCard,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+          pressed && { opacity: 0.95, transform: [{ scale: 0.98 }] },
+        ]}
+        onPress={onPress}
+      >
+        {/* Food Image */}
+        <View style={styles.foodCardImageWrap}>
+          <Image
+            source={{ uri: card.imageUri }}
+            style={StyleSheet.absoluteFillObject}
+            contentFit="cover"
+            transition={250}
+          />
+          <LinearGradient
+            colors={['transparent', 'transparent', 'rgba(0,0,0,0.70)']}
+            locations={[0, 0.45, 1]}
+            style={StyleSheet.absoluteFillObject}
+          />
+          {/* Creator pill */}
+          <View style={styles.foodCreatorPill}>
+            <Image source={{ uri: card.creatorAvatar }} style={styles.foodCreatorAvatar} contentFit="cover" />
+            <Text style={styles.foodCreatorName}>@{card.creator}</Text>
+          </View>
+          {/* Tags */}
+          <View style={styles.foodTagsRow}>
+            {card.tags.slice(0, 2).map(tag => (
+              <View key={tag} style={styles.foodTag}>
+                <Text style={styles.foodTagText}>{tag}</Text>
+              </View>
+            ))}
+            <View style={styles.foodTimeBadge}>
+              <MaterialIcons name="schedule" size={10} color="#FFD700" />
+              <Text style={styles.foodTimeText}>{card.cookTime}</Text>
+            </View>
+          </View>
+          {/* Dish name */}
+          <View style={styles.foodNameOverlay}>
+            <Text style={styles.foodDishName}>{card.dishName}</Text>
+            <Text style={styles.foodDifficulty}>{card.difficulty}</Text>
+          </View>
+        </View>
+
+        {/* Emotion Bar */}
+        <View style={[styles.foodEmotionBar, { borderTopColor: colors.border }]}>
+          {EMOTIONS.map(emotion => {
+            const isSelected = userEmotion === emotion.id;
+            const count = card.emotions[emotion.id] + (isSelected ? 1 : 0);
+            return (
+              <Pressable
+                key={emotion.id}
+                style={({ pressed }) => [
+                  styles.foodEmotionBtn,
+                  isSelected && { backgroundColor: `${emotion.color}18`, borderColor: `${emotion.color}40` },
+                  pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] },
+                ]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onEmotion(card.id, emotion.id);
+                }}
+              >
+                <Text style={[styles.foodEmotionEmoji, isSelected && { fontSize: 18 }]}>{emotion.emoji}</Text>
+                <Text style={[
+                  styles.foodEmotionCount,
+                  { color: isSelected ? emotion.color : colors.textMuted },
+                  isSelected && { fontWeight: '800' },
+                ]}>{formatCount(count)}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 // ─── New Creator Card ───
 function NewCreatorCard({ creator, onPress }: { creator: NewCreator; onPress: () => void }) {
   const tier = getTierInfo(creator.creatorType);
@@ -247,8 +434,17 @@ function NewCreatorCard({ creator, onPress }: { creator: NewCreator; onPress: ()
 export default function LearnScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const { liveSessions, trendingShows, topCreators, newCreators } = useCreator();
   const { toggleFollow, isFollowing } = usePosts();
+  const [userEmotions, setUserEmotions] = useState<Record<string, EmotionType | null>>({});
+
+  const handleEmotion = useCallback((cardId: string, emotion: EmotionType) => {
+    setUserEmotions(prev => ({
+      ...prev,
+      [cardId]: prev[cardId] === emotion ? null : emotion,
+    }));
+  }, []);
 
   const liveNow = liveSessions.filter(s => s.isLive);
   const upcoming = liveSessions.filter(s => !s.isLive).slice(0, 3);
@@ -265,15 +461,15 @@ export default function LearnScreen() {
   }, [router]);
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header — refined */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Discover</Text>
-          <Text style={styles.headerSubtitle}>Home Chefs, Shows & Live</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Discover</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>Home Chefs, Shows & Live</Text>
         </View>
         <Pressable
-          style={({ pressed }) => [styles.searchBtn, pressed && { opacity: 0.7 }]}
+          style={({ pressed }) => [styles.searchBtn, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.7 }]}
           onPress={() => { Haptics.selectionAsync(); router.push('/shows'); }}
         >
           <MaterialIcons name="explore" size={22} color="#D4AF37" />
@@ -401,6 +597,45 @@ export default function LearnScreen() {
           </Animated.View>
         ) : null}
 
+        {/* ─── Trending Food Cards ─── */}
+        <Animated.View entering={FadeInDown.delay(350).duration(350)}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Trending Food</Text>
+              <View style={styles.trendingFireBadge}>
+                <Text style={{ fontSize: 13 }}>🔥</Text>
+              </View>
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.seeAllBtn, pressed && { opacity: 0.7 }]}
+              onPress={() => { Haptics.selectionAsync(); router.push('/explore'); }}
+            >
+              <Text style={styles.seeAllText}>Explore All</Text>
+              <MaterialIcons name="chevron-right" size={18} color="#D4AF37" />
+            </Pressable>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}
+          >
+            {TRENDING_FOOD_CARDS.map((card, i) => (
+              <TrendingFoodCard
+                key={card.id}
+                card={card}
+                index={i}
+                userEmotion={userEmotions[card.id] || null}
+                onEmotion={handleEmotion}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  router.push('/explore');
+                }}
+                colors={colors}
+              />
+            ))}
+          </ScrollView>
+        </Animated.View>
+
         {/* ─── Become a Creator CTA ─── */}
         <Animated.View entering={FadeInDown.delay(400).duration(350)} style={styles.ctaSection}>
           <View style={styles.ctaCard}>
@@ -426,7 +661,7 @@ export default function LearnScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1 },
 
   // Header
   header: {
@@ -738,6 +973,139 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  // Trending Food Cards
+  trendingFireBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,107,107,0.10)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  foodCard: {
+    width: FOOD_CARD_W,
+    borderRadius: 22,
+    overflow: 'hidden',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  foodCardImageWrap: {
+    width: '100%',
+    height: FOOD_CARD_H,
+    position: 'relative',
+  },
+  foodCreatorPill: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingRight: 12,
+    paddingLeft: 4,
+    paddingVertical: 4,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.50)',
+  },
+  foodCreatorAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1.5,
+    borderColor: 'rgba(212,175,55,0.50)',
+  },
+  foodCreatorName: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFF',
+    letterSpacing: 0.2,
+  },
+  foodTagsRow: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    gap: 5,
+  },
+  foodTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+  },
+  foodTagText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#FFF',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  foodTimeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: 'rgba(212,175,55,0.25)',
+  },
+  foodTimeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#FFD700',
+  },
+  foodNameOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    paddingTop: 36,
+  },
+  foodDishName: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFF',
+    letterSpacing: -0.3,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 8,
+  },
+  foodDifficulty: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: 'rgba(255,215,0,0.85)',
+    marginTop: 3,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  foodEmotionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    gap: 6,
+    borderTopWidth: 1,
+  },
+  foodEmotionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 7,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  foodEmotionEmoji: { fontSize: 14 },
+  foodEmotionCount: { fontSize: 11, fontWeight: '700' },
 
   // CTA Section
   ctaSection: { paddingHorizontal: 20, marginTop: 34, marginBottom: 16 },
