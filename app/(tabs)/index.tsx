@@ -379,7 +379,7 @@ export default function HomeScreen() {
         <View style={styles.quickActionsSection}>
           <View style={styles.quickRow}>
             <QuickActionCard emoji="🪙" label="Genie Coins" tileColor={TILE_COLORS[0]} onPress={() => router.push('/coin-wallet')} delay={50} />
-            <QuickActionCard emoji={myTier?.emoji || currentLevel.emoji} label="Creator Badge" tileColor={TILE_COLORS[1]} onPress={() => router.push('/creator-dashboard')} delay={100} />
+            <QuickActionCard emoji="👨‍🍳" label="Master Chefs" tileColor={TILE_COLORS[1]} onPress={() => router.push('/master-chefs')} delay={100} />
             <QuickActionCard emoji="👨‍🍳" label="Home Chef" tileColor={TILE_COLORS[2]} onPress={() => { isCreatorUnlocked ? router.push('/creator-studio') : router.push('/creator-dashboard'); }} delay={150} />
           </View>
         </View>
