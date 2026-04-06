@@ -117,7 +117,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="learn"
         options={{
-          title: 'Discover',
+          title: 'Explore',
           tabBarIcon: ({ color, focused }) => (
             <MaterialIcons name={focused ? 'explore' : 'explore'} size={26} color={color} />
           ),
