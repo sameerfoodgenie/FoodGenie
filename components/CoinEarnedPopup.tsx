@@ -8,7 +8,6 @@ import Animated, {
   withDelay,
   withSpring,
   Easing,
-  interpolate,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,74 +21,28 @@ export default function CoinEarnedPopup() {
   return <CoinPopupContent amount={coinAnimation.amount} reason={coinAnimation.reason} icon={coinAnimation.icon} />;
 }
 
-// Sparkle particle
-function Sparkle({ delay, x, y }: { delay: number; x: number; y: number }) {
-  const opacity = useSharedValue(0);
-  const scale = useSharedValue(0);
-  const translateY = useSharedValue(0);
-
-  useEffect(() => {
-    opacity.value = withDelay(delay, withSequence(
-      withTiming(1, { duration: 200 }),
-      withDelay(400, withTiming(0, { duration: 300 })),
-    ));
-    scale.value = withDelay(delay, withSequence(
-      withSpring(1.2, { damping: 8 }),
-      withDelay(300, withTiming(0, { duration: 200 })),
-    ));
-    translateY.value = withDelay(delay, withTiming(-20, { duration: 800, easing: Easing.out(Easing.cubic) }));
-  }, []);
-
-  const style = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ scale: scale.value }, { translateY: translateY.value }],
-    position: 'absolute' as const,
-    left: x,
-    top: y,
-  }));
-
-  return <Animated.Text style={[{ fontSize: 10, color: '#FFD700' }, style]}>✦</Animated.Text>;
-}
-
 function CoinPopupContent({ amount, reason, icon }: { amount: number; reason: string; icon: string }) {
   const translateY = useSharedValue(-130);
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.5);
-  const coinRotate = useSharedValue(0);
   const coinScale = useSharedValue(0.3);
-  const glowOpacity = useSharedValue(0);
   const amountScale = useSharedValue(0);
 
   useEffect(() => {
-    // Container enter
     translateY.value = withSpring(0, { damping: 14, stiffness: 120 });
     opacity.value = withTiming(1, { duration: 250 });
     scale.value = withSpring(1, { damping: 11, stiffness: 180 });
 
-    // Coin animation
-    coinRotate.value = withSequence(
-      withTiming(720, { duration: 800, easing: Easing.out(Easing.cubic) }),
-      withTiming(0, { duration: 0 }),
-    );
     coinScale.value = withSequence(
       withSpring(1.3, { damping: 6, stiffness: 200 }),
       withSpring(1, { damping: 10 }),
     );
 
-    // Glow pulse
-    glowOpacity.value = withSequence(
-      withTiming(0.6, { duration: 300 }),
-      withTiming(0.2, { duration: 500 }),
-      withTiming(0.4, { duration: 400 }),
-    );
-
-    // Amount pop
     amountScale.value = withDelay(200, withSequence(
       withSpring(1.15, { damping: 6, stiffness: 200 }),
       withSpring(1, { damping: 10 }),
     ));
 
-    // Exit
     const exitDelay = 2200;
     translateY.value = withDelay(exitDelay, withTiming(-130, { duration: 350, easing: Easing.in(Easing.cubic) }));
     opacity.value = withDelay(exitDelay, withTiming(0, { duration: 350 }));
@@ -101,11 +54,7 @@ function CoinPopupContent({ amount, reason, icon }: { amount: number; reason: st
   }));
 
   const coinStyle = useAnimatedStyle(() => ({
-    transform: [{ rotateY: `${coinRotate.value}deg` }, { scale: coinScale.value }],
-  }));
-
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
+    transform: [{ scale: coinScale.value }],
   }));
 
   const amountStyle = useAnimatedStyle(() => ({
@@ -127,14 +76,13 @@ function CoinPopupContent({ amount, reason, icon }: { amount: number; reason: st
     <View style={styles.wrapper} pointerEvents="none">
       <Animated.View style={[styles.container, containerStyle]}>
         <LinearGradient
-          colors={['#1A1510', '#111118', '#0A0A0F']}
+          colors={['#FFF8E1', '#FFECB3', '#FFF3E0']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.gradient}
         >
-          {/* Glow behind coin */}
           <View style={styles.coinWrap}>
-            <Animated.View style={[styles.coinGlow, glowStyle]} />
+            <View style={styles.coinGlow} />
             <Animated.View style={coinStyle}>
               <Image
                 source={require('../assets/images/genie-coin.png')}
@@ -150,11 +98,6 @@ function CoinPopupContent({ amount, reason, icon }: { amount: number; reason: st
             </Animated.View>
             <Text style={styles.reasonText} numberOfLines={1}>{displayReason}</Text>
           </View>
-
-          {/* Sparkles */}
-          <Sparkle delay={100} x={-8} y={8} />
-          <Sparkle delay={250} x={-4} y={-6} />
-          <Sparkle delay={400} x={12} y={2} />
 
           <Text style={styles.sparkle}>✨</Text>
         </LinearGradient>
@@ -175,14 +118,14 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 24,
     overflow: 'hidden',
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
-    shadowRadius: 28,
-    elevation: 18,
+    shadowColor: '#D4AF37',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.20,
+    shadowRadius: 20,
+    elevation: 10,
     maxWidth: SCREEN_W - 40,
     borderWidth: 1.5,
-    borderColor: 'rgba(212,175,55,0.40)',
+    borderColor: 'rgba(212,175,55,0.30)',
   },
   gradient: {
     flexDirection: 'row',
@@ -205,7 +148,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(255,215,0,0.30)',
+    backgroundColor: 'rgba(255,215,0,0.25)',
     top: -7,
     left: -7,
   },
@@ -220,13 +163,13 @@ const styles = StyleSheet.create({
   amountText: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#FFD700',
+    color: '#8B6914',
     letterSpacing: -0.3,
   },
   reasonText: {
     fontSize: 12,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.55)',
+    color: 'rgba(139,105,20,0.60)',
   },
   sparkle: {
     fontSize: 22,

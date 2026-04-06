@@ -553,7 +553,7 @@ export default function ExploreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.background },
+  container: { flex: 1, backgroundColor: '#FDF8F0' },
 
   // Header
   header: {
@@ -561,7 +561,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: theme.background,
+    backgroundColor: '#FDF8F0',
     borderBottomWidth: 1,
     borderBottomColor: theme.border,
     gap: 12,

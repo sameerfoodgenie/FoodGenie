@@ -17,11 +17,11 @@ export const theme = {
   warning: '#F59E0B',
   error: '#EF4444',
 
-  // Backgrounds - Clean white
-  background: '#FFFFFF',
-  backgroundSecondary: '#F8F8FA',
-  backgroundTertiary: '#F1F1F5',
-  surface: '#F4F4F8',
+  // Backgrounds - Warm cream
+  background: '#FDF8F0',
+  backgroundSecondary: '#FAF5ED',
+  backgroundTertiary: '#F5EFE5',
+  surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
 
   // Text

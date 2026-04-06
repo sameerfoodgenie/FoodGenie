@@ -322,7 +322,7 @@ export default function LiveSessionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.background },
+  container: { flex: 1, backgroundColor: '#FDF8F0' },
 
   // Hero
   heroSection: {

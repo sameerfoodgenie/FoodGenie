@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { theme } from '../constants/theme';
+import { useTheme } from '../hooks/useTheme';
 import { useCreator, MilestoneCategory } from '../contexts/CreatorContext';
 
 const CATEGORY_TABS: { id: MilestoneCategory | 'all'; label: string; emoji: string }[] = [
@@ -26,6 +27,7 @@ const CATEGORY_TABS: { id: MilestoneCategory | 'all'; label: string; emoji: stri
 export default function CreatorDashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const {
     currentLevel, nextLevel, levelProgress,
     milestones, unlockedMilestones, nextMilestone,
@@ -278,7 +280,7 @@ export default function CreatorDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.background },
+  container: { flex: 1, backgroundColor: '#FDF8F0' },
   safeArea: { flex: 1 },
 
   header: {

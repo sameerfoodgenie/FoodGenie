@@ -15,27 +15,15 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCoin } from '../hooks/useCoin';
 import { useAlert } from '@/template';
+import { useTheme } from '../hooks/useTheme';
 import { REDEEM_CATEGORIES } from '../services/coinService';
-
-const LUX = {
-  bg: '#0A0A0F',
-  bgCard: '#111118',
-  bgSurface: '#16161F',
-  gold: '#D4AF37',
-  goldLight: '#FFD700',
-  goldMuted: 'rgba(212,175,55,0.15)',
-  goldBorder: 'rgba(212,175,55,0.25)',
-  white: '#F0F0F5',
-  whiteMuted: 'rgba(255,255,255,0.55)',
-  whiteFaint: 'rgba(255,255,255,0.30)',
-  border: 'rgba(255,255,255,0.06)',
-};
 
 export default function CoinRedeemScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { balance, spendCoins, refreshWallet } = useCoin();
   const { showAlert } = useAlert();
+  const { colors } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState(REDEEM_CATEGORIES[0].id);
   const [redeeming, setRedeeming] = useState<string | null>(null);
 
@@ -67,17 +55,17 @@ export default function CoinRedeemScreen() {
   }, [balance, spendCoins, showAlert, refreshWallet]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         {/* Header */}
         <View style={styles.header}>
           <Pressable
-            style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [styles.backBtn, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.7 }]}
             onPress={() => { Haptics.selectionAsync(); router.back(); }}
           >
-            <MaterialIcons name="arrow-back" size={22} color={LUX.white} />
+            <MaterialIcons name="arrow-back" size={22} color={colors.textPrimary} />
           </Pressable>
-          <Text style={styles.headerTitle}>Rewards Store</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Rewards Store</Text>
           <View style={styles.balancePill}>
             <Image source={require('../assets/images/genie-coin.png')} style={styles.pillCoin} contentFit="contain" />
             <Text style={styles.pillBalance}>{balance.toLocaleString()}</Text>
@@ -86,39 +74,36 @@ export default function CoinRedeemScreen() {
 
         {/* Category Tabs */}
         <Animated.View entering={FadeIn.duration(300)}>
-          <ScrollView
-            horizontal showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryTabs}
-          >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryTabs}>
             {REDEEM_CATEGORIES.map((cat) => {
               const isActive = selectedCategory === cat.id;
               return (
                 <Pressable
                   key={cat.id}
                   style={[
-                    styles.categoryTab,
-                    isActive && { borderColor: `${cat.color}50`, backgroundColor: `${cat.color}12` },
+                    styles.categoryTab, { backgroundColor: colors.surface, borderColor: colors.border },
+                    isActive && { borderColor: `${cat.color}50`, backgroundColor: `${cat.color}10` },
                   ]}
                   onPress={() => { Haptics.selectionAsync(); setSelectedCategory(cat.id); }}
                 >
                   <Text style={styles.categoryEmoji}>{cat.icon}</Text>
-                  <Text style={[styles.categoryLabel, isActive && { color: cat.color }]}>{cat.title}</Text>
+                  <Text style={[styles.categoryLabel, { color: colors.textSecondary }, isActive && { color: cat.color }]}>{cat.title}</Text>
                 </Pressable>
               );
             })}
           </ScrollView>
         </Animated.View>
 
-        {/* Category Hero Header */}
+        {/* Category Hero */}
         <Animated.View entering={FadeInDown.delay(50).duration(350)} style={styles.catHero}>
           <LinearGradient
-            colors={[`${activeCategory.color}15`, `${activeCategory.color}05`, LUX.bg]}
+            colors={[`${activeCategory.color}12`, `${activeCategory.color}06`, colors.background]}
             style={styles.catHeroGrad}
           >
             <Text style={styles.catHeroEmoji}>{activeCategory.icon}</Text>
             <View>
-              <Text style={styles.catHeroTitle}>{activeCategory.title}</Text>
-              <Text style={styles.catHeroSub}>{activeCategory.items.length} rewards available</Text>
+              <Text style={[styles.catHeroTitle, { color: colors.textPrimary }]}>{activeCategory.title}</Text>
+              <Text style={[styles.catHeroSub, { color: colors.textMuted }]}>{activeCategory.items.length} rewards available</Text>
             </View>
           </LinearGradient>
         </Animated.View>
@@ -135,7 +120,7 @@ export default function CoinRedeemScreen() {
               <Animated.View key={item.id} entering={FadeInDown.delay(80 + i * 60).duration(400)}>
                 <Pressable
                   style={({ pressed }) => [
-                    styles.redeemCard,
+                    styles.redeemCard, { backgroundColor: colors.surface, borderColor: colors.border },
                     pressed && canAfford && { opacity: 0.92, transform: [{ scale: 0.99 }] },
                     !canAfford && styles.redeemCardDisabled,
                   ]}
@@ -143,15 +128,15 @@ export default function CoinRedeemScreen() {
                   disabled={isRedeeming}
                 >
                   <View style={styles.redeemTop}>
-                    <View style={[styles.redeemEmoji, { backgroundColor: `${activeCategory.color}12` }]}>
+                    <View style={[styles.redeemEmoji, { backgroundColor: `${activeCategory.color}10` }]}>
                       <Text style={{ fontSize: 36 }}>{item.image}</Text>
                     </View>
                     <View style={styles.redeemInfo}>
-                      <Text style={styles.redeemName}>{item.name}</Text>
-                      <Text style={styles.redeemDesc}>{item.desc}</Text>
+                      <Text style={[styles.redeemName, { color: colors.textPrimary }]}>{item.name}</Text>
+                      <Text style={[styles.redeemDesc, { color: colors.textMuted }]}>{item.desc}</Text>
                       <View style={styles.redeemPriceRow}>
                         <Image source={require('../assets/images/genie-coin.png')} style={styles.redeemCoinImg} contentFit="contain" />
-                        <Text style={[styles.redeemCoinText, !canAfford && { color: LUX.whiteFaint }]}>{item.coins}</Text>
+                        <Text style={[styles.redeemCoinText, !canAfford && { color: colors.textMuted }]}>{item.coins}</Text>
                       </View>
                     </View>
                   </View>
@@ -162,14 +147,14 @@ export default function CoinRedeemScreen() {
                     disabled={isRedeeming || !canAfford}
                   >
                     {canAfford ? (
-                      <LinearGradient colors={[LUX.gold, LUX.goldLight]} style={styles.redeemBtnGrad}>
+                      <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.redeemBtnGrad}>
                         <Text style={styles.redeemBtnText}>Redeem Now</Text>
-                        <MaterialIcons name="arrow-forward" size={16} color="#0A0A0F" />
+                        <MaterialIcons name="arrow-forward" size={16} color="#FFF" />
                       </LinearGradient>
                     ) : (
-                      <View style={[styles.redeemBtnGrad, { backgroundColor: LUX.bgSurface }]}>
-                        <MaterialIcons name="lock" size={14} color={LUX.whiteFaint} />
-                        <Text style={[styles.redeemBtnText, { color: LUX.whiteFaint }]}>
+                      <View style={[styles.redeemBtnGrad, { backgroundColor: colors.backgroundTertiary }]}>
+                        <MaterialIcons name="lock" size={14} color={colors.textMuted} />
+                        <Text style={[styles.redeemBtnText, { color: colors.textMuted }]}>
                           Need {item.coins - balance} more
                         </Text>
                       </View>
@@ -186,7 +171,7 @@ export default function CoinRedeemScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: LUX.bg },
+  container: { flex: 1 },
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -194,27 +179,24 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: LUX.bgSurface, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: LUX.border,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1,
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: LUX.white },
+  headerTitle: { fontSize: 18, fontWeight: '800' },
   balancePill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: LUX.goldMuted, borderWidth: 1, borderColor: LUX.goldBorder,
+    backgroundColor: 'rgba(212,175,55,0.10)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.20)',
   },
   pillCoin: { width: 20, height: 20 },
-  pillBalance: { fontSize: 14, fontWeight: '800', color: LUX.goldLight },
+  pillBalance: { fontSize: 14, fontWeight: '800', color: '#D4AF37' },
 
   categoryTabs: { paddingHorizontal: 16, gap: 8, paddingVertical: 6 },
   categoryTab: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 16, paddingVertical: 10,
-    borderRadius: 16, backgroundColor: LUX.bgCard,
-    borderWidth: 1.5, borderColor: LUX.border,
+    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, borderWidth: 1.5,
   },
   categoryEmoji: { fontSize: 18 },
-  categoryLabel: { fontSize: 13, fontWeight: '700', color: LUX.whiteMuted },
+  categoryLabel: { fontSize: 13, fontWeight: '700' },
 
   catHero: { paddingHorizontal: 16, marginTop: 8 },
   catHeroGrad: {
@@ -222,29 +204,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 18, borderRadius: 20,
   },
   catHeroEmoji: { fontSize: 36 },
-  catHeroTitle: { fontSize: 22, fontWeight: '900', color: LUX.white },
-  catHeroSub: { fontSize: 13, fontWeight: '500', color: LUX.whiteFaint },
+  catHeroTitle: { fontSize: 22, fontWeight: '900' },
+  catHeroSub: { fontSize: 13, fontWeight: '500' },
 
   itemsList: { paddingHorizontal: 16, gap: 14, paddingTop: 14 },
 
   redeemCard: {
-    padding: 18, borderRadius: 22,
-    backgroundColor: LUX.bgCard,
-    borderWidth: 1, borderColor: LUX.border,
-    gap: 14,
+    padding: 18, borderRadius: 22, borderWidth: 1, gap: 14,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05, shadowRadius: 12, elevation: 3,
   },
   redeemCardDisabled: { opacity: 0.6 },
   redeemTop: { flexDirection: 'row', gap: 14 },
   redeemEmoji: {
-    width: 68, height: 68, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center',
+    width: 68, height: 68, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
   },
   redeemInfo: { flex: 1, gap: 4 },
-  redeemName: { fontSize: 16, fontWeight: '700', color: LUX.white },
-  redeemDesc: { fontSize: 12, fontWeight: '500', color: LUX.whiteFaint },
+  redeemName: { fontSize: 16, fontWeight: '700' },
+  redeemDesc: { fontSize: 12, fontWeight: '500' },
   redeemPriceRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
   redeemCoinImg: { width: 18, height: 18 },
-  redeemCoinText: { fontSize: 16, fontWeight: '800', color: LUX.goldLight },
+  redeemCoinText: { fontSize: 16, fontWeight: '800', color: '#D4AF37' },
 
   redeemBtn: { borderRadius: 16, overflow: 'hidden' },
   redeemBtnLocked: {},
@@ -252,5 +232,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     paddingVertical: 12, borderRadius: 16,
   },
-  redeemBtnText: { fontSize: 14, fontWeight: '700', color: '#0A0A0F' },
+  redeemBtnText: { fontSize: 14, fontWeight: '700', color: '#FFF' },
 });

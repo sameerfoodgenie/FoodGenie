@@ -12,55 +12,41 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/template';
+import { useTheme } from '../hooks/useTheme';
 import * as coinService from '../services/coinService';
 
-const LUX = {
-  bg: '#0A0A0F',
-  bgCard: '#111118',
-  bgSurface: '#16161F',
-  gold: '#D4AF37',
-  goldLight: '#FFD700',
-  goldMuted: 'rgba(212,175,55,0.15)',
-  goldBorder: 'rgba(212,175,55,0.25)',
-  white: '#F0F0F5',
-  whiteMuted: 'rgba(255,255,255,0.55)',
-  whiteFaint: 'rgba(255,255,255,0.30)',
-  border: 'rgba(255,255,255,0.06)',
-};
-
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
-const RANK_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32'];
-const RANK_GLOW = ['rgba(255,215,0,0.12)', 'rgba(192,192,192,0.10)', 'rgba(205,127,50,0.10)'];
+const RANK_COLORS = ['#D4AF37', '#9CA3AF', '#CD7F32'];
 
-function LeaderboardItem({ entry, isMe, index }: { entry: coinService.LeaderboardEntry; isMe: boolean; index: number }) {
+function LeaderboardItem({ entry, isMe, index, colors }: { entry: coinService.LeaderboardEntry; isMe: boolean; index: number; colors: any }) {
   const isTop3 = entry.rank <= 3;
   return (
     <Animated.View entering={FadeInDown.delay(50 + index * 35).duration(300)}>
       <View style={[
-        styles.leaderItem,
-        isMe && styles.leaderItemMe,
-        isTop3 && { backgroundColor: RANK_GLOW[entry.rank - 1] },
+        styles.leaderItem, { borderBottomColor: colors.border },
+        isMe && { backgroundColor: 'rgba(212,175,55,0.08)' },
+        isTop3 && { backgroundColor: `${RANK_COLORS[entry.rank - 1]}08` },
       ]}>
         <View style={styles.rankWrap}>
           {isTop3 ? (
             <Text style={styles.rankMedal}>{RANK_MEDALS[entry.rank - 1]}</Text>
           ) : (
-            <Text style={styles.rankNumber}>#{entry.rank}</Text>
+            <Text style={[styles.rankNumber, { color: colors.textMuted }]}>#{entry.rank}</Text>
           )}
         </View>
         <LinearGradient
-          colors={isTop3 ? [RANK_COLORS[entry.rank - 1], `${RANK_COLORS[entry.rank - 1]}88`] : [LUX.bgSurface, LUX.bgSurface]}
+          colors={isTop3 ? [RANK_COLORS[entry.rank - 1], `${RANK_COLORS[entry.rank - 1]}88`] : [colors.backgroundTertiary, colors.backgroundTertiary]}
           style={styles.leaderAvatar}
         >
-          <Text style={styles.leaderAvatarText}>
+          <Text style={[styles.leaderAvatarText, { color: isTop3 ? '#FFF' : colors.textPrimary }]}>
             {(entry.username || 'U').slice(0, 2).toUpperCase()}
           </Text>
         </LinearGradient>
         <View style={styles.leaderInfo}>
-          <Text style={[styles.leaderName, isMe && styles.leaderNameMe]} numberOfLines={1}>
+          <Text style={[styles.leaderName, { color: colors.textPrimary }, isMe && { color: '#D4AF37', fontWeight: '700' }]} numberOfLines={1}>
             @{entry.username}{isMe ? ' (You)' : ''}
           </Text>
         </View>
@@ -79,6 +65,7 @@ export default function CoinLeaderboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState<'alltime' | 'weekly'>('alltime');
   const [leaderboard, setLeaderboard] = useState<coinService.LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,29 +92,29 @@ export default function CoinLeaderboardScreen() {
   const rest = leaderboard.slice(3);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         {/* Header */}
         <View style={styles.header}>
           <Pressable
-            style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [styles.backBtn, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.7 }]}
             onPress={() => { Haptics.selectionAsync(); router.back(); }}
           >
-            <MaterialIcons name="arrow-back" size={22} color={LUX.white} />
+            <MaterialIcons name="arrow-back" size={22} color={colors.textPrimary} />
           </Pressable>
-          <Text style={styles.headerTitle}>Leaderboard</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Leaderboard</Text>
           <View style={{ width: 44 }} />
         </View>
 
         {/* Tabs */}
-        <View style={styles.tabs}>
+        <View style={[styles.tabs, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {(['alltime', 'weekly'] as const).map(tab => (
             <Pressable
               key={tab}
               style={[styles.tab, activeTab === tab && styles.tabActive]}
               onPress={() => { Haptics.selectionAsync(); setActiveTab(tab); }}
             >
-              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+              <Text style={[styles.tabText, { color: colors.textMuted }, activeTab === tab && styles.tabTextActive]}>
                 {tab === 'alltime' ? '🏆 All Time' : '⚡ This Week'}
               </Text>
             </Pressable>
@@ -138,45 +125,39 @@ export default function CoinLeaderboardScreen() {
         {top3.length >= 3 ? (
           <Animated.View entering={FadeIn.duration(600)} style={styles.podium}>
             <LinearGradient
-              colors={['#14100A', '#0F0F14', '#0A0A0F']}
+              colors={['#FFF8E1', '#FFECB3', '#FDF8F0']}
               style={styles.podiumGrad}
             >
-              {/* Decorative glow */}
-              <View style={styles.podiumGlow} />
-
-              {/* Second place */}
+              {/* Second */}
               <View style={styles.podiumItem}>
                 <LinearGradient colors={['#C0C0C0', '#A0A0A0']} style={styles.podiumAv}>
                   <Text style={styles.podiumAvText}>{(top3[1].username || 'U').slice(0, 2).toUpperCase()}</Text>
                 </LinearGradient>
                 <Text style={styles.podiumMedal}>🥈</Text>
-                <Text style={styles.podiumName} numberOfLines={1}>@{top3[1].username}</Text>
-                <Text style={[styles.podiumCoins, { color: '#C0C0C0' }]}>{top3[1].total_earned.toLocaleString()}</Text>
-                <View style={[styles.podiumBar, { height: 55, backgroundColor: 'rgba(192,192,192,0.12)' }]} />
+                <Text style={[styles.podiumName, { color: colors.textSecondary }]} numberOfLines={1}>@{top3[1].username}</Text>
+                <Text style={[styles.podiumCoins, { color: '#9CA3AF' }]}>{top3[1].total_earned.toLocaleString()}</Text>
+                <View style={[styles.podiumBar, { height: 55, backgroundColor: 'rgba(192,192,192,0.15)' }]} />
               </View>
 
-              {/* First place */}
+              {/* First */}
               <View style={[styles.podiumItem, styles.podiumFirst]}>
                 <Text style={styles.crownEmoji}>👑</Text>
-                <LinearGradient colors={[LUX.gold, LUX.goldLight]} style={[styles.podiumAv, styles.podiumAvFirst]}>
-                  <Text style={[styles.podiumAvText, { fontSize: 20, color: '#0A0A0F' }]}>{(top3[0].username || 'U').slice(0, 2).toUpperCase()}</Text>
+                <LinearGradient colors={['#D4AF37', '#FFD700']} style={[styles.podiumAv, styles.podiumAvFirst]}>
+                  <Text style={[styles.podiumAvText, { fontSize: 20, color: '#FFF' }]}>{(top3[0].username || 'U').slice(0, 2).toUpperCase()}</Text>
                 </LinearGradient>
                 <Text style={styles.podiumMedal}>🥇</Text>
-                <Text style={styles.podiumName} numberOfLines={1}>@{top3[0].username}</Text>
-                <Text style={[styles.podiumCoins, { color: LUX.goldLight }]}>{top3[0].total_earned.toLocaleString()}</Text>
-                <LinearGradient
-                  colors={['rgba(212,175,55,0.20)', 'rgba(212,175,55,0.05)']}
-                  style={[styles.podiumBar, { height: 75 }]}
-                />
+                <Text style={[styles.podiumName, { color: colors.textSecondary }]} numberOfLines={1}>@{top3[0].username}</Text>
+                <Text style={[styles.podiumCoins, { color: '#D4AF37' }]}>{top3[0].total_earned.toLocaleString()}</Text>
+                <View style={[styles.podiumBar, { height: 75, backgroundColor: 'rgba(212,175,55,0.15)' }]} />
               </View>
 
-              {/* Third place */}
+              {/* Third */}
               <View style={styles.podiumItem}>
                 <LinearGradient colors={['#CD7F32', '#A06828']} style={styles.podiumAv}>
                   <Text style={styles.podiumAvText}>{(top3[2].username || 'U').slice(0, 2).toUpperCase()}</Text>
                 </LinearGradient>
                 <Text style={styles.podiumMedal}>🥉</Text>
-                <Text style={styles.podiumName} numberOfLines={1}>@{top3[2].username}</Text>
+                <Text style={[styles.podiumName, { color: colors.textSecondary }]} numberOfLines={1}>@{top3[2].username}</Text>
                 <Text style={[styles.podiumCoins, { color: '#CD7F32' }]}>{top3[2].total_earned.toLocaleString()}</Text>
                 <View style={[styles.podiumBar, { height: 40, backgroundColor: 'rgba(205,127,50,0.12)' }]} />
               </View>
@@ -184,30 +165,29 @@ export default function CoinLeaderboardScreen() {
           </Animated.View>
         ) : null}
 
-        {/* Ranking label */}
+        {/* Rankings */}
         <View style={styles.listHeader}>
-          <Text style={styles.listHeaderTitle}>Rankings</Text>
-          <Text style={styles.listHeaderCount}>{leaderboard.length} players</Text>
+          <Text style={[styles.listHeaderTitle, { color: colors.textPrimary }]}>Rankings</Text>
+          <Text style={[styles.listHeaderCount, { color: colors.textMuted }]}>{leaderboard.length} players</Text>
         </View>
 
-        {/* Rest of list */}
         <FlatList
           data={rest}
           keyExtractor={item => item.user_id}
           renderItem={({ item, index }) => (
-            <LeaderboardItem entry={item} isMe={item.user_id === user?.id} index={index} />
+            <LeaderboardItem entry={item} isMe={item.user_id === user?.id} index={index} colors={colors} />
           )}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={LUX.goldLight} colors={[LUX.goldLight]} />
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#D4AF37" colors={['#D4AF37']} />
           }
           ListEmptyComponent={
             !loading ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyIcon}>🏆</Text>
-                <Text style={styles.emptyTitle}>No entries yet</Text>
-                <Text style={styles.emptySub}>Be the first to earn Genie Coins!</Text>
+                <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No entries yet</Text>
+                <Text style={[styles.emptySub, { color: colors.textMuted }]}>Be the first to earn Genie Coins!</Text>
               </View>
             ) : null
           }
@@ -218,7 +198,7 @@ export default function CoinLeaderboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: LUX.bg },
+  container: { flex: 1 },
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -226,37 +206,28 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: LUX.bgSurface, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: LUX.border,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1,
   },
-  headerTitle: { fontSize: 20, fontWeight: '800', color: LUX.white },
+  headerTitle: { fontSize: 20, fontWeight: '800' },
 
   tabs: {
     flexDirection: 'row', marginHorizontal: 16, gap: 4,
-    padding: 4, borderRadius: 16, backgroundColor: LUX.bgCard,
-    borderWidth: 1, borderColor: LUX.border,
-    marginBottom: 8,
+    padding: 4, borderRadius: 16, borderWidth: 1, marginBottom: 8,
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 11, borderRadius: 12 },
   tabActive: {
-    backgroundColor: LUX.goldMuted,
-    borderWidth: 1, borderColor: LUX.goldBorder,
+    backgroundColor: 'rgba(212,175,55,0.12)',
+    borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)',
   },
-  tabText: { fontSize: 14, fontWeight: '700', color: LUX.whiteFaint },
-  tabTextActive: { color: LUX.goldLight },
+  tabText: { fontSize: 14, fontWeight: '700' },
+  tabTextActive: { color: '#D4AF37' },
 
-  // Podium
   podium: { marginHorizontal: 16, borderRadius: 24, overflow: 'hidden', marginBottom: 12 },
   podiumGrad: {
     flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center',
     paddingHorizontal: 16, paddingTop: 32, paddingBottom: 18, gap: 8,
-    borderWidth: 1, borderColor: LUX.goldBorder, borderRadius: 24,
+    borderWidth: 1, borderColor: 'rgba(212,175,55,0.20)', borderRadius: 24,
     position: 'relative',
-  },
-  podiumGlow: {
-    position: 'absolute', top: -40, left: '50%', marginLeft: -60,
-    width: 120, height: 120, borderRadius: 60,
-    backgroundColor: 'rgba(255,215,0,0.06)',
   },
   podiumItem: { flex: 1, alignItems: 'center', gap: 4 },
   podiumFirst: { marginTop: -20 },
@@ -264,48 +235,43 @@ const styles = StyleSheet.create({
   podiumAv: {
     width: 48, height: 48, borderRadius: 24,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.6)',
   },
-  podiumAvFirst: { width: 60, height: 60, borderRadius: 30, borderWidth: 3, borderColor: LUX.goldBorder },
-  podiumAvText: { fontSize: 16, fontWeight: '800', color: LUX.white },
+  podiumAvFirst: { width: 60, height: 60, borderRadius: 30, borderWidth: 3, borderColor: 'rgba(212,175,55,0.40)' },
+  podiumAvText: { fontSize: 16, fontWeight: '800', color: '#FFF' },
   podiumMedal: { fontSize: 22 },
-  podiumName: { fontSize: 11, fontWeight: '700', color: LUX.whiteMuted, textAlign: 'center', maxWidth: 80 },
+  podiumName: { fontSize: 11, fontWeight: '700', textAlign: 'center', maxWidth: 80 },
   podiumCoins: { fontSize: 15, fontWeight: '900' },
   podiumBar: { width: '100%', borderRadius: 10, marginTop: 6 },
 
-  // List header
   listHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 10,
   },
-  listHeaderTitle: { fontSize: 16, fontWeight: '800', color: LUX.white },
-  listHeaderCount: { fontSize: 12, fontWeight: '600', color: LUX.whiteFaint },
+  listHeaderTitle: { fontSize: 16, fontWeight: '800' },
+  listHeaderCount: { fontSize: 12, fontWeight: '600' },
 
-  // List items
   leaderItem: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingHorizontal: 20, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: LUX.border,
+    paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1,
   },
-  leaderItemMe: { backgroundColor: LUX.goldMuted },
   rankWrap: { width: 36, alignItems: 'center' },
   rankMedal: { fontSize: 22 },
-  rankNumber: { fontSize: 15, fontWeight: '800', color: LUX.whiteFaint },
+  rankNumber: { fontSize: 15, fontWeight: '800' },
   leaderAvatar: {
     width: 42, height: 42, borderRadius: 21,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1.5, borderColor: LUX.border,
+    borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.06)',
   },
-  leaderAvatarText: { fontSize: 14, fontWeight: '700', color: LUX.white },
+  leaderAvatarText: { fontSize: 14, fontWeight: '700' },
   leaderInfo: { flex: 1 },
-  leaderName: { fontSize: 14, fontWeight: '600', color: LUX.white },
-  leaderNameMe: { color: LUX.goldLight, fontWeight: '700' },
+  leaderName: { fontSize: 14, fontWeight: '600' },
   leaderCoins: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   leaderCoinImg: { width: 18, height: 18 },
-  leaderCoinText: { fontSize: 16, fontWeight: '800', color: LUX.gold },
+  leaderCoinText: { fontSize: 16, fontWeight: '800', color: '#D4AF37' },
 
   emptyState: { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyIcon: { fontSize: 48 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: LUX.white },
-  emptySub: { fontSize: 14, color: LUX.whiteFaint },
+  emptyTitle: { fontSize: 18, fontWeight: '700' },
+  emptySub: { fontSize: 14 },
 });

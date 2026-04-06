@@ -264,7 +264,7 @@ export default function HomeScreen() {
 
   const headerGradient = isDark
     ? ['#1A1510', '#1E1A12', '#14141C'] as const
-    : ['#FFF8E1', '#FFECB3', '#FFF3E0'] as const;
+    : ['#FFF8E1', '#FFECB3', '#FDF8F0'] as const;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -374,30 +374,6 @@ export default function HomeScreen() {
             </View>
           </Animated.View>
         </LinearGradient>
-
-        {/* ═══════ Food Category Scroll ═══════ */}
-        <Animated.View entering={FadeInDown.delay(200).duration(350)} style={styles.categorySection}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
-            {FOOD_CATEGORIES.map((cat, i) => {
-              const isActive = cat.id === activeCategory;
-              return (
-                <Pressable
-                  key={cat.id}
-                  style={({ pressed }) => [
-                    styles.categoryChip,
-                    { backgroundColor: isActive ? cat.color : (isDark ? 'rgba(255,255,255,0.06)' : '#FFFFFF'), borderColor: isActive ? cat.color : colors.cardBorder },
-                    pressed && { opacity: 0.85 },
-                  ]}
-                  onPress={() => { Haptics.selectionAsync(); setActiveCategory(cat.id); }}
-                >
-                  <Text style={{ fontSize: 22 }}>{cat.emoji}</Text>
-                  <Text style={[styles.categoryLabel, { color: isActive ? '#FFFFFF' : colors.textPrimary }]}>{cat.label}</Text>
-                  {isActive ? <View style={styles.categoryActiveLine} /> : null}
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </Animated.View>
 
         {/* ═══════ Quick Action Tiles (Vibrant) ═══════ */}
         <View style={styles.quickActionsSection}>
