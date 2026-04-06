@@ -12,6 +12,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { theme } from '../../constants/theme';
+import { useTheme } from '../../hooks/useTheme';
 import OnboardingWalkthrough, { useOnboardingStatus } from '../../components/OnboardingWalkthrough';
 
 function GlowingPlusButton({ focused }: { focused: boolean }) {
@@ -57,6 +58,7 @@ function GlowingPlusButton({ focused }: { focused: boolean }) {
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const { hasCompleted, markComplete } = useOnboardingStatus();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -84,9 +86,9 @@ export default function TabLayout() {
       default: 8,
     }),
     paddingHorizontal: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.tabBarBg,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.06)',
+    borderTopColor: colors.tabBarBorder,
   };
 
   return (
@@ -95,8 +97,8 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle,
-        tabBarActiveTintColor: '#D4AF37',
-        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',

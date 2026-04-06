@@ -7,6 +7,8 @@ import {
   FlatList,
   Dimensions,
   ScrollView,
+  Switch,
+  Platform,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,6 +25,7 @@ import { useAlert, useAuth } from '@/template';
 import { useRouter } from 'expo-router';
 import { fetchProfile, UserProfile } from '../../services/profileService';
 import { useCoin } from '../../hooks/useCoin';
+import { useTheme } from '../../hooks/useTheme';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_GAP = 2;
@@ -34,6 +37,8 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { posts, streak, totalPosts, followingCount, followerCount, refreshFeed } = usePosts();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { user, logout } = useAuth();
+  const { colors, isDark, toggleDarkMode } = useTheme();
 
   useEffect(() => {
     if (user?.id) {
@@ -44,7 +49,6 @@ export default function ProfileScreen() {
   }, [user?.id]);
   const { todayMeals } = useMeals();
   const { showAlert } = useAlert();
-  const { user, logout } = useAuth();
   const { balance: coinBalance, currentStreak: coinStreak } = useCoin();
   const {
     currentLevel,
@@ -109,7 +113,7 @@ export default function ProfileScreen() {
       {item.imageUri ? (
         <Image source={{ uri: item.imageUri }} style={styles.gridImage} contentFit="cover" transition={150} />
       ) : (
-        <View style={styles.gridNoImage}>
+        <View style={[styles.gridNoImage, { backgroundColor: colors.surface }]}>
           <Text style={{ fontSize: 28 }}>🍽</Text>
         </View>
       )}
@@ -117,7 +121,7 @@ export default function ProfileScreen() {
   );
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={gridPosts}
         keyExtractor={item => item.id}
@@ -130,10 +134,10 @@ export default function ProfileScreen() {
           <View>
             {/* Header */}
             <View style={styles.header}>
-              <Text style={styles.title}>{name}</Text>
+              <Text style={[styles.title, { color: colors.textPrimary }]}>{name}</Text>
               <View style={styles.headerActions}>
                 <Pressable style={styles.headerIconBtn} onPress={() => router.push('/(tabs)/camera')}>
-                  <MaterialIcons name="add-box" size={24} color="#1A1A2E" />
+                  <MaterialIcons name="add-box" size={24} color={colors.textPrimary} />
                 </Pressable>
                 <Pressable style={styles.headerIconBtn} onPress={() => { Haptics.selectionAsync(); router.push('/admin' as any); }}>
                   <MaterialIcons name="admin-panel-settings" size={22} color="#D4AF37" />
@@ -145,17 +149,17 @@ export default function ProfileScreen() {
                   <Image source={require('../../assets/images/genie-coin.png')} style={{ width: 20, height: 20 }} contentFit="contain" />
                 </Pressable>
                 <Pressable style={styles.headerIconBtn} onPress={() => { Haptics.selectionAsync(); router.push('/app-info' as any); }}>
-                  <MaterialIcons name="info-outline" size={20} color="#6B7280" />
+                  <MaterialIcons name="info-outline" size={20} color={colors.textSecondary} />
                 </Pressable>
                 <Pressable style={styles.headerIconBtn} onPress={handleLogout}>
-                  <MaterialIcons name="logout" size={20} color="#6B7280" />
+                  <MaterialIcons name="logout" size={20} color={colors.textSecondary} />
                 </Pressable>
               </View>
             </View>
 
-            {/* Profile info + social stats — glass card */}
+            {/* Profile info + social stats */}
             <Animated.View entering={FadeIn.duration(400)} style={styles.profileCard}>
-              <View style={styles.profileCardInner}>
+              <View style={[styles.profileCardInner, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
                 <View style={styles.avatarWrap}>
                   <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.avatar}>
                     <Text style={styles.avatarText}>{initials}</Text>
@@ -166,23 +170,23 @@ export default function ProfileScreen() {
                 </View>
                 <View style={styles.socialStats}>
                   <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{gridPosts.length}</Text>
-                    <Text style={styles.statLabel}>Posts</Text>
+                    <Text style={[styles.statValue, { color: colors.textPrimary }]}>{gridPosts.length}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Posts</Text>
                   </View>
-                  <View style={styles.statDivider} />
+                  <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
                   <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{followerCount}</Text>
-                    <Text style={styles.statLabel}>Followers</Text>
+                    <Text style={[styles.statValue, { color: colors.textPrimary }]}>{followerCount}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Followers</Text>
                   </View>
-                  <View style={styles.statDivider} />
+                  <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
                   <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{followingCount}</Text>
-                    <Text style={styles.statLabel}>Following</Text>
+                    <Text style={[styles.statValue, { color: colors.textPrimary }]}>{followingCount}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Following</Text>
                   </View>
-                  <View style={styles.statDivider} />
+                  <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
                   <Pressable style={styles.statItem} onPress={() => router.push('/coin-wallet')}>
                     <Text style={[styles.statValue, { color: '#FFD700' }]}>{coinBalance}</Text>
-                    <Text style={styles.statLabel}>Coins</Text>
+                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Coins</Text>
                   </Pressable>
                 </View>
               </View>
@@ -191,7 +195,7 @@ export default function ProfileScreen() {
             {/* Bio + Level */}
             <View style={styles.bioSection}>
               <View style={styles.bioNameRow}>
-                <Text style={styles.bioName}>{name}</Text>
+                <Text style={[styles.bioName, { color: colors.textPrimary }]}>{name}</Text>
                 {myTier ? (
                   <View style={[styles.levelTag, { backgroundColor: `${myTier.color}14`, borderColor: `${myTier.color}30` }]}>
                     <Text style={styles.levelTagEmoji}>{myTier.emoji}</Text>
@@ -204,14 +208,39 @@ export default function ProfileScreen() {
                   </View>
                 )}
               </View>
-              {email ? <Text style={styles.bioEmail}>{email}</Text> : null}
-              <Text style={styles.bioText}>Food lover sharing my meals on FoodGenie</Text>
+              {email ? <Text style={[styles.bioEmail, { color: colors.textSecondary }]}>{email}</Text> : null}
+              <Text style={[styles.bioText, { color: colors.textMuted }]}>Food lover sharing my meals on FoodGenie</Text>
             </View>
+
+            {/* ─── Dark Mode Toggle ─── */}
+            <Animated.View entering={FadeInDown.delay(30).duration(300)} style={styles.darkModeSection}>
+              <Pressable
+                style={[styles.darkModeCard, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
+                onPress={() => { Haptics.selectionAsync(); toggleDarkMode(); }}
+              >
+                <View style={styles.darkModeLeft}>
+                  <View style={[styles.darkModeIcon, { backgroundColor: isDark ? 'rgba(255,215,0,0.12)' : 'rgba(26,26,46,0.06)' }]}>
+                    <MaterialIcons name={isDark ? 'dark-mode' : 'light-mode'} size={22} color={isDark ? '#FFD700' : '#1A1A2E'} />
+                  </View>
+                  <View>
+                    <Text style={[styles.darkModeLabel, { color: colors.textPrimary }]}>Dark Mode</Text>
+                    <Text style={[styles.darkModeSub, { color: colors.textMuted }]}>{isDark ? 'On' : 'Off'}</Text>
+                  </View>
+                </View>
+                <Switch
+                  value={isDark}
+                  onValueChange={() => { Haptics.selectionAsync(); toggleDarkMode(); }}
+                  trackColor={{ false: '#E5E7EB', true: 'rgba(212,175,55,0.35)' }}
+                  thumbColor={isDark ? '#FFD700' : '#FFFFFF'}
+                  ios_backgroundColor="#E5E7EB"
+                />
+              </Pressable>
+            </Animated.View>
 
             {/* ─── Latest Post Hero ─── */}
             {latestPost ? (
               <Animated.View entering={FadeInDown.delay(50).duration(350)} style={styles.latestPostSection}>
-                <Text style={styles.latestLabel}>LATEST POST</Text>
+                <Text style={[styles.latestLabel, { color: '#D4AF37' }]}>LATEST POST</Text>
                 <Pressable
                   style={({ pressed }) => [styles.latestPostCard, pressed && { opacity: 0.95, transform: [{ scale: 0.99 }] }]}
                   onPress={() => Haptics.selectionAsync()}
@@ -219,7 +248,7 @@ export default function ProfileScreen() {
                   {latestPost.imageUri ? (
                     <Image source={{ uri: latestPost.imageUri }} style={styles.latestPostImage} contentFit="cover" transition={200} />
                   ) : (
-                    <View style={styles.latestPostNoImage}>
+                    <View style={[styles.latestPostNoImage, { backgroundColor: colors.surfaceElevated }]}>
                       <Text style={{ fontSize: 48 }}>🍽</Text>
                     </View>
                   )}
@@ -270,8 +299,8 @@ export default function ProfileScreen() {
                       </View>
                     ))}
                     {unlockedBadges.length < badges.length ? (
-                      <View style={styles.moreBadges}>
-                        <Text style={styles.moreBadgesText}>+{badges.length - unlockedBadges.length}</Text>
+                      <View style={[styles.moreBadges, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+                        <Text style={[styles.moreBadgesText, { color: colors.textSecondary }]}>+{badges.length - unlockedBadges.length}</Text>
                       </View>
                     ) : null}
                   </ScrollView>
@@ -282,16 +311,16 @@ export default function ProfileScreen() {
             {/* Action buttons */}
             <Animated.View entering={FadeInDown.delay(150).duration(300)} style={styles.actionRow}>
               <Pressable
-                style={({ pressed }) => [styles.editProfileBtn, pressed && { opacity: 0.8 }]}
+                style={({ pressed }) => [styles.editProfileBtn, { backgroundColor: colors.surface, borderColor: colors.cardBorder }, pressed && { opacity: 0.8 }]}
                 onPress={() => router.push('/(tabs)/preferences')}
               >
-                <Text style={styles.editProfileText}>Edit Profile</Text>
+                <Text style={[styles.editProfileText, { color: colors.textPrimary }]}>Edit Profile</Text>
               </Pressable>
               <Pressable
-                style={({ pressed }) => [styles.editProfileBtn, pressed && { opacity: 0.8 }]}
+                style={({ pressed }) => [styles.editProfileBtn, { backgroundColor: colors.surface, borderColor: colors.cardBorder }, pressed && { opacity: 0.8 }]}
                 onPress={() => { Haptics.selectionAsync(); router.push('/creator-dashboard'); }}
               >
-                <Text style={styles.editProfileText}>Dashboard</Text>
+                <Text style={[styles.editProfileText, { color: colors.textPrimary }]}>Dashboard</Text>
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.editProfileBtn, styles.showsBtn, pressed && { opacity: 0.8 }]}
@@ -309,11 +338,11 @@ export default function ProfileScreen() {
                   style={({ pressed }) => [styles.creatorCardUnlocked, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
                   onPress={handleShowsTap}
                 >
-                  <View style={styles.creatorCardInner}>
+                  <View style={[styles.creatorCardInner, { backgroundColor: isDark ? 'rgba(212,175,55,0.08)' : 'rgba(212,175,55,0.04)', borderColor: 'rgba(212,175,55,0.18)' }]}>
                     <View style={styles.creatorHeader}>
                       <View style={styles.creatorTitleRow}>
                         <MaterialIcons name="auto-awesome" size={20} color="#FFD700" />
-                        <Text style={styles.creatorTitle}>Creator Studio</Text>
+                        <Text style={[styles.creatorTitle, { color: colors.textPrimary }]}>Creator Studio</Text>
                       </View>
                       <View style={styles.creatorBadgeTag}>
                         <Text style={styles.creatorBadgeText}>Unlocked</Text>
@@ -321,14 +350,14 @@ export default function ProfileScreen() {
                     </View>
                     <View style={styles.creatorStats}>
                       <View style={styles.creatorStatItem}>
-                        <Text style={styles.creatorStatVal}>{shows.length}</Text>
-                        <Text style={styles.creatorStatLbl}>Shows</Text>
+                        <Text style={[styles.creatorStatVal, { color: colors.textPrimary }]}>{shows.length}</Text>
+                        <Text style={[styles.creatorStatLbl, { color: colors.textSecondary }]}>Shows</Text>
                       </View>
                       <View style={styles.creatorStatItem}>
-                        <Text style={styles.creatorStatVal}>
+                        <Text style={[styles.creatorStatVal, { color: colors.textPrimary }]}>
                           {shows.reduce((s, sh) => s + sh.episodes.length, 0)}
                         </Text>
-                        <Text style={styles.creatorStatLbl}>Episodes</Text>
+                        <Text style={[styles.creatorStatLbl, { color: colors.textSecondary }]}>Episodes</Text>
                       </View>
                     </View>
                     <View style={styles.creatorCta}>
@@ -338,14 +367,14 @@ export default function ProfileScreen() {
                   </View>
                 </Pressable>
               ) : (
-                <View style={styles.creatorCardLocked}>
+                <View style={[styles.creatorCardLocked, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
                   <View style={styles.lockHeader}>
                     <View style={styles.lockIconWrap}>
                       <MaterialIcons name="rocket-launch" size={24} color="#FFD700" />
                     </View>
                     <View style={styles.lockTitleBlock}>
-                      <Text style={styles.lockTitle}>Creator Mode</Text>
-                      <Text style={styles.lockSubtitle}>
+                      <Text style={[styles.lockTitle, { color: colors.textPrimary }]}>Creator Mode</Text>
+                      <Text style={[styles.lockSubtitle, { color: colors.textMuted }]}>
                         {postsNeeded > 0
                           ? `You are ${postsNeeded} post${postsNeeded !== 1 ? 's' : ''} away from Creator Mode`
                           : `${streakNeeded} day${streakNeeded !== 1 ? 's' : ''} streak to unlock`
@@ -362,19 +391,19 @@ export default function ProfileScreen() {
                   <View style={styles.progressSection}>
                     <View style={styles.progressItem}>
                       <View style={styles.progressLabel}>
-                        <Text style={styles.progressText}>Posts</Text>
-                        <Text style={styles.progressCount}>{postCount}/5</Text>
+                        <Text style={[styles.progressText, { color: colors.textMuted }]}>Posts</Text>
+                        <Text style={[styles.progressCount, { color: colors.textPrimary }]}>{postCount}/5</Text>
                       </View>
-                      <View style={styles.progressBarBg}>
+                      <View style={[styles.progressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#E5E7EB' }]}>
                         <Animated.View style={[styles.progressBarFill, { width: `${postProgress * 100}%`, backgroundColor: '#D4AF37' }]} />
                       </View>
                     </View>
                     <View style={styles.progressItem}>
                       <View style={styles.progressLabel}>
-                        <Text style={styles.progressText}>Streak</Text>
-                        <Text style={styles.progressCount}>{streakCount}/7 days</Text>
+                        <Text style={[styles.progressText, { color: colors.textMuted }]}>Streak</Text>
+                        <Text style={[styles.progressCount, { color: colors.textPrimary }]}>{streakCount}/7 days</Text>
                       </View>
-                      <View style={styles.progressBarBg}>
+                      <View style={[styles.progressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#E5E7EB' }]}>
                         <Animated.View style={[styles.progressBarFill, { width: `${streakProgress * 100}%`, backgroundColor: '#FFD700' }]} />
                       </View>
                     </View>
@@ -384,7 +413,7 @@ export default function ProfileScreen() {
             </Animated.View>
 
             {/* Grid header */}
-            <View style={styles.gridHeader}>
+            <View style={[styles.gridHeader, { borderTopColor: colors.border, borderBottomColor: colors.border }]}>
               <View style={styles.gridTab}>
                 <MaterialIcons name="grid-on" size={22} color="#D4AF37" />
               </View>
@@ -393,11 +422,11 @@ export default function ProfileScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyGrid}>
-            <View style={styles.emptyGridIcon}>
-              <MaterialIcons name="camera-alt" size={40} color="#6B7280" />
+            <View style={[styles.emptyGridIcon, { backgroundColor: colors.surface }]}>
+              <MaterialIcons name="camera-alt" size={40} color={colors.textSecondary} />
             </View>
-            <Text style={styles.emptyGridTitle}>No Posts Yet</Text>
-            <Text style={styles.emptyGridSub}>Share your first meal!</Text>
+            <Text style={[styles.emptyGridTitle, { color: colors.textPrimary }]}>No Posts Yet</Text>
+            <Text style={[styles.emptyGridSub, { color: colors.textSecondary }]}>Share your first meal!</Text>
           </View>
         }
       />
@@ -406,7 +435,7 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1 },
 
   header: {
     flexDirection: 'row',
@@ -416,11 +445,10 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 14,
   },
-  title: { fontSize: 22, fontWeight: '800', color: '#1A1A2E', letterSpacing: -0.3 },
+  title: { fontSize: 22, fontWeight: '800', letterSpacing: -0.3 },
   headerActions: { flexDirection: 'row', gap: 14 },
   headerIconBtn: { padding: 6 },
 
-  // Profile card — glass
   profileCard: {
     paddingHorizontal: 20,
     paddingBottom: 4,
@@ -430,9 +458,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -465,13 +491,13 @@ const styles = StyleSheet.create({
 
   socialStats: { flex: 1, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
   statItem: { alignItems: 'center', gap: 2 },
-  statValue: { fontSize: 18, fontWeight: '800', color: '#1A1A2E' },
-  statLabel: { fontSize: 10, fontWeight: '500', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 },
-  statDivider: { width: 1, height: 28, backgroundColor: 'rgba(0,0,0,0.08)' },
+  statValue: { fontSize: 18, fontWeight: '800' },
+  statLabel: { fontSize: 10, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.5 },
+  statDivider: { width: 1, height: 28 },
 
   bioSection: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8, gap: 4 },
   bioNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  bioName: { fontSize: 15, fontWeight: '700', color: '#1A1A2E' },
+  bioName: { fontSize: 15, fontWeight: '700' },
   levelTag: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -483,15 +509,50 @@ const styles = StyleSheet.create({
   },
   levelTagEmoji: { fontSize: 12 },
   levelTagText: { fontSize: 11, fontWeight: '700' },
-  bioEmail: { fontSize: 13, color: '#6B7280' },
-  bioText: { fontSize: 14, color: '#9CA3AF', marginTop: 4, lineHeight: 20 },
+  bioEmail: { fontSize: 13 },
+  bioText: { fontSize: 14, marginTop: 4, lineHeight: 20 },
+
+  /* ─── Dark Mode Toggle ─── */
+  darkModeSection: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 4,
+  },
+  darkModeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  darkModeLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  darkModeIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  darkModeLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  darkModeSub: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
 
   // Latest post hero
   latestPostSection: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 4 },
   latestLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#D4AF37',
     letterSpacing: 1.2,
     marginBottom: 10,
   },
@@ -505,7 +566,6 @@ const styles = StyleSheet.create({
   latestPostNoImage: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#18181E',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -519,7 +579,7 @@ const styles = StyleSheet.create({
     paddingTop: 50,
   },
   latestPostInfo: { gap: 4 },
-  latestDishName: { fontSize: 20, fontWeight: '800', color: '#FFF' },  // keep white on overlay
+  latestDishName: { fontSize: 20, fontWeight: '800', color: '#FFF' },
   latestCaption: { fontSize: 13, color: 'rgba(255,255,255,0.60)', fontWeight: '500' },
   latestMeta: { flexDirection: 'row', gap: 16, marginTop: 6 },
   latestMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -543,13 +603,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: '#F4F4F8',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  moreBadgesText: { fontSize: 12, fontWeight: '700', color: '#6B7280' },
+  moreBadgesText: { fontSize: 12, fontWeight: '700' },
 
   actionRow: {
     flexDirection: 'row',
@@ -570,11 +628,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 11,
     borderRadius: 12,
-    backgroundColor: '#F4F4F8',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
   },
-  editProfileText: { fontSize: 14, fontWeight: '700', color: '#1A1A2E' },
+  editProfileText: { fontSize: 14, fontWeight: '700' },
 
   /* Creator Section */
   creatorSection: { paddingHorizontal: 20, paddingBottom: 16 },
@@ -583,8 +639,6 @@ const styles = StyleSheet.create({
     padding: 18,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.18)',
-    backgroundColor: 'rgba(212,175,55,0.04)',
     gap: 14,
   },
   creatorHeader: {
@@ -593,7 +647,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   creatorTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  creatorTitle: { fontSize: 16, fontWeight: '700', color: '#1A1A2E' },
+  creatorTitle: { fontSize: 16, fontWeight: '700' },
   creatorBadgeTag: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -603,8 +657,8 @@ const styles = StyleSheet.create({
   creatorBadgeText: { fontSize: 12, fontWeight: '700', color: '#D4AF37' },
   creatorStats: { flexDirection: 'row', gap: 24 },
   creatorStatItem: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
-  creatorStatVal: { fontSize: 20, fontWeight: '800', color: '#1A1A2E' },
-  creatorStatLbl: { fontSize: 13, color: '#6B7280', fontWeight: '500' },
+  creatorStatVal: { fontSize: 20, fontWeight: '800' },
+  creatorStatLbl: { fontSize: 13, fontWeight: '500' },
   creatorCta: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -617,9 +671,7 @@ const styles = StyleSheet.create({
   creatorCardLocked: {
     padding: 18,
     borderRadius: 20,
-    backgroundColor: '#F8F8FA',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
     gap: 14,
   },
   lockHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -634,8 +686,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(212,175,55,0.15)',
   },
   lockTitleBlock: { flex: 1, gap: 3 },
-  lockTitle: { fontSize: 16, fontWeight: '700', color: '#1A1A2E' },
-  lockSubtitle: { fontSize: 13, color: '#9CA3AF', fontWeight: '500', lineHeight: 18 },
+  lockTitle: { fontSize: 16, fontWeight: '700' },
+  lockSubtitle: { fontSize: 13, fontWeight: '500', lineHeight: 18 },
 
   rewardPreview: {
     flexDirection: 'row',
@@ -653,12 +705,11 @@ const styles = StyleSheet.create({
   progressSection: { gap: 10 },
   progressItem: { gap: 6 },
   progressLabel: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  progressText: { fontSize: 13, fontWeight: '600', color: '#9CA3AF' },
-  progressCount: { fontSize: 13, fontWeight: '700', color: '#1A1A2E' },
+  progressText: { fontSize: 13, fontWeight: '600' },
+  progressCount: { fontSize: 13, fontWeight: '700' },
   progressBarBg: {
     height: 5,
     borderRadius: 3,
-    backgroundColor: '#E5E7EB',
     overflow: 'hidden',
   },
   progressBarFill: { height: '100%', borderRadius: 3 },
@@ -668,9 +719,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.06)',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.06)',
   },
   gridTab: {
     paddingVertical: 12,
@@ -683,7 +732,6 @@ const styles = StyleSheet.create({
   gridNoImage: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#F4F4F8',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -692,11 +740,10 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#F4F4F8',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
-  emptyGridTitle: { fontSize: 18, fontWeight: '700', color: '#1A1A2E' },
-  emptyGridSub: { fontSize: 14, color: '#6B7280' },
+  emptyGridTitle: { fontSize: 18, fontWeight: '700' },
+  emptyGridSub: { fontSize: 14 },
 });

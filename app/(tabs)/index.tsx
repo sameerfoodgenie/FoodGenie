@@ -23,6 +23,7 @@ import { useCreator, CREATOR_TIERS } from '../../contexts/CreatorContext';
 import { useAuth } from '@/template';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useCoin } from '../../hooks/useCoin';
+import { useTheme } from '../../hooks/useTheme';
 import { fetchProfile, UserProfile } from '../../services/profileService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -72,18 +73,25 @@ function QuickActionCard({
   color,
   onPress,
   delay = 0,
+  isDark,
+  cardBg,
+  textColor,
 }: {
   emoji: string;
   label: string;
   color: string;
   onPress: () => void;
   delay?: number;
+  isDark: boolean;
+  cardBg: string;
+  textColor: string;
 }) {
   return (
     <Animated.View entering={FadeInDown.delay(delay).duration(350)}>
       <Pressable
         style={({ pressed }) => [
           styles.quickCard,
+          { backgroundColor: isDark ? '#1A1A2E' : '#1A1A2E' },
           pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] },
         ]}
         onPress={() => { Haptics.selectionAsync(); onPress(); }}
@@ -105,6 +113,7 @@ function DayMealCard({
   isToday,
   index,
   onPress,
+  colors,
 }: {
   dayName: string;
   date: Date;
@@ -112,22 +121,22 @@ function DayMealCard({
   isToday: boolean;
   index: number;
   onPress: () => void;
+  colors: any;
 }) {
   const latestPost = posts.length > 0 ? posts[0] : null;
-  const dateNum = date.getDate();
 
   return (
     <Animated.View entering={FadeInDown.delay(100 + index * 60).duration(400)}>
       <Pressable
         style={({ pressed }) => [
           styles.dayCard,
-          isToday && styles.dayCardToday,
+          { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+          isToday && { borderColor: 'rgba(212,175,55,0.35)', borderWidth: 1.5 },
           pressed && { opacity: 0.92, transform: [{ scale: 0.98 }] },
         ]}
         onPress={() => { Haptics.selectionAsync(); onPress(); }}
       >
-        {/* Image or placeholder */}
-        <View style={styles.dayCardImage}>
+        <View style={[styles.dayCardImage, { backgroundColor: colors.surface }]}>
           {latestPost?.imageUri ? (
             <Image
               source={{ uri: latestPost.thumbnailUri || latestPost.imageUri }}
@@ -136,19 +145,17 @@ function DayMealCard({
               transition={200}
             />
           ) : latestPost ? (
-            <View style={styles.dayCardNoImg}>
+            <View style={[styles.dayCardNoImg, { backgroundColor: colors.backgroundTertiary }]}>
               <Text style={{ fontSize: 32 }}>{MEAL_EMOJI[latestPost.mealType] || '🍽'}</Text>
             </View>
           ) : (
-            <View style={styles.dayCardEmpty}>
-              <MaterialIcons name="add-circle-outline" size={28} color={isToday ? '#D4AF37' : '#D1D5DB'} />
+            <View style={[styles.dayCardEmpty, { backgroundColor: colors.backgroundSecondary }]}>
+              <MaterialIcons name="add-circle-outline" size={28} color={isToday ? '#D4AF37' : colors.textMuted} />
             </View>
           )}
-          {/* Day overlay badge */}
-          <View style={[styles.dayBadge, isToday && styles.dayBadgeToday]}>
-            <Text style={[styles.dayBadgeText, isToday && styles.dayBadgeTextToday]}>{dayName}</Text>
+          <View style={[styles.dayBadge, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }, isToday && styles.dayBadgeToday]}>
+            <Text style={[styles.dayBadgeText, { color: colors.textSecondary }, isToday && styles.dayBadgeTextToday]}>{dayName}</Text>
           </View>
-          {/* Meal count badge */}
           {posts.length > 1 ? (
             <View style={styles.mealCountBadge}>
               <Text style={styles.mealCountText}>{posts.length}</Text>
@@ -156,27 +163,25 @@ function DayMealCard({
           ) : null}
         </View>
 
-        {/* Bottom info */}
         <View style={styles.dayCardBottom}>
           {latestPost ? (
             <>
-              <Text style={styles.dayDishName} numberOfLines={1}>{latestPost.dishName}</Text>
+              <Text style={[styles.dayDishName, { color: colors.textPrimary }]} numberOfLines={1}>{latestPost.dishName}</Text>
               <View style={styles.dayMetaRow}>
                 <Text style={styles.daySource}>{latestPost.source === 'home_cooked' ? '🏠' : latestPost.source === 'restaurant' ? '🍴' : '📦'}</Text>
-                <Text style={styles.dayLikes}>❤️ {latestPost.likes}</Text>
+                <Text style={[styles.dayLikes, { color: colors.textMuted }]}>❤️ {latestPost.likes}</Text>
               </View>
             </>
           ) : (
-            <Text style={[styles.dayDishName, { color: '#9CA3AF', fontSize: 12 }]}>
+            <Text style={[styles.dayDishName, { color: colors.textMuted, fontSize: 12 }]}>
               {isToday ? 'Add meal' : 'No meal'}
             </Text>
           )}
         </View>
 
-        {/* Bookmark icon */}
         {latestPost ? (
           <View style={styles.dayBookmark}>
-            <MaterialIcons name={latestPost.isSaved ? 'bookmark' : 'bookmark-border'} size={16} color={latestPost.isSaved ? '#D4AF37' : '#9CA3AF'} />
+            <MaterialIcons name={latestPost.isSaved ? 'bookmark' : 'bookmark-border'} size={16} color={latestPost.isSaved ? '#D4AF37' : colors.textMuted} />
           </View>
         ) : null}
       </Pressable>
@@ -192,6 +197,7 @@ export default function HomeScreen() {
   const { isCreatorUnlocked, currentLevel, myCreatorType } = useCreator();
   const { unreadCount } = useNotifications(user?.id || null);
   const { balance, currentStreak } = useCoin();
+  const { colors, isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
@@ -238,11 +244,10 @@ export default function HomeScreen() {
     router.push({ pathname: '/(tabs)/camera', params: { mealType, date: selectedDayForMeal || undefined } });
   }, [selectedDayForMeal, router]);
 
-  // Count total meals this week
   const weekMealCount = weekMeals.reduce((sum, d) => sum + d.posts.length, 0);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
@@ -256,9 +261,8 @@ export default function HomeScreen() {
         }
       >
         {/* ─── Profile Summary Bar ─── */}
-        <View style={[styles.profileBar, { paddingTop: insets.top + 12 }]}>
+        <View style={[styles.profileBar, { paddingTop: insets.top + 12, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
           <Animated.View entering={FadeIn.duration(400)} style={styles.profileBarInner}>
-            {/* Left: Avatar */}
             <Pressable
               onPress={() => { Haptics.selectionAsync(); router.push('/(tabs)/profile'); }}
               style={({ pressed }) => [pressed && { opacity: 0.8 }]}
@@ -268,20 +272,18 @@ export default function HomeScreen() {
               </LinearGradient>
             </Pressable>
 
-            {/* Middle: Stats */}
             <View style={styles.profileStats}>
               <Pressable style={styles.profileStat} onPress={() => { Haptics.selectionAsync(); router.push('/(tabs)/profile'); }}>
-                <Text style={styles.profileStatValue}>{followingCount}</Text>
-                <Text style={styles.profileStatLabel}>Chefs</Text>
+                <Text style={[styles.profileStatValue, { color: colors.textPrimary }]}>{followingCount}</Text>
+                <Text style={[styles.profileStatLabel, { color: colors.textMuted }]}>Chefs</Text>
               </Pressable>
-              <View style={styles.profileStatDivider} />
+              <View style={[styles.profileStatDivider, { backgroundColor: colors.border }]} />
               <Pressable style={styles.profileStat} onPress={() => { Haptics.selectionAsync(); router.push('/coin-wallet'); }}>
                 <Image source={require('../../assets/images/genie-coin.png')} style={{ width: 18, height: 18 }} contentFit="contain" />
                 <Text style={[styles.profileStatValue, { color: '#D4AF37' }]}>{balance}</Text>
               </Pressable>
             </View>
 
-            {/* Right: Coins */}
             <Pressable
               style={({ pressed }) => [styles.coinsBadge, pressed && { opacity: 0.8 }]}
               onPress={() => { Haptics.selectionAsync(); router.push('/coin-wallet'); }}
@@ -291,12 +293,11 @@ export default function HomeScreen() {
             </Pressable>
           </Animated.View>
 
-          {/* Notification bell */}
           <Pressable
-            style={styles.notifBtn}
+            style={[styles.notifBtn, { backgroundColor: colors.surface }]}
             onPress={() => { Haptics.selectionAsync(); router.push('/notifications'); }}
           >
-            <MaterialIcons name="notifications-none" size={22} color="#1A1A2E" />
+            <MaterialIcons name="notifications-none" size={22} color={colors.textPrimary} />
             {unreadCount > 0 ? (
               <View style={styles.notifDot}>
                 <Text style={styles.notifDotText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -308,60 +309,18 @@ export default function HomeScreen() {
         {/* ─── Quick Action Cards Row 1 ─── */}
         <View style={styles.quickActionsSection}>
           <View style={styles.quickRow}>
-            <QuickActionCard
-              emoji="🪙"
-              label="Genie Coins"
-              color="#FFD700"
-              onPress={() => router.push('/coin-wallet')}
-              delay={50}
-            />
-            <QuickActionCard
-              emoji={myTier?.emoji || currentLevel.emoji}
-              label="Creator Badge"
-              color="#D4AF37"
-              onPress={() => router.push('/creator-dashboard')}
-              delay={100}
-            />
-            <QuickActionCard
-              emoji="👨‍🍳"
-              label="Become Home Chef"
-              color="#4ADE80"
-              onPress={() => {
-                if (isCreatorUnlocked) {
-                  router.push('/creator-studio');
-                } else {
-                  router.push('/creator-dashboard');
-                }
-              }}
-              delay={150}
-            />
+            <QuickActionCard emoji="🪙" label="Genie Coins" color="#FFD700" onPress={() => router.push('/coin-wallet')} delay={50} isDark={isDark} cardBg={colors.cardBg} textColor={colors.textPrimary} />
+            <QuickActionCard emoji={myTier?.emoji || currentLevel.emoji} label="Creator Badge" color="#D4AF37" onPress={() => router.push('/creator-dashboard')} delay={100} isDark={isDark} cardBg={colors.cardBg} textColor={colors.textPrimary} />
+            <QuickActionCard emoji="👨‍🍳" label="Become Home Chef" color="#4ADE80" onPress={() => { isCreatorUnlocked ? router.push('/creator-studio') : router.push('/creator-dashboard'); }} delay={150} isDark={isDark} cardBg={colors.cardBg} textColor={colors.textPrimary} />
           </View>
         </View>
 
         {/* ─── Quick Action Cards Row 2 ─── */}
         <View style={styles.quickActionsSection2}>
           <View style={styles.quickRow}>
-            <QuickActionCard
-              emoji="🔥"
-              label="Trending Food"
-              color="#FF6B6B"
-              onPress={() => router.push('/explore')}
-              delay={200}
-            />
-            <QuickActionCard
-              emoji="🎟️"
-              label="Offers & Vouchers"
-              color="#A855F7"
-              onPress={() => router.push('/coin-redeem')}
-              delay={250}
-            />
-            <QuickActionCard
-              emoji="📦"
-              label="Order Food"
-              color="#3B82F6"
-              onPress={() => router.push('/partner-apps')}
-              delay={300}
-            />
+            <QuickActionCard emoji="🔥" label="Trending Food" color="#FF6B6B" onPress={() => router.push('/explore')} delay={200} isDark={isDark} cardBg={colors.cardBg} textColor={colors.textPrimary} />
+            <QuickActionCard emoji="🎟️" label="Offers & Vouchers" color="#A855F7" onPress={() => router.push('/coin-redeem')} delay={250} isDark={isDark} cardBg={colors.cardBg} textColor={colors.textPrimary} />
+            <QuickActionCard emoji="📦" label="Order Food" color="#3B82F6" onPress={() => router.push('/partner-apps')} delay={300} isDark={isDark} cardBg={colors.cardBg} textColor={colors.textPrimary} />
           </View>
         </View>
 
@@ -369,7 +328,7 @@ export default function HomeScreen() {
         <View style={styles.weekSection}>
           <Animated.View entering={FadeIn.delay(200).duration(350)} style={styles.weekHeader}>
             <View style={styles.weekHeaderLeft}>
-              <Text style={styles.weekTitle}>This Week</Text>
+              <Text style={[styles.weekTitle, { color: colors.textPrimary }]}>This Week</Text>
               <View style={styles.weekCountBadge}>
                 <Text style={styles.weekCountText}>{weekMealCount} meals</Text>
               </View>
@@ -382,7 +341,6 @@ export default function HomeScreen() {
             ) : null}
           </Animated.View>
 
-          {/* Day cards grid - 2 columns */}
           <View style={styles.weekGrid}>
             {weekMeals.map((day, i) => (
               <DayMealCard
@@ -392,13 +350,8 @@ export default function HomeScreen() {
                 posts={day.posts}
                 isToday={day.isToday}
                 index={i}
-                onPress={() => {
-                  if (day.posts.length === 0) {
-                    handleAddMeal(day.dateStr);
-                  } else {
-                    handleAddMeal(day.dateStr);
-                  }
-                }}
+                onPress={() => handleAddMeal(day.dateStr)}
+                colors={colors}
               />
             ))}
           </View>
@@ -408,7 +361,7 @@ export default function HomeScreen() {
         {feedPosts.length > 0 ? (
           <View style={styles.feedPreviewSection}>
             <Animated.View entering={FadeIn.delay(300).duration(350)} style={styles.feedPreviewHeader}>
-              <Text style={styles.feedPreviewTitle}>Community Feed</Text>
+              <Text style={[styles.feedPreviewTitle, { color: colors.textPrimary }]}>Community Feed</Text>
               <Pressable
                 onPress={() => { Haptics.selectionAsync(); router.push('/explore'); }}
                 style={({ pressed }) => [pressed && { opacity: 0.7 }]}
@@ -427,6 +380,7 @@ export default function HomeScreen() {
                   <Pressable
                     style={({ pressed }) => [
                       styles.feedCard,
+                      { backgroundColor: colors.surface },
                       pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
                     ]}
                     onPress={() => { Haptics.selectionAsync(); router.push({ pathname: '/food-detail', params: { postId: post.id } }); }}
@@ -439,7 +393,7 @@ export default function HomeScreen() {
                         transition={200}
                       />
                     ) : (
-                      <View style={[styles.feedCardImage, styles.feedCardNoImg]}>
+                      <View style={[styles.feedCardImage, styles.feedCardNoImg, { backgroundColor: colors.backgroundTertiary }]}>
                         <Text style={{ fontSize: 28 }}>{MEAL_EMOJI[post.mealType] || '🍽'}</Text>
                       </View>
                     )}
@@ -470,11 +424,11 @@ export default function HomeScreen() {
         animationType="fade"
         onRequestClose={() => setMealPickerVisible(false)}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setMealPickerVisible(false)}>
-          <Pressable style={styles.mealPickerSheet} onPress={(e) => e.stopPropagation()}>
-            <View style={styles.mealPickerHandle} />
-            <Text style={styles.mealPickerTitle}>Add a Meal</Text>
-            <Text style={styles.mealPickerSub}>What are you logging?</Text>
+        <Pressable style={[styles.modalOverlay, { backgroundColor: colors.overlayBg }]} onPress={() => setMealPickerVisible(false)}>
+          <Pressable style={[styles.mealPickerSheet, { backgroundColor: colors.modalBg }]} onPress={(e) => e.stopPropagation()}>
+            <View style={[styles.mealPickerHandle, { backgroundColor: colors.border }]} />
+            <Text style={[styles.mealPickerTitle, { color: colors.textPrimary }]}>Add a Meal</Text>
+            <Text style={[styles.mealPickerSub, { color: colors.textMuted }]}>What are you logging?</Text>
             <View style={styles.mealPickerGrid}>
               {[
                 { id: 'breakfast', label: 'Breakfast', emoji: '☀️', color: '#FFB347' },
@@ -486,6 +440,7 @@ export default function HomeScreen() {
                   key={mt.id}
                   style={({ pressed }) => [
                     styles.mealPickerItem,
+                    { backgroundColor: colors.surface, borderColor: colors.cardBorder },
                     pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] },
                   ]}
                   onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleMealTypeSelect(mt.id); }}
@@ -493,15 +448,15 @@ export default function HomeScreen() {
                   <View style={[styles.mealPickerEmojiBg, { backgroundColor: `${mt.color}18` }]}>
                     <Text style={{ fontSize: 32 }}>{mt.emoji}</Text>
                   </View>
-                  <Text style={styles.mealPickerItemLabel}>{mt.label}</Text>
+                  <Text style={[styles.mealPickerItemLabel, { color: colors.textPrimary }]}>{mt.label}</Text>
                 </Pressable>
               ))}
             </View>
             <Pressable
-              style={({ pressed }) => [styles.mealPickerCancel, pressed && { opacity: 0.7 }]}
+              style={({ pressed }) => [styles.mealPickerCancel, { backgroundColor: colors.surface }, pressed && { opacity: 0.7 }]}
               onPress={() => setMealPickerVisible(false)}
             >
-              <Text style={styles.mealPickerCancelText}>Cancel</Text>
+              <Text style={[styles.mealPickerCancelText, { color: colors.textSecondary }]}>Cancel</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -511,15 +466,13 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1 },
 
   /* ─── Profile Bar ─── */
   profileBar: {
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.04)',
   },
   profileBarInner: {
     flexDirection: 'row',
@@ -545,9 +498,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   profileStat: { alignItems: 'center', gap: 1 },
-  profileStatValue: { fontSize: 17, fontWeight: '800', color: '#1A1A2E' },
-  profileStatLabel: { fontSize: 10, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.3 },
-  profileStatDivider: { width: 1, height: 24, backgroundColor: 'rgba(0,0,0,0.06)' },
+  profileStatValue: { fontSize: 17, fontWeight: '800' },
+  profileStatLabel: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.3 },
+  profileStatDivider: { width: 1, height: 24 },
   coinsBadge: {
     alignItems: 'center',
     gap: 2,
@@ -568,7 +521,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F4F4F8',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -604,7 +556,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 8,
     borderRadius: 16,
-    backgroundColor: '#1A1A2E',
     alignItems: 'center',
     gap: 8,
     shadowColor: '#000',
@@ -632,11 +583,9 @@ const styles = StyleSheet.create({
   /* ─── Meal Picker Modal ─── */
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
   },
   mealPickerSheet: {
-    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 24,
@@ -648,19 +597,16 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#E0E0E0',
     marginBottom: 20,
   },
   mealPickerTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#1A1A2E',
     marginBottom: 4,
   },
   mealPickerSub: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#9CA3AF',
     marginBottom: 24,
   },
   mealPickerGrid: {
@@ -674,9 +620,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 20,
     borderRadius: 18,
-    backgroundColor: '#F8F8FA',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
   },
   mealPickerEmojiBg: {
     width: 56,
@@ -688,19 +632,16 @@ const styles = StyleSheet.create({
   mealPickerItemLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1A1A2E',
   },
   mealPickerCancel: {
     marginTop: 18,
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 14,
-    backgroundColor: '#F4F4F8',
   },
   mealPickerCancelText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#6B7280',
   },
 
   /* ─── Weekly Meal Calendar ─── */
@@ -722,7 +663,6 @@ const styles = StyleSheet.create({
   weekTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1A1A2E',
   },
   weekCountBadge: {
     paddingHorizontal: 10,
@@ -757,9 +697,7 @@ const styles = StyleSheet.create({
   dayCard: {
     width: WEEK_CARD_W,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -767,28 +705,20 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  dayCardToday: {
-    borderColor: 'rgba(212,175,55,0.35)',
-    borderWidth: 1.5,
-    shadowColor: '#D4AF37',
-    shadowOpacity: 0.08,
-  },
   dayCardImage: {
     width: '100%',
     height: 100,
-    backgroundColor: '#F8F8FA',
     position: 'relative',
   },
   dayCardNoImg: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F0F0F4',
   },
   dayCardEmpty: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FAFAFA',
   },
   dayBadge: {
     position: 'absolute',
@@ -797,15 +727,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.92)',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
   },
   dayBadgeToday: {
     backgroundColor: 'rgba(212,175,55,0.15)',
     borderColor: 'rgba(212,175,55,0.30)',
   },
-  dayBadgeText: { fontSize: 11, fontWeight: '800', color: '#6B7280' },
+  dayBadgeText: { fontSize: 11, fontWeight: '800' },
   dayBadgeTextToday: { color: '#D4AF37' },
   mealCountBadge: {
     position: 'absolute',
@@ -824,14 +752,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     gap: 3,
   },
-  dayDishName: { fontSize: 13, fontWeight: '700', color: '#1A1A2E' },
+  dayDishName: { fontSize: 13, fontWeight: '700' },
   dayMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   daySource: { fontSize: 11 },
-  dayLikes: { fontSize: 11, fontWeight: '600', color: '#9CA3AF' },
+  dayLikes: { fontSize: 11, fontWeight: '600' },
   dayBookmark: {
     position: 'absolute',
     bottom: 10,
@@ -849,7 +777,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 14,
   },
-  feedPreviewTitle: { fontSize: 18, fontWeight: '800', color: '#1A1A2E' },
+  feedPreviewTitle: { fontSize: 18, fontWeight: '800' },
   feedPreviewSeeAll: { fontSize: 14, fontWeight: '600', color: '#D4AF37' },
   feedPreviewScroll: {
     paddingHorizontal: 20,
@@ -860,7 +788,6 @@ const styles = StyleSheet.create({
     height: 190,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#F4F4F8',
     position: 'relative',
   },
   feedCardImage: {
@@ -870,7 +797,6 @@ const styles = StyleSheet.create({
   feedCardNoImg: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F0F0F4',
   },
   feedCardOverlay: {
     position: 'absolute',
