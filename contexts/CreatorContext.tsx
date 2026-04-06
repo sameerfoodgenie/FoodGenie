@@ -257,9 +257,77 @@ const SAMPLE_NEW_CREATORS: NewCreator[] = [];
 // Top creators start empty — populated dynamically
 const SAMPLE_TOP_CREATORS: TopCreator[] = [];
 
+// ─── Pre-seeded Show: 7 Day Snack Challenge ───
+const SEED_SHOW: CreatorShow = {
+  id: 'show_7day_snack',
+  title: '7 Day Snack Challenge',
+  description: '7 days of healthy, quick snack recipes you can make at home. One episode per day — eat clean, feel great!',
+  coverUri: 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=800&q=80',
+  isPaid: false,
+  createdAt: Date.now() - 7 * 86400000,
+  episodes: [
+    {
+      id: 'ep_day1',
+      title: 'Day 1: Healthy Breakfast Bowl',
+      description: 'Start your day with a simple and nutritious breakfast bowl. This quick recipe includes oats, fresh fruits, and nuts.',
+      imageUri: 'https://images.unsplash.com/photo-1511690743698-d9d18f7e20f1?w=600&q=80',
+      videoUri: 'https://videos.pexels.com/video-files/1448735/1448735-hd_1920_1080_24fps.mp4',
+      createdAt: Date.now() - 7 * 86400000,
+    },
+    {
+      id: 'ep_day2',
+      title: 'Day 2: Peanut Butter Sandwich',
+      description: 'A quick and protein-rich snack perfect for breakfast or evening hunger. Bread, peanut butter, and sliced fruits.',
+      imageUri: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&q=80',
+      videoUri: 'https://videos.pexels.com/video-files/3195394/3195394-uhd_2560_1440_25fps.mp4',
+      createdAt: Date.now() - 6 * 86400000,
+    },
+    {
+      id: 'ep_day3',
+      title: 'Day 3: Chana Chaat',
+      description: 'A healthy Indian snack packed with protein and flavor. Boiled chana, onion, tomato, and lemon — quick mix and serve.',
+      imageUri: 'https://images.unsplash.com/photo-1606491956689-2ea866880049?w=600&q=80',
+      videoUri: 'https://videos.pexels.com/video-files/3296396/3296396-uhd_2560_1440_25fps.mp4',
+      createdAt: Date.now() - 5 * 86400000,
+    },
+    {
+      id: 'ep_day4',
+      title: 'Day 4: Smoothie Bowl',
+      description: 'Refreshing smoothie bowl with blended fruits, toppings, and seeds. Serve chilled for a perfect midday treat.',
+      imageUri: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=600&q=80',
+      videoUri: 'https://videos.pexels.com/video-files/4921967/4921967-hd_1920_1080_25fps.mp4',
+      createdAt: Date.now() - 4 * 86400000,
+    },
+    {
+      id: 'ep_day5',
+      title: 'Day 5: Paneer Snack',
+      description: 'Simple paneer snack for a protein boost. Paneer cubes with light seasoning and a quick saut\u00e9.',
+      imageUri: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=600&q=80',
+      videoUri: 'https://videos.pexels.com/video-files/5494998/5494998-uhd_2560_1440_30fps.mp4',
+      createdAt: Date.now() - 3 * 86400000,
+    },
+    {
+      id: 'ep_day6',
+      title: 'Day 6: Sprouts Salad',
+      description: 'Fresh and crunchy sprouts salad for a healthy evening. Sprouts, veggies, lemon, and spices — toss and serve.',
+      imageUri: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&q=80',
+      videoUri: 'https://videos.pexels.com/video-files/3209828/3209828-uhd_2560_1440_25fps.mp4',
+      createdAt: Date.now() - 2 * 86400000,
+    },
+    {
+      id: 'ep_day7',
+      title: 'Day 7: Healthy Wrap',
+      description: 'End your challenge with a tasty and healthy wrap. Roti wrap with veggies and filling — roll and serve.',
+      imageUri: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=600&q=80',
+      videoUri: 'https://videos.pexels.com/video-files/4253491/4253491-uhd_2560_1440_25fps.mp4',
+      createdAt: Date.now() - 1 * 86400000,
+    },
+  ],
+};
+
 export function CreatorProvider({ children }: { children: ReactNode }) {
   const { posts, streak, myPosts } = usePosts();
-  const [shows, setShows] = useState<CreatorShow[]>([]);
+  const [shows, setShows] = useState<CreatorShow[]>([SEED_SHOW]);
   const [hasSeenUnlock, setHasSeenUnlock] = useState(false);
   const [myCreatorType, setMyCreatorType] = useState<CreatorType>(null);
   const [liveSessions, setLiveSessions] = useState<LiveSession[]>(SAMPLE_LIVE_SESSIONS);

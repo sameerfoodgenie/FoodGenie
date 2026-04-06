@@ -257,24 +257,39 @@ export default function CreateShowScreen() {
                 {existingShow.episodes.length > 0 ? (
                   <View style={styles.epList}>
                     {existingShow.episodes.map((ep, idx) => (
-                      <View key={ep.id} style={styles.epCard}>
-                        <View style={styles.epNumber}>
-                          <Text style={styles.epNumberText}>{idx + 1}</Text>
-                        </View>
-                        {ep.imageUri ? (
-                          <Image source={{ uri: ep.imageUri }} style={styles.epThumb} contentFit="cover" transition={150} />
-                        ) : (
-                          <View style={[styles.epThumb, styles.epThumbPlaceholder]}>
-                            <MaterialIcons name="play-circle-outline" size={20} color={theme.textMuted} />
+                      <Animated.View key={ep.id} entering={FadeInDown.delay(idx * 60).duration(300)}>
+                        <View style={styles.epCard}>
+                          <View style={styles.epNumber}>
+                            <Text style={styles.epNumberText}>{idx + 1}</Text>
                           </View>
-                        )}
-                        <View style={styles.epInfo}>
-                          <Text style={styles.epTitle} numberOfLines={1}>{ep.title}</Text>
-                          {ep.description ? (
-                            <Text style={styles.epDesc} numberOfLines={1}>{ep.description}</Text>
-                          ) : null}
+                          <View style={styles.epThumbWrap}>
+                            {ep.imageUri ? (
+                              <Image source={{ uri: ep.imageUri }} style={styles.epThumb} contentFit="cover" transition={150} />
+                            ) : (
+                              <View style={[styles.epThumb, styles.epThumbPlaceholder]}>
+                                <MaterialIcons name="play-circle-outline" size={20} color={theme.textMuted} />
+                              </View>
+                            )}
+                            {ep.videoUri ? (
+                              <View style={styles.epPlayBadge}>
+                                <MaterialIcons name="play-arrow" size={16} color="#FFF" />
+                              </View>
+                            ) : null}
+                          </View>
+                          <View style={styles.epInfo}>
+                            <Text style={styles.epTitle} numberOfLines={1}>{ep.title}</Text>
+                            {ep.description ? (
+                              <Text style={styles.epDesc} numberOfLines={2}>{ep.description}</Text>
+                            ) : null}
+                            {ep.videoUri ? (
+                              <View style={styles.epVideoBadge}>
+                                <MaterialIcons name="videocam" size={10} color="#D4AF37" />
+                                <Text style={styles.epVideoText}>Video</Text>
+                              </View>
+                            ) : null}
+                          </View>
                         </View>
-                      </View>
+                      </Animated.View>
                     ))}
                   </View>
                 ) : !showEpisodeForm ? (
@@ -435,35 +450,66 @@ const styles = StyleSheet.create({
   },
   epSubmitText: { fontSize: 15, fontWeight: '700', color: theme.textOnPrimary },
 
-  epList: { paddingHorizontal: 20, marginTop: 12, gap: 8 },
+  epList: { paddingHorizontal: 20, marginTop: 12, gap: 10 },
   epCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    padding: 10,
-    borderRadius: 12,
+    padding: 12,
+    borderRadius: 14,
     backgroundColor: theme.surface,
     borderWidth: 1,
     borderColor: theme.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   epNumber: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: theme.backgroundTertiary,
+    backgroundColor: 'rgba(212,175,55,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.20)',
   },
-  epNumberText: { fontSize: 13, fontWeight: '700', color: theme.textSecondary },
-  epThumb: { width: 48, height: 48, borderRadius: 8, overflow: 'hidden' },
+  epNumberText: { fontSize: 13, fontWeight: '800', color: '#D4AF37' },
+  epThumbWrap: { position: 'relative' },
+  epThumb: { width: 56, height: 56, borderRadius: 10, overflow: 'hidden' },
   epThumbPlaceholder: {
     backgroundColor: theme.backgroundTertiary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  epInfo: { flex: 1, gap: 2 },
-  epTitle: { fontSize: 14, fontWeight: '600', color: theme.textPrimary },
-  epDesc: { fontSize: 12, color: theme.textMuted },
+  epPlayBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(0,0,0,0.60)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  epInfo: { flex: 1, gap: 3 },
+  epTitle: { fontSize: 14, fontWeight: '700', color: theme.textPrimary },
+  epDesc: { fontSize: 12, color: theme.textMuted, lineHeight: 16 },
+  epVideoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: 'rgba(212,175,55,0.10)',
+    marginTop: 2,
+  },
+  epVideoText: { fontSize: 9, fontWeight: '700', color: '#D4AF37' },
 
   noEpisodes: {
     alignItems: 'center',

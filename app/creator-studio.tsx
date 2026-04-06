@@ -23,6 +23,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 function ShowCard({ show, onPress, onDelete }: { show: CreatorShow; onPress: () => void; onDelete: () => void }) {
   const episodeCount = show.episodes.length;
   const timeAgo = getTimeAgo(show.createdAt);
+  const latestThumb = show.episodes.length > 0 ? show.episodes[show.episodes.length - 1].imageUri : null;
 
   return (
     <Pressable
@@ -33,12 +34,15 @@ function ShowCard({ show, onPress, onDelete }: { show: CreatorShow; onPress: () 
       <View style={styles.showCover}>
         {show.coverUri ? (
           <Image source={{ uri: show.coverUri }} style={styles.showCoverImage} contentFit="cover" transition={200} />
+        ) : latestThumb ? (
+          <Image source={{ uri: latestThumb }} style={styles.showCoverImage} contentFit="cover" transition={200} />
         ) : (
           <LinearGradient colors={['#1A1A1A', '#121212']} style={styles.showCoverPlaceholder}>
             <MaterialIcons name="movie-creation" size={32} color={theme.textMuted} />
           </LinearGradient>
         )}
         <View style={styles.episodeBadge}>
+          <MaterialIcons name="playlist-play" size={12} color="#FFF" />
           <Text style={styles.episodeBadgeText}>{episodeCount} ep{episodeCount !== 1 ? 's' : ''}</Text>
         </View>
       </View>
@@ -49,7 +53,15 @@ function ShowCard({ show, onPress, onDelete }: { show: CreatorShow; onPress: () 
         {show.description ? (
           <Text style={styles.showDesc} numberOfLines={2}>{show.description}</Text>
         ) : null}
-        <Text style={styles.showMeta}>{timeAgo}</Text>
+        <View style={styles.showMetaRow}>
+          <Text style={styles.showMeta}>{timeAgo}</Text>
+          {show.episodes.some(e => e.videoUri) ? (
+            <View style={styles.showVideoBadge}>
+              <MaterialIcons name="videocam" size={10} color="#D4AF37" />
+              <Text style={styles.showVideoText}>Videos</Text>
+            </View>
+          ) : null}
+        </View>
       </View>
 
       {/* Actions */}
@@ -285,16 +297,30 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 4,
     right: 4,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(0,0,0,0.70)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 8,
   },
   episodeBadgeText: { fontSize: 10, fontWeight: '700', color: '#FFF' },
   showInfo: { flex: 1, gap: 4 },
   showTitle: { fontSize: 16, fontWeight: '700', color: theme.textPrimary },
   showDesc: { fontSize: 13, color: theme.textSecondary, lineHeight: 18 },
+  showMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
   showMeta: { fontSize: 12, color: theme.textMuted, fontWeight: '500' },
+  showVideoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: 'rgba(212,175,55,0.10)',
+  },
+  showVideoText: { fontSize: 9, fontWeight: '700', color: '#D4AF37' },
   showActions: {},
   showActionBtn: {
     width: 36,
