@@ -8,6 +8,7 @@ import {
   Dimensions,
   Platform,
   RefreshControl,
+  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -218,11 +219,24 @@ export default function HomeScreen() {
 
   const myTier = CREATOR_TIERS.find(t => t.id === myCreatorType) || null;
 
+  const [mealPickerVisible, setMealPickerVisible] = useState(false);
+  const [selectedDayForMeal, setSelectedDayForMeal] = useState<string | null>(null);
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await refreshFeed();
     setRefreshing(false);
   }, [refreshFeed]);
+
+  const handleAddMeal = useCallback((dayStr: string) => {
+    setSelectedDayForMeal(dayStr);
+    setMealPickerVisible(true);
+  }, []);
+
+  const handleMealTypeSelect = useCallback((mealType: string) => {
+    setMealPickerVisible(false);
+    router.push({ pathname: '/(tabs)/camera', params: { mealType, date: selectedDayForMeal || undefined } });
+  }, [selectedDayForMeal, router]);
 
   // Count total meals this week
   const weekMealCount = weekMeals.reduce((sum, d) => sum + d.posts.length, 0);
@@ -257,18 +271,13 @@ export default function HomeScreen() {
             {/* Middle: Stats */}
             <View style={styles.profileStats}>
               <Pressable style={styles.profileStat} onPress={() => { Haptics.selectionAsync(); router.push('/(tabs)/profile'); }}>
-                <Text style={styles.profileStatValue}>{totalPosts}</Text>
-                <Text style={styles.profileStatLabel}>Posts</Text>
+                <Text style={styles.profileStatValue}>{followingCount}</Text>
+                <Text style={styles.profileStatLabel}>Chefs</Text>
               </Pressable>
               <View style={styles.profileStatDivider} />
-              <Pressable style={styles.profileStat} onPress={() => { Haptics.selectionAsync(); router.push('/(tabs)/profile'); }}>
-                <Text style={styles.profileStatValue}>{followerCount}</Text>
-                <Text style={styles.profileStatLabel}>Followers</Text>
-              </Pressable>
-              <View style={styles.profileStatDivider} />
-              <Pressable style={styles.profileStat} onPress={() => { Haptics.selectionAsync(); router.push('/(tabs)/profile'); }}>
-                <Text style={styles.profileStatValue}>{feedPosts.length}</Text>
-                <Text style={styles.profileStatLabel}>Clips</Text>
+              <Pressable style={styles.profileStat} onPress={() => { Haptics.selectionAsync(); router.push('/coin-wallet'); }}>
+                <Image source={require('../../assets/images/genie-coin.png')} style={{ width: 18, height: 18 }} contentFit="contain" />
+                <Text style={[styles.profileStatValue, { color: '#D4AF37' }]}>{balance}</Text>
               </Pressable>
             </View>
 
@@ -384,10 +393,10 @@ export default function HomeScreen() {
                 isToday={day.isToday}
                 index={i}
                 onPress={() => {
-                  if (day.isToday && day.posts.length === 0) {
-                    router.push('/(tabs)/camera');
-                  } else if (day.posts.length > 0) {
-                    router.push({ pathname: '/food-detail', params: { postId: day.posts[0].id } });
+                  if (day.posts.length === 0) {
+                    handleAddMeal(day.dateStr);
+                  } else {
+                    handleAddMeal(day.dateStr);
                   }
                 }}
               />
@@ -453,6 +462,50 @@ export default function HomeScreen() {
         ) : null}
 
       </ScrollView>
+
+      {/* Meal Type Picker Modal */}
+      <Modal
+        visible={mealPickerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMealPickerVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setMealPickerVisible(false)}>
+          <Pressable style={styles.mealPickerSheet} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.mealPickerHandle} />
+            <Text style={styles.mealPickerTitle}>Add a Meal</Text>
+            <Text style={styles.mealPickerSub}>What are you logging?</Text>
+            <View style={styles.mealPickerGrid}>
+              {[
+                { id: 'breakfast', label: 'Breakfast', emoji: '☀️', color: '#FFB347' },
+                { id: 'lunch', label: 'Lunch', emoji: '🍽', color: '#4ADE80' },
+                { id: 'dinner', label: 'Dinner', emoji: '🌙', color: '#818CF8' },
+                { id: 'snack', label: 'Snack', emoji: '🍿', color: '#FB923C' },
+              ].map(mt => (
+                <Pressable
+                  key={mt.id}
+                  style={({ pressed }) => [
+                    styles.mealPickerItem,
+                    pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] },
+                  ]}
+                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleMealTypeSelect(mt.id); }}
+                >
+                  <View style={[styles.mealPickerEmojiBg, { backgroundColor: `${mt.color}18` }]}>
+                    <Text style={{ fontSize: 32 }}>{mt.emoji}</Text>
+                  </View>
+                  <Text style={styles.mealPickerItemLabel}>{mt.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.mealPickerCancel, pressed && { opacity: 0.7 }]}
+              onPress={() => setMealPickerVisible(false)}
+            >
+              <Text style={styles.mealPickerCancelText}>Cancel</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -551,16 +604,14 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 8,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
+    backgroundColor: '#1A1A2E',
     alignItems: 'center',
     gap: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   quickCardIcon: {
     width: 44,
@@ -568,13 +619,88 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   quickCardLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#1A1A2E',
+    color: 'rgba(255,255,255,0.90)',
     textAlign: 'center',
     lineHeight: 14,
+  },
+
+  /* ─── Meal Picker Modal ─── */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  mealPickerSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 40,
+    alignItems: 'center',
+  },
+  mealPickerHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E0E0E0',
+    marginBottom: 20,
+  },
+  mealPickerTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1A1A2E',
+    marginBottom: 4,
+  },
+  mealPickerSub: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#9CA3AF',
+    marginBottom: 24,
+  },
+  mealPickerGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  mealPickerItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 20,
+    borderRadius: 18,
+    backgroundColor: '#F8F8FA',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  mealPickerEmojiBg: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mealPickerItemLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1A1A2E',
+  },
+  mealPickerCancel: {
+    marginTop: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 14,
+    backgroundColor: '#F4F4F8',
+  },
+  mealPickerCancelText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#6B7280',
   },
 
   /* ─── Weekly Meal Calendar ─── */
