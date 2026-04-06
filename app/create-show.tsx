@@ -258,7 +258,22 @@ export default function CreateShowScreen() {
                   <View style={styles.epList}>
                     {existingShow.episodes.map((ep, idx) => (
                       <Animated.View key={ep.id} entering={FadeInDown.delay(idx * 60).duration(300)}>
-                        <View style={styles.epCard}>
+                        <Pressable
+                          style={({ pressed }) => [styles.epCard, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            router.push({
+                              pathname: '/episode-player',
+                              params: {
+                                videoUri: ep.videoUri || '',
+                                title: ep.title,
+                                description: ep.description || '',
+                                imageUri: ep.imageUri || '',
+                                episodeNumber: String(idx + 1),
+                              },
+                            });
+                          }}
+                        >
                           <View style={styles.epNumber}>
                             <Text style={styles.epNumberText}>{idx + 1}</Text>
                           </View>
@@ -288,7 +303,7 @@ export default function CreateShowScreen() {
                               </View>
                             ) : null}
                           </View>
-                        </View>
+                        </Pressable>
                       </Animated.View>
                     ))}
                   </View>

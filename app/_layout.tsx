@@ -70,6 +70,7 @@ function RootInner() {
           <Stack.Screen name="coin-wallet" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
           <Stack.Screen name="coin-redeem" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="coin-leaderboard" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="episode-player" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
         </Stack>
       </View>
     </>
