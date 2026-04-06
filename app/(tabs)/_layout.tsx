@@ -117,11 +117,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="learn"
+        name="foodies"
         options={{
-          title: 'Explore',
+          title: 'Foodies',
           tabBarIcon: ({ color, focused }) => (
-            <MaterialIcons name={focused ? 'explore' : 'explore'} size={26} color={color} />
+            <MaterialIcons name={focused ? 'local-fire-department' : 'local-fire-department'} size={26} color={color} />
           ),
         }}
       />
