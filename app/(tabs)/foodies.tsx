@@ -10,6 +10,8 @@ import {
   ScrollView,
   Platform,
   ViewToken,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -28,17 +30,21 @@ import Animated, {
   withSpring,
   withDelay,
   runOnJS,
-  Easing,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../hooks/useTheme';
+import { useAuth } from '@/template';
+import {
+  fetchFoodCards,
+  fetchUserEmotions,
+  toggleEmotion,
+  FoodCardDB,
+  EmotionType,
+} from '../../services/foodCardService';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 // ── Types ──
-type EmotionType = 'craving' | 'must_try' | 'loved';
-
 interface EmotionDef {
   id: EmotionType;
   emoji: string;
@@ -66,120 +72,31 @@ interface FoodieCard {
   difficulty: string;
   restaurant?: string;
   price?: string;
-  category: 'trending' | 'nearby' | 'creator' | 'offer';
+  category: string;
 }
 
-// ── Sample Data ──
-const FEED_CARDS: FoodieCard[] = [
-  {
-    id: 'f_1', dishName: 'Butter Chicken', creator: 'chef_aarav',
-    creatorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80',
-    imageUri: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=900&q=85',
-    description: 'Creamy, buttery tomato gravy with tender chicken pieces. A timeless classic from the heart of Delhi.',
-    recipe: ['Marinate chicken overnight', 'Grill in tandoor', 'Prepare makhani gravy', 'Simmer together'],
-    emotions: { craving: 567, must_try: 398, loved: 445 }, tags: ['mughlai', 'chicken', 'north-indian'],
-    cookTime: '35 min', difficulty: 'Medium', restaurant: 'Moti Mahal', price: '₹320', category: 'trending',
-  },
-  {
-    id: 'f_2', dishName: 'Masala Dosa', creator: 'priya_vegan',
-    creatorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80',
-    imageUri: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=900&q=85',
-    description: 'Crispy golden crepe filled with spiced potato filling, served with sambar and fresh coconut chutney.',
-    recipe: ['Prepare dosa batter', 'Make potato masala', 'Spread on hot griddle', 'Serve with chutneys'],
-    emotions: { craving: 412, must_try: 234, loved: 356 }, tags: ['south-indian', 'veg', 'crispy'],
-    cookTime: '20 min', difficulty: 'Medium', restaurant: 'Sagar Ratna', price: '₹160', category: 'nearby',
-  },
-  {
-    id: 'f_3', dishName: 'Paneer Tikka Masala', creator: 'meera_kitchen',
-    creatorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80',
-    imageUri: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=900&q=85',
-    description: 'Smoky, spiced paneer cubes grilled to perfection in rich tomato-cream gravy.',
-    recipe: ['Marinate paneer in yogurt + spices', 'Grill until charred', 'Simmer in tomato-cream sauce', 'Garnish with cream + cilantro'],
-    emotions: { craving: 342, must_try: 189, loved: 267 }, tags: ['paneer', 'north-indian'],
-    cookTime: '25 min', difficulty: 'Easy', restaurant: 'Punjab Grill', price: '₹280', category: 'creator',
-  },
-  {
-    id: 'f_4', dishName: 'Chicken Biryani', creator: 'chef_aarav',
-    creatorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80',
-    imageUri: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=900&q=85',
-    description: 'Fragrant basmati rice layered with spiced chicken and saffron. The king of all biryanis.',
-    recipe: ['Marinate chicken', 'Parboil rice', 'Layer and seal', 'Slow cook on dum'],
-    emotions: { craving: 723, must_try: 512, loved: 634 }, tags: ['biryani', 'hyderabadi', 'dum'],
-    cookTime: '45 min', difficulty: 'Hard', restaurant: 'Paradise', price: '₹350', category: 'trending',
-  },
-  {
-    id: 'f_5', dishName: 'Pav Bhaji', creator: 'rohan_streetfood',
-    creatorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80',
-    imageUri: 'https://images.unsplash.com/photo-1606491956689-2ea866880049?w=900&q=85',
-    description: 'Mumbai street-style spiced vegetable mash with buttery toasted buns. Nostalgia in every bite.',
-    recipe: ['Boil and mash vegetables', 'Cook with pav bhaji masala', 'Toast pav in butter', 'Serve hot'],
-    emotions: { craving: 534, must_try: 312, loved: 287 }, tags: ['street-food', 'mumbai', 'veg'],
-    cookTime: '30 min', difficulty: 'Easy', restaurant: 'Sardar Pav Bhaji', price: '₹180', category: 'nearby',
-  },
-  {
-    id: 'f_6', dishName: 'Tandoori Momos', creator: 'rohan_streetfood',
-    creatorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80',
-    imageUri: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=900&q=85',
-    description: 'Steamed momos grilled in tandoori masala with spicy mayo. Fusion at its finest.',
-    recipe: ['Prepare momo filling', 'Wrap and steam', 'Coat in tandoori paste', 'Grill until charred'],
-    emotions: { craving: 456, must_try: 378, loved: 289 }, tags: ['fusion', 'street-food', 'momos'],
-    cookTime: '30 min', difficulty: 'Medium', category: 'creator',
-  },
-  {
-    id: 'f_7', dishName: 'Chole Bhature', creator: 'chef_aarav',
-    creatorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80',
-    imageUri: 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=900&q=85',
-    description: 'Spicy chickpea curry with deep-fried fluffy bread. The ultimate Punjabi comfort food.',
-    recipe: ['Soak chickpeas overnight', 'Pressure cook with spices', 'Knead bhatura dough', 'Deep fry and serve'],
-    emotions: { craving: 489, must_try: 267, loved: 356 }, tags: ['punjabi', 'heavy', 'comfort'],
-    cookTime: '50 min', difficulty: 'Medium', restaurant: 'Bikanervala', price: '₹200', category: 'trending',
-  },
-  {
-    id: 'f_8', dishName: 'Avocado Toast', creator: 'priya_vegan',
-    creatorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80',
-    imageUri: 'https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=900&q=85',
-    description: 'Creamy avocado on sourdough with cherry tomatoes and microgreens.',
-    recipe: ['Toast sourdough bread', 'Mash avocado with lime', 'Top with tomatoes', 'Season and serve'],
-    emotions: { craving: 234, must_try: 312, loved: 198 }, tags: ['healthy', 'breakfast', 'vegan'],
-    cookTime: '10 min', difficulty: 'Easy', category: 'creator',
-  },
-  {
-    id: 'f_9', dishName: 'Vada Pav', creator: 'rohan_streetfood',
-    creatorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80',
-    imageUri: 'https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=900&q=85',
-    description: 'The Mumbai street burger: spiced potato fritter in a soft bun with three chutneys.',
-    recipe: ['Make aloo vada', 'Toast pav', 'Apply chutneys', 'Assemble and serve'],
-    emotions: { craving: 534, must_try: 312, loved: 389 }, tags: ['mumbai', 'quick', 'iconic'],
-    cookTime: '5 min', difficulty: 'Easy', price: '₹40', category: 'nearby',
-  },
-  {
-    id: 'f_10', dishName: 'Margherita Pizza', creator: 'ananya_desserts',
-    creatorAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
-    imageUri: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=900&q=85',
-    description: 'Classic thin-crust pizza with fresh mozzarella, basil, and tomato sauce.',
-    recipe: ['Prepare pizza dough', 'Spread tomato sauce', 'Add fresh mozzarella', 'Bake at 250C'],
-    emotions: { craving: 534, must_try: 312, loved: 445 }, tags: ['italian', 'pizza', 'cheesy'],
-    cookTime: '20 min', difficulty: 'Easy', restaurant: 'La Pinoz', price: '₹299', category: 'offer',
-  },
-  {
-    id: 'f_11', dishName: 'Mango Lassi', creator: 'meera_kitchen',
-    creatorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80',
-    imageUri: 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=900&q=85',
-    description: 'Thick and creamy mango yogurt smoothie with a hint of cardamom.',
-    recipe: ['Blend ripe mangoes', 'Add chilled yogurt', 'Sweeten with sugar', 'Top with pistachios'],
-    emotions: { craving: 345, must_try: 198, loved: 423 }, tags: ['drink', 'summer', 'refreshing'],
-    cookTime: '5 min', difficulty: 'Easy', category: 'creator',
-  },
-  {
-    id: 'f_12', dishName: 'Samosa', creator: 'rohan_streetfood',
-    creatorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80',
-    imageUri: 'https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=900&q=85',
-    description: 'Crispy deep-fried pastry stuffed with spiced potatoes and peas.',
-    recipe: ['Make potato filling', 'Prepare pastry dough', 'Shape and fill', 'Deep fry golden'],
-    emotions: { craving: 612, must_try: 234, loved: 445 }, tags: ['snack', 'crispy', 'tea-time'],
-    cookTime: '5 min', difficulty: 'Easy', price: '₹30', category: 'nearby',
-  },
-];
+function mapDBtoUI(card: FoodCardDB): FoodieCard {
+  return {
+    id: card.id,
+    dishName: card.dish_name,
+    creator: card.creator_handle,
+    creatorAvatar: card.creator_avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80',
+    imageUri: card.image_url,
+    description: card.description || '',
+    recipe: Array.isArray(card.recipe_steps) ? card.recipe_steps : [],
+    emotions: {
+      craving: card.craving_count,
+      must_try: card.must_try_count,
+      loved: card.loved_count,
+    },
+    tags: card.tags || [],
+    cookTime: card.cook_time || '—',
+    difficulty: card.difficulty || 'Easy',
+    restaurant: card.restaurant_name || undefined,
+    price: card.price || undefined,
+    category: card.category || 'trending',
+  };
+}
 
 function formatCount(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, '')}K`;
@@ -273,7 +190,6 @@ function FoodieCardView({
   const isLongPressing = useRef(false);
 
   const categoryInfo = CATEGORY_LABELS[card.category] || CATEGORY_LABELS.trending;
-  const totalEmotions = card.emotions.craving + card.emotions.must_try + card.emotions.loved;
 
   const handlePressIn = useCallback(() => {
     isLongPressing.current = false;
@@ -297,14 +213,12 @@ function FoodieCardView({
     if (isLongPressing.current) return;
     const now = Date.now();
     if (now - lastTap.current < 300) {
-      // Double tap
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       onDoubleTap();
       setShowHeart(true);
       lastTap.current = 0;
     } else {
       lastTap.current = now;
-      // Single tap with delay to distinguish from double tap
       setTimeout(() => {
         if (lastTap.current === now) {
           onOpenDetail();
@@ -327,7 +241,6 @@ function FoodieCardView({
           contentFit="cover"
           transition={300}
         />
-        {/* Gradient overlays */}
         <LinearGradient
           colors={['rgba(0,0,0,0.55)', 'transparent', 'transparent', 'rgba(0,0,0,0.80)']}
           locations={[0, 0.2, 0.5, 1]}
@@ -335,11 +248,10 @@ function FoodieCardView({
         />
       </Pressable>
 
-      {/* Heart overlay */}
       <HeartOverlay visible={showHeart} onDone={() => setShowHeart(false)} />
       <SaveToast visible={showSave} />
 
-      {/* Top: Category badge */}
+      {/* Top badges */}
       <SafeAreaView edges={['top']} style={sty.topOverlay} pointerEvents="box-none">
         <View style={[sty.categoryBadge, { backgroundColor: `${categoryInfo.color}CC` }]}>
           <Text style={{ fontSize: 11 }}>{categoryInfo.emoji}</Text>
@@ -352,12 +264,11 @@ function FoodieCardView({
         ) : null}
       </SafeAreaView>
 
-      {/* Right: Actions */}
+      {/* Right actions */}
       <View style={sty.rightActions} pointerEvents="box-none">
-        {/* Emotion reactions */}
         {EMOTIONS.map(em => {
           const sel = userEmotion === em.id;
-          const count = card.emotions[em.id] + (sel ? 1 : 0);
+          const count = card.emotions[em.id];
           return (
             <Pressable
               key={em.id}
@@ -369,8 +280,6 @@ function FoodieCardView({
             </Pressable>
           );
         })}
-
-        {/* Save */}
         <Pressable
           style={({ pressed }) => [sty.rightActionBtn, pressed && { transform: [{ scale: 0.9 }] }]}
           onPress={() => {
@@ -383,8 +292,6 @@ function FoodieCardView({
           <MaterialIcons name={isSaved ? 'bookmark' : 'bookmark-border'} size={30} color={isSaved ? '#FFD700' : '#FFF'} />
           <Text style={sty.rightActionCount}>Save</Text>
         </Pressable>
-
-        {/* Share */}
         <Pressable
           style={({ pressed }) => [sty.rightActionBtn, pressed && { transform: [{ scale: 0.9 }] }]}
           onPress={() => Haptics.selectionAsync()}
@@ -394,9 +301,8 @@ function FoodieCardView({
         </Pressable>
       </View>
 
-      {/* Bottom: Info */}
+      {/* Bottom info */}
       <View style={sty.bottomInfo} pointerEvents="box-none">
-        {/* Creator row */}
         <Pressable style={sty.creatorRow} onPress={() => Haptics.selectionAsync()}>
           <Image source={{ uri: card.creatorAvatar }} style={sty.creatorAvatar} contentFit="cover" />
           <View style={{ flex: 1 }}>
@@ -411,11 +317,9 @@ function FoodieCardView({
           </Pressable>
         </Pressable>
 
-        {/* Dish name */}
         <Text style={sty.dishName}>{card.dishName}</Text>
         <Text style={sty.dishDescription} numberOfLines={2}>{card.description}</Text>
 
-        {/* Tags + meta */}
         <View style={sty.metaRow}>
           <View style={sty.metaBadge}>
             <MaterialIcons name="schedule" size={12} color="#FFD700" />
@@ -432,7 +336,6 @@ function FoodieCardView({
           ))}
         </View>
 
-        {/* Swipe hint (only on first card) */}
         <View style={sty.swipeHint}>
           <MaterialIcons name="keyboard-arrow-up" size={18} color="rgba(255,255,255,0.40)" />
           <Text style={sty.swipeHintText}>Swipe up for more</Text>
@@ -454,7 +357,6 @@ function DetailModal({ card, visible, onClose, colors, isDark, userEmotion, onEm
   return (
     <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
       <View style={[sty.detailRoot, { backgroundColor: colors.background }]}>
-        {/* Hero image */}
         <View style={sty.detailHero}>
           <Image source={{ uri: card.imageUri }} style={StyleSheet.absoluteFillObject} contentFit="cover" transition={300} />
           <LinearGradient
@@ -477,16 +379,13 @@ function DetailModal({ card, visible, onClose, colors, isDark, userEmotion, onEm
           </View>
         </View>
 
-        {/* Content */}
         <ScrollView
           style={[sty.detailContent, { backgroundColor: colors.background }]}
           contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Description */}
           <Text style={[sty.detailDescription, { color: colors.textSecondary }]}>{card.description}</Text>
 
-          {/* Meta */}
           <View style={sty.detailMeta}>
             <View style={[sty.detailMetaCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <MaterialIcons name="schedule" size={18} color="#D4AF37" />
@@ -507,11 +406,10 @@ function DetailModal({ card, visible, onClose, colors, isDark, userEmotion, onEm
             ) : null}
           </View>
 
-          {/* Emotions */}
           <View style={sty.detailEmotionRow}>
             {EMOTIONS.map(em => {
               const sel = userEmotion === em.id;
-              const count = card.emotions[em.id] + (sel ? 1 : 0);
+              const count = card.emotions[em.id];
               return (
                 <Pressable
                   key={em.id}
@@ -530,7 +428,6 @@ function DetailModal({ card, visible, onClose, colors, isDark, userEmotion, onEm
             })}
           </View>
 
-          {/* Tags */}
           <View style={sty.detailTagsRow}>
             {card.tags.map(tag => (
               <View key={tag} style={[sty.detailTag, { backgroundColor: isDark ? 'rgba(212,175,55,0.12)' : 'rgba(212,175,55,0.08)', borderColor: 'rgba(212,175,55,0.20)' }]}>
@@ -539,7 +436,6 @@ function DetailModal({ card, visible, onClose, colors, isDark, userEmotion, onEm
             ))}
           </View>
 
-          {/* Recipe */}
           <View style={sty.detailRecipeSection}>
             <Text style={[sty.detailRecipeTitle, { color: colors.textPrimary }]}>Quick Recipe</Text>
             {card.recipe.map((step, i) => (
@@ -555,10 +451,21 @@ function DetailModal({ card, visible, onClose, colors, isDark, userEmotion, onEm
   );
 }
 
+// ── Loading Skeleton ──
+function LoadingSkeleton({ cardHeight }: { cardHeight: number }) {
+  return (
+    <View style={[sty.cardContainer, { height: cardHeight, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center' }]}>
+      <ActivityIndicator size="large" color="#D4AF37" />
+      <Text style={{ color: 'rgba(255,255,255,0.5)', marginTop: 16, fontSize: 14, fontWeight: '600' }}>Loading food cards...</Text>
+    </View>
+  );
+}
+
 // ── MAIN SCREEN ──
 export default function FoodiesScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const { user } = useAuth();
   const router = useRouter();
 
   const [dimensions, setDimensions] = useState({ width: SCREEN_W, height: SCREEN_H });
@@ -574,6 +481,10 @@ export default function FoodiesScreen() {
 
   const cardHeight = Math.max(1, dimensions.height - (insets.bottom + (Platform.OS === 'ios' ? 88 : 72)));
 
+  // ── Data State ──
+  const [cards, setCards] = useState<FoodieCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [userEmotions, setUserEmotions] = useState<Record<string, EmotionType | null>>({});
   const [likedCards, setLikedCards] = useState<Set<string>>(new Set());
   const [savedCards, setSavedCards] = useState<Set<string>>(new Set());
@@ -581,26 +492,70 @@ export default function FoodiesScreen() {
   const [selectedCard, setSelectedCard] = useState<FoodieCard | null>(null);
   const [showDetail, setShowDetail] = useState(false);
 
-  // Infinite feed simulation — repeat cards
-  const feedData = useMemo(() => {
-    const extended: FoodieCard[] = [];
-    for (let cycle = 0; cycle < 5; cycle++) {
-      FEED_CARDS.forEach((card, i) => {
-        extended.push({ ...card, id: `${card.id}_c${cycle}` });
-      });
-    }
-    return extended;
-  }, []);
+  // ── Fetch Data ──
+  const loadData = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true); else setLoading(true);
+    try {
+      const { data: dbCards } = await fetchFoodCards({ limit: 50 });
+      const uiCards = dbCards.map(mapDBtoUI);
+      setCards(uiCards);
 
-  const handleEmotion = useCallback((cardId: string, emotion: EmotionType) => {
-    setUserEmotions(prev => ({ ...prev, [cardId]: prev[cardId] === emotion ? null : emotion }));
-  }, []);
+      // Load user emotions if logged in
+      if (user?.id) {
+        const { data: emotions } = await fetchUserEmotions(user.id);
+        const emotionMap: Record<string, EmotionType | null> = {};
+        emotions.forEach(e => { emotionMap[e.card_id] = e.emotion_type; });
+        setUserEmotions(emotionMap);
+      }
+    } catch (e) {
+      console.log('FoodiesScreen load error:', e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // ── Emotion Toggle (writes to DB) ──
+  const handleEmotion = useCallback(async (cardId: string, emotion: EmotionType) => {
+    if (!user?.id) return;
+
+    // Optimistic update
+    setUserEmotions(prev => {
+      const current = prev[cardId];
+      return { ...prev, [cardId]: current === emotion ? null : emotion };
+    });
+
+    // Optimistic count update
+    setCards(prev => prev.map(c => {
+      if (c.id !== cardId) return c;
+      const currentEm = userEmotions[cardId];
+      const newEmotions = { ...c.emotions };
+      // Undo previous
+      if (currentEm) newEmotions[currentEm] = Math.max(0, newEmotions[currentEm] - 1);
+      // Apply new if different
+      if (currentEm !== emotion) newEmotions[emotion] = newEmotions[emotion] + 1;
+      return { ...c, emotions: newEmotions };
+    }));
+
+    // DB call
+    const { error } = await toggleEmotion(cardId, user.id, emotion);
+    if (error) {
+      console.log('Toggle emotion error:', error);
+      // Revert on error — refetch
+      loadData(true);
+    }
+  }, [user?.id, userEmotions, loadData]);
 
   const handleDoubleTap = useCallback((cardId: string) => {
     setLikedCards(prev => { const s = new Set(prev); s.add(cardId); return s; });
-    // Auto-set emotion to craving if none set
-    setUserEmotions(prev => prev[cardId] ? prev : { ...prev, [cardId]: 'craving' });
-  }, []);
+    if (!userEmotions[cardId] && user?.id) {
+      handleEmotion(cardId, 'craving');
+    }
+  }, [userEmotions, user?.id, handleEmotion]);
 
   const handleSave = useCallback((cardId: string) => {
     setSavedCards(prev => {
@@ -624,6 +579,12 @@ export default function FoodiesScreen() {
   const handleDetailEmotion = useCallback((emotion: EmotionType) => {
     if (selectedCard) handleEmotion(selectedCard.id, emotion);
   }, [selectedCard, handleEmotion]);
+
+  // Keep detail card in sync with card state
+  const detailCard = useMemo(() => {
+    if (!selectedCard) return null;
+    return cards.find(c => c.id === selectedCard.id) || selectedCard;
+  }, [selectedCard, cards]);
 
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems.length > 0 && viewableItems[0].index != null) {
@@ -656,10 +617,18 @@ export default function FoodiesScreen() {
     index,
   }), [cardHeight]);
 
+  if (loading && cards.length === 0) {
+    return (
+      <View style={[sty.container, { backgroundColor: '#000' }]}>
+        <LoadingSkeleton cardHeight={cardHeight} />
+      </View>
+    );
+  }
+
   return (
     <View style={[sty.container, { backgroundColor: '#000' }]}>
       <FlatList
-        data={feedData}
+        data={cards}
         keyExtractor={item => item.id}
         renderItem={renderCard}
         pagingEnabled
@@ -674,16 +643,30 @@ export default function FoodiesScreen() {
         maxToRenderPerBatch={3}
         windowSize={5}
         removeClippedSubviews={Platform.OS !== 'web'}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => loadData(true)}
+            tintColor="#D4AF37"
+            colors={['#D4AF37']}
+          />
+        }
+        ListEmptyComponent={
+          <View style={[sty.cardContainer, { height: cardHeight, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111' }]}>
+            <Text style={{ fontSize: 48, marginBottom: 12 }}>🍽️</Text>
+            <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '800' }}>No food cards yet</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, marginTop: 6 }}>Pull down to refresh</Text>
+          </View>
+        }
       />
 
-      {/* Detail Modal */}
       <DetailModal
-        card={selectedCard}
+        card={detailCard}
         visible={showDetail}
         onClose={handleCloseDetail}
         colors={colors}
         isDark={isDark}
-        userEmotion={selectedCard ? userEmotions[selectedCard.id] || null : null}
+        userEmotion={detailCard ? userEmotions[detailCard.id] || null : null}
         onEmotion={handleDetailEmotion}
       />
     </View>
@@ -693,17 +676,11 @@ export default function FoodiesScreen() {
 // ── STYLES ──
 const sty = StyleSheet.create({
   container: { flex: 1 },
-
-  /* Card */
   cardContainer: { width: '100%', position: 'relative' },
-
-  /* Heart overlay */
   heartOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center', justifyContent: 'center', zIndex: 50,
   },
-
-  /* Save toast */
   saveToast: {
     position: 'absolute', top: '50%', alignSelf: 'center', zIndex: 50,
     flexDirection: 'row', alignItems: 'center', gap: 8,
@@ -711,8 +688,6 @@ const sty = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.75)',
   },
   saveToastText: { fontSize: 15, fontWeight: '800', color: '#FFD700' },
-
-  /* Top overlay */
   topOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -728,16 +703,12 @@ const sty = StyleSheet.create({
     backgroundColor: 'rgba(212,175,55,0.92)',
   },
   priceText: { fontSize: 14, fontWeight: '900', color: '#1A1A2E' },
-
-  /* Right actions */
   rightActions: {
     position: 'absolute', right: 12, bottom: 200, gap: 18, alignItems: 'center', zIndex: 10,
   },
   rightActionBtn: { alignItems: 'center', gap: 3 },
   rightActionEmoji: { fontSize: 26 },
   rightActionCount: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.75)' },
-
-  /* Bottom info */
   bottomInfo: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     paddingHorizontal: 16, paddingBottom: 20, gap: 8, zIndex: 10,
@@ -754,7 +725,6 @@ const sty = StyleSheet.create({
     borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.50)',
   },
   followChipText: { fontSize: 12, fontWeight: '800', color: '#FFF' },
-
   dishName: {
     fontSize: 26, fontWeight: '900', color: '#FFF', letterSpacing: -0.5,
     textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 10,
@@ -774,14 +744,11 @@ const sty = StyleSheet.create({
     backgroundColor: 'rgba(212,175,55,0.20)',
   },
   tagText: { fontSize: 11, fontWeight: '700', color: '#FFD700', textTransform: 'capitalize' },
-
   swipeHint: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 4, marginTop: 4, opacity: 0.6,
   },
   swipeHintText: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.40)' },
-
-  /* Detail Modal */
   detailRoot: { flex: 1 },
   detailHero: { height: SCREEN_H * 0.42, position: 'relative' },
   detailTopBar: {
@@ -802,10 +769,8 @@ const sty = StyleSheet.create({
   detailCreatorName: { fontSize: 14, fontWeight: '800', color: '#FFF' },
   detailDishName: { fontSize: 26, fontWeight: '900', color: '#FFF', letterSpacing: -0.3 },
   detailRestaurant: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.70)' },
-
   detailContent: { flex: 1, borderTopLeftRadius: 28, borderTopRightRadius: 28, marginTop: -20, paddingTop: 28, paddingHorizontal: 20 },
   detailDescription: { fontSize: 15, fontWeight: '500', lineHeight: 23, marginBottom: 20 },
-
   detailMeta: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   detailMetaCard: {
     flex: 1, alignItems: 'center', gap: 5,
@@ -813,7 +778,6 @@ const sty = StyleSheet.create({
   },
   detailMetaValue: { fontSize: 14, fontWeight: '800' },
   detailMetaLabel: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.3 },
-
   detailEmotionRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   detailEmotionBtn: {
     flex: 1, alignItems: 'center', gap: 5,
@@ -821,11 +785,9 @@ const sty = StyleSheet.create({
   },
   detailEmotionLabel: { fontSize: 11, fontWeight: '700' },
   detailEmotionCount: { fontSize: 13, fontWeight: '800' },
-
   detailTagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
   detailTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1 },
   detailTagText: { fontSize: 12, fontWeight: '700', color: '#D4AF37', textTransform: 'capitalize' },
-
   detailRecipeSection: { gap: 14, marginBottom: 16 },
   detailRecipeTitle: { fontSize: 18, fontWeight: '800', marginBottom: 4 },
   detailStepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
