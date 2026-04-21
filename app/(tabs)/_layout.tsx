@@ -85,7 +85,7 @@ export default function TabLayout() {
       android: insets.bottom + 8,
       default: 8,
     }),
-    paddingHorizontal: 24,
+    paddingHorizontal: 8,
     backgroundColor: colors.tabBarBg,
     borderTopWidth: 1,
     borderTopColor: colors.tabBarBorder,
@@ -100,10 +100,10 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: '600',
-          marginTop: 3,
-          letterSpacing: 0.2,
+          marginTop: 2,
+          letterSpacing: 0.1,
         },
       }}
     >
@@ -134,11 +134,29 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="grocery"
+        options={{
+          title: 'Grocery',
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialIcons name={focused ? 'shopping-cart' : 'shopping-cart'} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="cook"
+        options={{
+          title: 'Book Cook',
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialIcons name={focused ? 'restaurant' : 'restaurant'} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <MaterialIcons name={focused ? 'person' : 'person-outline'} size={26} color={color} />
+            <MaterialIcons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
           ),
         }}
       />
