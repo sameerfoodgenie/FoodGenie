@@ -26,9 +26,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../../hooks/useTheme';
-import { useAuth } from '../../template';
+import { useAuth, useAlert } from '../../template';
 import { fetchCooks, Cook, CookVideoReview, uploadVideoReview } from '../../services/cookService';
+import { createBooking } from '../../services/bookingService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const DISH_IMAGE_SIZE = 80;
@@ -694,10 +696,15 @@ function CookProfileModal({ cook, visible, onClose, onBook, onPlayVideo, onWrite
 }
 
 // ── Booking Confirmation Modal with plan selection ──
-function BookingModal({ cook, visible, onClose, colors, isDark }: {
-  cook: Cook | null; visible: boolean; onClose: () => void; colors: any; isDark: boolean;
+function BookingModal({ cook, visible, onClose, onBooked, colors, isDark }: {
+  cook: Cook | null; visible: boolean; onClose: () => void;
+  onBooked: () => void; colors: any; isDark: boolean;
 }) {
+  const { user } = useAuth();
+  const { showAlert } = useAlert();
   const [selectedPlan, setSelectedPlan] = useState<BookingPlan>('daily');
+  const [notes, setNotes] = useState('');
+  const [isBooking, setIsBooking] = useState(false);
   const insets = useSafeAreaInsets();
 
   if (!cook || !visible) return null;
@@ -708,6 +715,32 @@ function BookingModal({ cook, visible, onClose, colors, isDark }: {
       case 'weekly': return cook.pricing.perWeek;
       case 'monthly': return cook.pricing.perMonth;
     }
+  };
+
+  const handleConfirm = async () => {
+    if (!user || !cook) return;
+    setIsBooking(true);
+    const { error } = await createBooking({
+      userId: user.id,
+      cookId: cook.id,
+      cookName: cook.name,
+      cookPhoto: cook.photo,
+      cookSpeciality: cook.speciality,
+      plan: selectedPlan,
+      totalAmount: getPrice(selectedPlan),
+      perMealRate: cook.pricing.perMeal,
+      notes,
+    });
+    setIsBooking(false);
+    if (error) {
+      showAlert('Booking Failed', error);
+      return;
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setNotes('');
+    setSelectedPlan('daily');
+    onClose();
+    onBooked();
   };
 
   return (
@@ -786,14 +819,34 @@ function BookingModal({ cook, visible, onClose, colors, isDark }: {
                 </View>
               </View>
 
+              {/* Notes */}
+              <View style={{ width: '100%' }}>
+                <TextInput
+                  style={[st.bookingNotes, { color: colors.textPrimary, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F5F5F5', borderColor: colors.border }]}
+                  placeholder="Any special requests or dietary notes..."
+                  placeholderTextColor={colors.textMuted}
+                  value={notes}
+                  onChangeText={setNotes}
+                  multiline
+                  numberOfLines={2}
+                  textAlignVertical="top"
+                  maxLength={200}
+                />
+              </View>
+
               {/* Confirm Button */}
               <Pressable
-                style={({ pressed }) => [ck.bookingDoneBtn, pressed && { opacity: 0.85 }]}
-                onPress={() => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); onClose(); }}
+                style={({ pressed }) => [ck.bookingDoneBtn, isBooking && { opacity: 0.6 }, pressed && !isBooking && { opacity: 0.85 }]}
+                onPress={handleConfirm}
+                disabled={isBooking}
               >
                 <LinearGradient colors={['#D4AF37', '#FFD700']} style={ck.bookingDoneBtnGrad}>
-                  <MaterialIcons name="check" size={20} color="#FFF" />
-                  <Text style={ck.bookingDoneBtnText}>Confirm Booking</Text>
+                  {isBooking ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <MaterialIcons name="check" size={20} color="#FFF" />
+                  )}
+                  <Text style={ck.bookingDoneBtnText}>{isBooking ? 'Booking...' : 'Confirm Booking'}</Text>
                 </LinearGradient>
               </Pressable>
 
@@ -841,6 +894,8 @@ function CookSkeleton({ colors, isDark }: { colors: any; isDark: boolean }) {
 export default function BookCookScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const router = useRouter();
+  const { showAlert } = useAlert();
   const [cooks, setCooks] = useState<Cook[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -975,9 +1030,12 @@ export default function BookCookScreen() {
                   <Text style={[ck.headerTitle, { color: colors.textPrimary }]}>Book a Cook</Text>
                   <Text style={[ck.headerSub, { color: colors.textMuted }]}>Hire expert home cooks for authentic meals</Text>
                 </View>
-                <View style={[ck.headerIcon, { backgroundColor: isDark ? 'rgba(212,175,55,0.12)' : 'rgba(212,175,55,0.08)' }]}>
-                  <Text style={{ fontSize: 28 }}>👨‍🍳</Text>
-                </View>
+                <Pressable
+                  style={({ pressed }) => [ck.headerIcon, { backgroundColor: isDark ? 'rgba(212,175,55,0.12)' : 'rgba(212,175,55,0.08)' }, pressed && { opacity: 0.7 }]}
+                  onPress={() => router.push('/booking-history' as any)}
+                >
+                  <MaterialIcons name="receipt-long" size={24} color="#D4AF37" />
+                </Pressable>
               </View>
 
               {/* Stats */}
@@ -1181,6 +1239,7 @@ export default function BookCookScreen() {
         cook={bookingCook}
         visible={showBooking}
         onClose={() => { setShowBooking(false); setTimeout(() => setBookingCook(null), 300); }}
+        onBooked={() => router.push('/booking-history' as any)}
         colors={colors}
         isDark={isDark}
       />
@@ -1307,6 +1366,13 @@ const st = StyleSheet.create({
     paddingVertical: 4,
   },
   searchResultText: { fontSize: 12, fontWeight: '600' as const },
+
+  // Booking notes
+  bookingNotes: {
+    minHeight: 56, borderRadius: 14, borderWidth: 1,
+    paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10,
+    fontSize: 13, fontWeight: '500' as const, lineHeight: 19, width: '100%' as any,
+  },
 
   // Plans Banner on main screen
   plansBanner: { paddingTop: 16 },
