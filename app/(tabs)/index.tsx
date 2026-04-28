@@ -39,8 +39,8 @@ const FEATURE_BANNERS = [
   {
     id: 'aaj-khane',
     title: 'Aaj Khane Kya Hai? 🤔',
-    subtitle: 'Not sure what to eat today? Tap to get instant meal ideas based on your mood, budget & cravings',
-    cta: 'Decide Now',
+    subtitle: 'AI-powered meal plan from breakfast to dinner — with calories, nutrition & weekly/monthly planner',
+    cta: 'See Today\'s Plan',
     gradient: ['#FF6B6B', '#FF8E53', '#FFB347'] as const,
     icon: 'restaurant' as const,
     accentEmoji: '🍛',
@@ -49,22 +49,12 @@ const FEATURE_BANNERS = [
   {
     id: 'ai-planner',
     title: 'Let AI Plan Your Meals 🧠',
-    subtitle: 'Get a personalized weekly & monthly meal plan powered by AI — balanced nutrition, zero stress',
-    cta: 'Plan My Meals',
+    subtitle: 'Chat with AI to plan daily, weekly & monthly meals — plus get grocery budget estimates',
+    cta: 'Chat Now',
     gradient: ['#6C3CE0', '#8B5CF6', '#B794F4'] as const,
     icon: 'auto-awesome' as const,
-    accentEmoji: '📅',
-    route: '/daily-meals',
-  },
-  {
-    id: 'grocery-deals',
-    title: 'Best Grocery Deals 💰',
-    subtitle: 'Smart bundles matched to your meals — save up to 30% on weekly groceries from top stores',
-    cta: 'See Deals',
-    gradient: ['#059669', '#10B981', '#6EE7B7'] as const,
-    icon: 'local-offer' as const,
-    accentEmoji: '🛒',
-    route: '/(tabs)/grocery',
+    accentEmoji: '💬',
+    route: '/ai-meal-chat',
   },
 ];
 
