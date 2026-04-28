@@ -40,11 +40,275 @@ const QUICK_PROMPTS = [
   { emoji: '🥗', label: 'Low calorie', message: 'Plan low-calorie meals for this week under 1500 calories per day. Include calorie breakdown.' },
 ];
 
+// ── Inline Bold Text Renderer ──
+function RichInlineText({ text, baseStyle }: { text: string; baseStyle: any }) {
+  // Parse **bold** segments
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <Text style={baseStyle}>
+      {parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <Text key={i} style={{ fontWeight: '800' }}>{part.slice(2, -2)}</Text>;
+        }
+        return <Text key={i}>{part}</Text>;
+      })}
+    </Text>
+  );
+}
+
+// ── Markdown Content Renderer ──
+function MarkdownContent({ content, colors, isDark }: {
+  content: string; colors: any; isDark: boolean;
+}) {
+  const blocks = parseMarkdown(content);
+
+  return (
+    <View style={md.container}>
+      {blocks.map((block, i) => {
+        switch (block.type) {
+          case 'header':
+            return (
+              <View key={i} style={md.headerWrap}>
+                <RichInlineText
+                  text={block.text}
+                  baseStyle={[
+                    md.headerText,
+                    block.level === 1 && { fontSize: 17, fontWeight: '900' },
+                    block.level === 2 && { fontSize: 15, fontWeight: '800' },
+                    block.level === 3 && { fontSize: 14, fontWeight: '800' },
+                    { color: colors.textPrimary },
+                  ]}
+                />
+              </View>
+            );
+
+          case 'table':
+            return <TableCard key={i} table={block} colors={colors} isDark={isDark} />;
+
+          case 'bullet':
+            return (
+              <View key={i} style={md.bulletRow}>
+                <Text style={[md.bulletDot, { color: '#D4AF37' }]}>•</Text>
+                <RichInlineText text={block.text} baseStyle={[md.bulletText, { color: colors.textPrimary }]} />
+              </View>
+            );
+
+          case 'numbered':
+            return (
+              <View key={i} style={md.bulletRow}>
+                <Text style={[md.numberLabel, { color: '#D4AF37' }]}>{block.number}.</Text>
+                <RichInlineText text={block.text} baseStyle={[md.bulletText, { color: colors.textPrimary }]} />
+              </View>
+            );
+
+          case 'divider':
+            return <View key={i} style={[md.divider, { backgroundColor: colors.border }]} />;
+
+          case 'text':
+          default:
+            if (!block.text.trim()) return null;
+            return (
+              <RichInlineText key={i} text={block.text} baseStyle={[md.paragraph, { color: colors.textPrimary }]} />
+            );
+        }
+      })}
+    </View>
+  );
+}
+
+// ── Table as Card ──
+function TableCard({ table, colors, isDark }: {
+  table: { headers: string[]; rows: string[][] }; colors: any; isDark: boolean;
+}) {
+  const hasCategory = table.headers.length >= 2;
+
+  // Group rows by first column if it looks like categories
+  let currentCategory = '';
+
+  return (
+    <View style={[md.tableCard, {
+      backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+      borderColor: colors.border,
+    }]}>
+      {table.rows.map((row, ri) => {
+        const firstCol = row[0]?.trim() || '';
+        const isCategoryRow = firstCol && firstCol !== currentCategory && firstCol.length > 0;
+        const showCategoryHeader = isCategoryRow && firstCol !== '' && hasCategory;
+        if (firstCol) currentCategory = firstCol;
+
+        // If only first column has value and others are empty, it is a category header
+        const isOnlyCategoryCol = firstCol && row.slice(1).every(c => !c.trim());
+        
+        // Check for total/summary rows
+        const isTotal = firstCol.toLowerCase().includes('total') || row.some(c => c.toLowerCase().includes('total'));
+
+        if (isOnlyCategoryCol && !isTotal) {
+          return (
+            <View key={ri} style={[md.tableCategoryRow, ri > 0 && { marginTop: 10 }]}>
+              <Text style={[md.tableCategoryText, { color: '#D4AF37' }]}>{firstCol}</Text>
+            </View>
+          );
+        }
+
+        if (isTotal) {
+          return (
+            <View key={ri} style={[md.tableTotalRow, {
+              backgroundColor: isDark ? 'rgba(212,175,55,0.10)' : 'rgba(212,175,55,0.06)',
+              borderTopColor: colors.border,
+            }]}>
+              {row.map((cell, ci) => (
+                <Text key={ci} style={[md.tableTotalCell, { color: '#D4AF37' }]}>
+                  {cell.trim().replace(/\*\*/g, '')}
+                </Text>
+              ))}
+            </View>
+          );
+        }
+
+        return (
+          <View key={ri} style={[
+            md.tableRow,
+            ri < table.rows.length - 1 && { borderBottomWidth: 0.5, borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' },
+          ]}>
+            {row.map((cell, ci) => {
+              const cleaned = cell.trim().replace(/\*\*/g, '');
+              if (!cleaned) return null;
+              // First real data column
+              const isName = ci === 0 || (ci === 1 && !row[0]?.trim());
+              // Price-like column (contains ₹ or currency)
+              const isPrice = cleaned.includes('₹') || cleaned.match(/^\d+$/);
+              return (
+                <Text
+                  key={ci}
+                  style={[
+                    md.tableCell,
+                    { color: colors.textPrimary },
+                    isName && { flex: 2, fontWeight: '600' },
+                    isPrice && { color: '#D4AF37', fontWeight: '800' },
+                    !isName && !isPrice && { flex: 1 },
+                  ]}
+                  numberOfLines={2}
+                >
+                  {cleaned}
+                </Text>
+              );
+            })}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+// ── Markdown Parser ──
+interface MarkdownBlock {
+  type: 'header' | 'table' | 'bullet' | 'numbered' | 'divider' | 'text';
+  text: string;
+  level?: number;
+  number?: number;
+  headers?: string[];
+  rows?: string[][];
+}
+
+function parseMarkdown(content: string): MarkdownBlock[] {
+  const lines = content.split('\n');
+  const blocks: MarkdownBlock[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // Empty line
+    if (!trimmed) {
+      i++;
+      continue;
+    }
+
+    // Horizontal rule
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      blocks.push({ type: 'divider', text: '' });
+      i++;
+      continue;
+    }
+
+    // Headers
+    const headerMatch = trimmed.match(/^(#{1,3})\s+(.+)/);
+    if (headerMatch) {
+      blocks.push({ type: 'header', text: headerMatch[2], level: headerMatch[1].length });
+      i++;
+      continue;
+    }
+
+    // Table detection: line starts with |
+    if (trimmed.startsWith('|')) {
+      const tableLines: string[] = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        tableLines.push(lines[i].trim());
+        i++;
+      }
+      const parsed = parseTable(tableLines);
+      if (parsed) {
+        blocks.push({ type: 'table', text: '', ...parsed });
+      }
+      continue;
+    }
+
+    // Bullet list
+    if (/^[-*]\s+/.test(trimmed)) {
+      blocks.push({ type: 'bullet', text: trimmed.replace(/^[-*]\s+/, '') });
+      i++;
+      continue;
+    }
+
+    // Numbered list
+    const numMatch = trimmed.match(/^(\d+)[.)]\s+(.+)/);
+    if (numMatch) {
+      blocks.push({ type: 'numbered', text: numMatch[2], number: parseInt(numMatch[1]) });
+      i++;
+      continue;
+    }
+
+    // Regular text
+    blocks.push({ type: 'text', text: trimmed });
+    i++;
+  }
+
+  return blocks;
+}
+
+function parseTable(lines: string[]): { headers: string[]; rows: string[][] } | null {
+  if (lines.length < 2) return null;
+
+  const parseLine = (line: string) =>
+    line.split('|').filter((_, i, arr) => i > 0 && i < arr.length - 1).map(c => c.trim());
+
+  const headers = parseLine(lines[0]);
+
+  // Skip separator line (|---|---|)
+  let startRow = 1;
+  if (lines[1] && /^[\s|:-]+$/.test(lines[1])) {
+    startRow = 2;
+  }
+
+  const rows = lines.slice(startRow).map(parseLine).filter(r => r.some(c => c.length > 0));
+
+  if (rows.length === 0) return null;
+  return { headers, rows };
+}
+
 // ── Chat Bubble ──
 function ChatBubble({ message, colors, isDark }: {
   message: ChatMessage; colors: any; isDark: boolean;
 }) {
   const isUser = message.role === 'user';
+  const hasRichContent = !isUser && (
+    message.content.includes('|') ||
+    message.content.includes('###') ||
+    message.content.includes('**') ||
+    message.content.includes('- ') ||
+    /^\d+[.)]\s/m.test(message.content)
+  );
 
   return (
     <Animated.View entering={FadeInUp.duration(250)} style={[cb.wrap, isUser && cb.wrapUser]}>
@@ -66,13 +330,18 @@ function ChatBubble({ message, colors, isDark }: {
           borderWidth: 1,
           borderBottomLeftRadius: 4,
         },
+        hasRichContent && { paddingHorizontal: 10, paddingVertical: 12 },
       ]}>
-        <Text style={[
-          cb.text,
-          { color: isUser ? '#FFF' : colors.textPrimary },
-        ]}>
-          {message.content}
-        </Text>
+        {isUser || !hasRichContent ? (
+          <Text style={[
+            cb.text,
+            { color: isUser ? '#FFF' : colors.textPrimary },
+          ]}>
+            {message.content}
+          </Text>
+        ) : (
+          <MarkdownContent content={message.content} colors={colors} isDark={isDark} />
+        )}
         <Text style={[
           cb.time,
           { color: isUser ? 'rgba(255,255,255,0.60)' : colors.textMuted },
@@ -333,13 +602,36 @@ const s = StyleSheet.create({
 });
 
 const cb = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, maxWidth: '85%' },
-  wrapUser: { alignSelf: 'flex-end', flexDirection: 'row-reverse' },
+  wrap: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, maxWidth: '90%' },
+  wrapUser: { alignSelf: 'flex-end', flexDirection: 'row-reverse', maxWidth: '80%' },
   avatarWrap: {},
   avatar: { width: 32, height: 32, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  bubble: { flex: 1, padding: 14, borderRadius: 18, gap: 6, maxWidth: SCREEN_W * 0.72 },
+  bubble: { flex: 1, padding: 14, borderRadius: 18, gap: 6 },
   text: { fontSize: 15, fontWeight: '500', lineHeight: 22 },
   time: { fontSize: 10, fontWeight: '500', alignSelf: 'flex-end' },
   typingRow: { flexDirection: 'row', gap: 4, paddingVertical: 4, paddingHorizontal: 4 },
   typingDot: { width: 8, height: 8, borderRadius: 4 },
+});
+
+const md = StyleSheet.create({
+  container: { gap: 6 },
+  headerWrap: { marginTop: 4, marginBottom: 2 },
+  headerText: { fontSize: 15, fontWeight: '800', letterSpacing: -0.2 },
+  paragraph: { fontSize: 14, fontWeight: '500', lineHeight: 21 },
+  bulletRow: { flexDirection: 'row', gap: 6, paddingLeft: 2, marginVertical: 1 },
+  bulletDot: { fontSize: 14, fontWeight: '800', lineHeight: 21, width: 12 },
+  numberLabel: { fontSize: 13, fontWeight: '800', lineHeight: 21, width: 18, textAlign: 'right' },
+  bulletText: { flex: 1, fontSize: 14, fontWeight: '500', lineHeight: 21 },
+  divider: { height: 1, marginVertical: 6 },
+  // Table styles
+  tableCard: { borderRadius: 12, borderWidth: 1, overflow: 'hidden', marginVertical: 4 },
+  tableCategoryRow: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: 'rgba(212,175,55,0.06)' },
+  tableCategoryText: { fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  tableRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
+  tableCell: { flex: 1, fontSize: 13, fontWeight: '500', lineHeight: 18 },
+  tableTotalRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, marginTop: 2,
+  },
+  tableTotalCell: { fontSize: 14, fontWeight: '900' },
 });
