@@ -10,6 +10,7 @@ import {
   Platform,
   RefreshControl,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -47,7 +48,35 @@ const BOOKING_PLANS: { id: BookingPlan; label: string; emoji: string; desc: stri
   { id: 'monthly', label: 'Monthly', emoji: '🗓️', desc: '30 days, 3 meals/day', color: '#4ADE80', savings: 'Save 25%' },
 ];
 
+const PRICE_RANGES = [
+  { id: 'all', label: 'Any Price', emoji: '💰' },
+  { id: 'under500', label: 'Under ₹500/day', emoji: '🟢', max: 500 },
+  { id: '500-800', label: '₹500–₹800', emoji: '🟡', min: 500, max: 800 },
+  { id: 'above800', label: '₹800+/day', emoji: '🔴', min: 800 },
+];
+
 // ── Components ──
+
+function HighlightText({ text, query, style, highlightStyle }: {
+  text: string; query: string; style?: any; highlightStyle?: any;
+}) {
+  if (!query || query.length < 2) {
+    return <Text style={style}>{text}</Text>;
+  }
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+  return (
+    <Text style={style}>
+      {parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <Text key={i} style={[{ backgroundColor: 'rgba(212,175,55,0.30)', color: '#B8960C', borderRadius: 2 }, highlightStyle]}>{part}</Text>
+        ) : (
+          <Text key={i}>{part}</Text>
+        )
+      )}
+    </Text>
+  );
+}
 
 function StarRating({ rating, size = 12 }: { rating: number; size?: number }) {
   const full = Math.floor(rating);
@@ -150,11 +179,11 @@ function VideoPlayerModal({ review, visible, onClose, colors }: {
 }
 
 // ── Cook Card ──
-function CookCard({ cook, index, onBook, onViewProfile, onPlayVideo, colors, isDark }: {
+function CookCard({ cook, index, onBook, onViewProfile, onPlayVideo, colors, isDark, searchQuery = '' }: {
   cook: Cook; index: number;
   onBook: (cook: Cook) => void; onViewProfile: (cook: Cook) => void;
   onPlayVideo: (review: CookVideoReview) => void;
-  colors: any; isDark: boolean;
+  colors: any; isDark: boolean; searchQuery?: string;
 }) {
   return (
     <Animated.View entering={FadeInDown.delay(80 + index * 70).duration(350)}>
@@ -178,12 +207,12 @@ function CookCard({ cook, index, onBook, onViewProfile, onPlayVideo, colors, isD
           </View>
           <View style={{ flex: 1 }}>
             <View style={ck.nameRow}>
-              <Text style={[ck.cookName, { color: colors.textPrimary }]}>{cook.name}</Text>
+              <HighlightText text={cook.name} query={searchQuery} style={[ck.cookName, { color: colors.textPrimary }]} />
               {!cook.isAvailable ? (
                 <View style={ck.unavailTag}><Text style={ck.unavailText}>Busy</Text></View>
               ) : null}
             </View>
-            <Text style={[ck.speciality, { color: colors.textMuted }]}>{cook.speciality} Specialist</Text>
+            <HighlightText text={`${cook.speciality} Specialist`} query={searchQuery} style={[ck.speciality, { color: colors.textMuted }]} />
             <View style={ck.ratingRow}>
               <StarRating rating={cook.rating} />
               <Text style={ck.ratingText}>{cook.rating}</Text>
@@ -196,7 +225,7 @@ function CookCard({ cook, index, onBook, onViewProfile, onPlayVideo, colors, isD
               </View>
               <View style={ck.metaBadge}>
                 <MaterialIcons name="location-on" size={11} color="#D4AF37" />
-                <Text style={[ck.metaText, { color: colors.textSecondary }]}>{cook.location}</Text>
+                <HighlightText text={cook.location} query={searchQuery} style={[ck.metaText, { color: colors.textSecondary }]} />
               </View>
             </View>
           </View>
@@ -612,6 +641,9 @@ export default function BookCookScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [priceRange, setPriceRange] = useState('all');
   const [profileCook, setProfileCook] = useState<Cook | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [bookingCook, setBookingCook] = useState<Cook | null>(null);
@@ -634,6 +666,12 @@ export default function BookCookScreen() {
     loadCooks();
   }, [loadCooks]);
 
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadCooks();
@@ -641,9 +679,42 @@ export default function BookCookScreen() {
   }, [loadCooks]);
 
   const filteredCooks = useMemo(() => {
-    if (activeFilter === 'all') return cooks;
-    return cooks.filter(c => c.speciality === activeFilter);
-  }, [activeFilter, cooks]);
+    let result = cooks;
+
+    // Cuisine filter
+    if (activeFilter !== 'all') {
+      result = result.filter(c => c.speciality === activeFilter);
+    }
+
+    // Price range filter
+    if (priceRange !== 'all') {
+      const range = PRICE_RANGES.find(r => r.id === priceRange);
+      if (range) {
+        result = result.filter(c => {
+          const price = c.pricing.perDay;
+          if ((range as any).min && (range as any).max) return price >= (range as any).min && price <= (range as any).max;
+          if ((range as any).max) return price <= (range as any).max;
+          if ((range as any).min) return price >= (range as any).min;
+          return true;
+        });
+      }
+    }
+
+    // Text search
+    if (debouncedQuery.length >= 2) {
+      const q = debouncedQuery.toLowerCase();
+      result = result.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        c.speciality.toLowerCase().includes(q) ||
+        c.location.toLowerCase().includes(q) ||
+        c.expertise.some(e => e.toLowerCase().includes(q)) ||
+        c.dishes.some(d => d.name.toLowerCase().includes(q)) ||
+        c.languages.some(l => l.toLowerCase().includes(q))
+      );
+    }
+
+    return result;
+  }, [activeFilter, priceRange, debouncedQuery, cooks]);
 
   const availableCount = useMemo(() => cooks.filter(c => c.isAvailable).length, [cooks]);
   const avgRating = useMemo(() => {
@@ -712,6 +783,75 @@ export default function BookCookScreen() {
               </View>
             </Animated.View>
           </LinearGradient>
+
+          {/* ═══ Search Bar ═══ */}
+          <Animated.View entering={FadeInDown.delay(50).duration(300)} style={st.searchSection}>
+            <View style={[
+              st.searchBar,
+              {
+                backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F5F5F5',
+                borderColor: searchQuery ? '#D4AF37' : (isDark ? 'rgba(255,255,255,0.08)' : '#EBEBEB'),
+                borderWidth: searchQuery ? 1.5 : 1,
+              },
+            ]}>
+              <MaterialIcons name="search" size={20} color={searchQuery ? '#D4AF37' : colors.textMuted} />
+              <TextInput
+                style={[st.searchInput, { color: colors.textPrimary }]}
+                placeholder="Search by name, cuisine, location..."
+                placeholderTextColor={colors.textMuted}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                returnKeyType="search"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 ? (
+                <Pressable
+                  onPress={() => { setSearchQuery(''); Haptics.selectionAsync(); }}
+                  style={({ pressed }) => [st.searchClear, pressed && { opacity: 0.6 }]}
+                  hitSlop={8}
+                >
+                  <MaterialIcons name="close" size={18} color={colors.textMuted} />
+                </Pressable>
+              ) : null}
+            </View>
+
+            {/* Price Range Chips */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.priceChipsScroll}>
+              {PRICE_RANGES.map(range => {
+                const isActive = priceRange === range.id;
+                return (
+                  <Pressable
+                    key={range.id}
+                    style={[
+                      st.priceChip,
+                      {
+                        backgroundColor: isActive
+                          ? isDark ? 'rgba(212,175,55,0.20)' : 'rgba(212,175,55,0.10)'
+                          : colors.surface,
+                        borderColor: isActive ? '#D4AF37' : colors.border,
+                        borderWidth: isActive ? 1.5 : 1,
+                      },
+                    ]}
+                    onPress={() => { Haptics.selectionAsync(); setPriceRange(range.id); }}
+                  >
+                    <Text style={{ fontSize: 12 }}>{range.emoji}</Text>
+                    <Text style={[st.priceChipLabel, { color: isActive ? '#D4AF37' : colors.textSecondary }]}>{range.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            {/* Result count when searching */}
+            {debouncedQuery.length >= 2 ? (
+              <View style={st.searchResultInfo}>
+                <MaterialIcons name="filter-list" size={14} color="#D4AF37" />
+                <Text style={[st.searchResultText, { color: colors.textMuted }]}>
+                  {filteredCooks.length} cook{filteredCooks.length !== 1 ? 's' : ''} found
+                  {debouncedQuery ? ` for "${debouncedQuery}"` : ''}
+                </Text>
+              </View>
+            ) : null}
+          </Animated.View>
 
           {/* ═══ Booking Plans Banner ═══ */}
           <View style={st.plansBanner}>
@@ -802,6 +942,7 @@ export default function BookCookScreen() {
                   onPlayVideo={handlePlayVideo}
                   colors={colors}
                   isDark={isDark}
+                  searchQuery={debouncedQuery}
                 />
               ))
             )}
@@ -915,6 +1056,31 @@ const st = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 12, borderRadius: 14, borderWidth: 1, marginTop: 12,
   },
   perMealText: { flex: 1, fontSize: 13, fontWeight: '500', lineHeight: 19 },
+
+  // Search
+  searchSection: { paddingHorizontal: 20, paddingTop: 16, gap: 10 },
+  searchBar: {
+    flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10,
+    paddingHorizontal: 14, paddingVertical: Platform.OS === 'ios' ? 12 : 8,
+    borderRadius: 16,
+  },
+  searchInput: { flex: 1, fontSize: 14, fontWeight: '500' as const, paddingVertical: 0 },
+  searchClear: {
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    alignItems: 'center' as const, justifyContent: 'center' as const,
+  },
+  priceChipsScroll: { gap: 8 },
+  priceChip: {
+    flexDirection: 'row' as const, alignItems: 'center' as const, gap: 5,
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 14,
+  },
+  priceChipLabel: { fontSize: 12, fontWeight: '700' as const },
+  searchResultInfo: {
+    flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6,
+    paddingVertical: 4,
+  },
+  searchResultText: { fontSize: 12, fontWeight: '600' as const },
 
   // Plans Banner on main screen
   plansBanner: { paddingTop: 16 },
