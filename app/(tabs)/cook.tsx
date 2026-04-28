@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   Dimensions,
   Modal,
   Platform,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -22,247 +24,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useTheme } from '../../hooks/useTheme';
+import { fetchCooks, Cook, CookVideoReview } from '../../services/cookService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const DISH_IMAGE_SIZE = 80;
-
-// ── Types ──
-interface DishPhoto {
-  name: string;
-  image: string;
-}
-
-interface VideoReview {
-  id: string;
-  customerName: string;
-  customerPhoto: string;
-  thumbnail: string;
-  videoUrl: string;
-  rating: number;
-  comment: string;
-  date: string;
-}
-
-interface CookPricing {
-  perMeal: number;
-  perDay: number;
-  perWeek: number;
-  perMonth: number;
-}
-
-interface Cook {
-  id: string;
-  name: string;
-  photo: string;
-  rating: number;
-  reviews: number;
-  experience: string;
-  expertise: string[];
-  speciality: string;
-  pricing: CookPricing;
-  isAvailable: boolean;
-  bio: string;
-  dishes: DishPhoto[];
-  videoReviews: VideoReview[];
-  languages: string[];
-  location: string;
-}
-
-// ── Cook Data with real-looking photos ──
-const COOKS: Cook[] = [
-  {
-    id: '1',
-    name: 'Sunita Devi',
-    photo: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=400&q=80',
-    rating: 4.9,
-    reviews: 234,
-    experience: '12 years',
-    expertise: ['North Indian', 'Mughlai', 'Tandoor'],
-    speciality: 'North Indian',
-    pricing: { perMeal: 350, perDay: 800, perWeek: 4800, perMonth: 16000 },
-    isAvailable: true,
-    bio: 'Expert in authentic Punjabi and Mughlai cuisine. Known for her rich gravies and fresh rotis. Has cooked for over 200 families across Mumbai.',
-    dishes: [
-      { name: 'Dal Makhani', image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&q=80' },
-      { name: 'Butter Naan', image: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=300&q=80' },
-      { name: 'Paneer Tikka', image: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=300&q=80' },
-      { name: 'Biryani', image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=300&q=80' },
-    ],
-    videoReviews: [
-      {
-        id: 'v1', customerName: 'Priya Mehta', customerPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80',
-        thumbnail: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&q=80',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-        rating: 5, comment: 'Best dal makhani I have ever had! Sunita ji is amazing', date: '2 weeks ago',
-      },
-      {
-        id: 'v2', customerName: 'Rajesh Kumar', customerPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80',
-        thumbnail: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&q=80',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-        rating: 5, comment: 'Our family loves her cooking. Booked monthly!', date: '1 month ago',
-      },
-    ],
-    languages: ['Hindi', 'Punjabi'],
-    location: 'Andheri West',
-  },
-  {
-    id: '2',
-    name: 'Lakshmi Iyer',
-    photo: 'https://images.unsplash.com/photo-1611432579699-484f7990b127?w=400&q=80',
-    rating: 4.8,
-    reviews: 187,
-    experience: '8 years',
-    expertise: ['South Indian', 'Kerala', 'Chettinad'],
-    speciality: 'South Indian',
-    pricing: { perMeal: 300, perDay: 700, perWeek: 4200, perMonth: 14000 },
-    isAvailable: true,
-    bio: 'Specialist in traditional South Indian breakfast and meals. Authentic dosa, idli, and sambar that tastes like home.',
-    dishes: [
-      { name: 'Masala Dosa', image: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=300&q=80' },
-      { name: 'Idli Sambar', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=300&q=80' },
-      { name: 'Kerala Fish Curry', image: 'https://images.unsplash.com/photo-1626508035297-ab8ee8abe5d5?w=300&q=80' },
-      { name: 'Appam', image: 'https://images.unsplash.com/photo-1630383249896-424e482df921?w=300&q=80' },
-    ],
-    videoReviews: [
-      {
-        id: 'v3', customerName: 'Anitha Rao', customerPhoto: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&q=80',
-        thumbnail: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=400&q=80',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-        rating: 5, comment: 'Her dosa is crispy and perfect every time!', date: '3 days ago',
-      },
-    ],
-    languages: ['Tamil', 'Hindi', 'Malayalam'],
-    location: 'Powai',
-  },
-  {
-    id: '3',
-    name: 'Raju Sharma',
-    photo: 'https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?w=400&q=80',
-    rating: 4.7,
-    reviews: 312,
-    experience: '15 years',
-    expertise: ['Chinese', 'Thai', 'Continental'],
-    speciality: 'Chinese',
-    pricing: { perMeal: 450, perDay: 1000, perWeek: 6000, perMonth: 20000 },
-    isAvailable: true,
-    bio: 'Professional chef with 5-star hotel experience. Expert in Indo-Chinese, Thai curries, and Continental dishes. Previously at Taj and ITC.',
-    dishes: [
-      { name: 'Hakka Noodles', image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&q=80' },
-      { name: 'Manchurian', image: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?w=300&q=80' },
-      { name: 'Thai Green Curry', image: 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=300&q=80' },
-      { name: 'Pasta', image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=300&q=80' },
-    ],
-    videoReviews: [
-      {
-        id: 'v4', customerName: 'Neha Singh', customerPhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80',
-        thumbnail: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&q=80',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-        rating: 5, comment: 'Restaurant quality food at home. Kids love it!', date: '1 week ago',
-      },
-      {
-        id: 'v5', customerName: 'Vikram Joshi', customerPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80',
-        thumbnail: 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400&q=80',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-        rating: 4, comment: 'Great Thai curry, very authentic flavors', date: '2 weeks ago',
-      },
-    ],
-    languages: ['Hindi', 'English'],
-    location: 'Bandra',
-  },
-  {
-    id: '4',
-    name: 'Meenakshi Patel',
-    photo: 'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?w=400&q=80',
-    rating: 4.9,
-    reviews: 156,
-    experience: '10 years',
-    expertise: ['Gujarati', 'Rajasthani', 'Jain'],
-    speciality: 'Gujarati',
-    pricing: { perMeal: 280, perDay: 650, perWeek: 3900, perMonth: 13000 },
-    isAvailable: false,
-    bio: 'Pure vegetarian cook specializing in Gujarati thali, Rajasthani dal bati, and Jain food. Perfect for families with dietary restrictions.',
-    dishes: [
-      { name: 'Gujarati Thali', image: 'https://images.unsplash.com/photo-1596797038530-2c107229654b?w=300&q=80' },
-      { name: 'Dhokla', image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=300&q=80' },
-      { name: 'Undhiyu', image: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=300&q=80' },
-      { name: 'Dal Bati', image: 'https://images.unsplash.com/photo-1505253758473-96b7015fcd40?w=300&q=80' },
-    ],
-    videoReviews: [
-      {
-        id: 'v6', customerName: 'Divya Shah', customerPhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
-        thumbnail: 'https://images.unsplash.com/photo-1596797038530-2c107229654b?w=400&q=80',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-        rating: 5, comment: 'Feels like maa ke haath ka khana. So pure!', date: '5 days ago',
-      },
-    ],
-    languages: ['Gujarati', 'Hindi'],
-    location: 'Ghatkopar',
-  },
-  {
-    id: '5',
-    name: 'Ahmed Khan',
-    photo: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=400&q=80',
-    rating: 4.8,
-    reviews: 278,
-    experience: '14 years',
-    expertise: ['Mughlai', 'Kebabs', 'Biryani'],
-    speciality: 'Mughlai',
-    pricing: { perMeal: 400, perDay: 900, perWeek: 5400, perMonth: 18000 },
-    isAvailable: true,
-    bio: 'Master of Mughlai cuisine. Signature kebabs, biryanis, and kormas that taste like Old Delhi. Featured in Mumbai Foodie magazine.',
-    dishes: [
-      { name: 'Lucknowi Biryani', image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=300&q=80' },
-      { name: 'Seekh Kebab', image: 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=300&q=80' },
-      { name: 'Nihari', image: 'https://images.unsplash.com/photo-1545247181-516773cae754?w=300&q=80' },
-      { name: 'Shahi Tukda', image: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=300&q=80' },
-    ],
-    videoReviews: [
-      {
-        id: 'v7', customerName: 'Sanjay Gupta', customerPhoto: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80',
-        thumbnail: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=80',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-        rating: 5, comment: 'Best biryani in Mumbai. We book him every Eid!', date: '3 weeks ago',
-      },
-      {
-        id: 'v8', customerName: 'Fatima Shaikh', customerPhoto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80',
-        thumbnail: 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=400&q=80',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-        rating: 5, comment: 'His kebabs melt in your mouth. Incredible!', date: '1 month ago',
-      },
-    ],
-    languages: ['Hindi', 'Urdu'],
-    location: 'Mohammed Ali Road',
-  },
-  {
-    id: '6',
-    name: 'Priya Nair',
-    photo: 'https://images.unsplash.com/photo-1583185253606-87da9df39a0e?w=400&q=80',
-    rating: 4.6,
-    reviews: 98,
-    experience: '5 years',
-    expertise: ['Healthy', 'Keto', 'Salads'],
-    speciality: 'Healthy',
-    pricing: { perMeal: 500, perDay: 1100, perWeek: 6500, perMonth: 22000 },
-    isAvailable: true,
-    bio: 'Nutrition-certified cook. Specializes in keto, low-carb, high-protein meals and meal prep. Perfect for fitness enthusiasts.',
-    dishes: [
-      { name: 'Quinoa Bowl', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&q=80' },
-      { name: 'Grilled Chicken', image: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=300&q=80' },
-      { name: 'Smoothie Bowl', image: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=300&q=80' },
-      { name: 'Greek Salad', image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=300&q=80' },
-    ],
-    videoReviews: [
-      {
-        id: 'v9', customerName: 'Rohan Desai', customerPhoto: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&q=80',
-        thumbnail: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80',
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-        rating: 5, comment: 'Lost 8 kgs in 2 months with her meal plans!', date: '4 days ago',
-      },
-    ],
-    languages: ['English', 'Hindi', 'Malayalam'],
-    location: 'Juhu',
-  },
-];
 
 const FILTER_CHIPS = [
   { id: 'all', label: 'All', emoji: '👨‍🍳' },
@@ -303,7 +68,7 @@ function StarRating({ rating, size = 12 }: { rating: number; size?: number }) {
 
 // ── Video Review Card (thumbnail with play icon) ──
 function VideoReviewThumb({ review, onPlay, colors, isDark }: {
-  review: VideoReview; onPlay: (review: VideoReview) => void; colors: any; isDark: boolean;
+  review: CookVideoReview; onPlay: (review: CookVideoReview) => void; colors: any; isDark: boolean;
 }) {
   return (
     <Pressable
@@ -312,11 +77,9 @@ function VideoReviewThumb({ review, onPlay, colors, isDark }: {
     >
       <Image source={{ uri: review.thumbnail }} style={st.videoThumbImage} contentFit="cover" transition={200} />
       <LinearGradient colors={['transparent', 'rgba(0,0,0,0.80)']} style={st.videoThumbGrad} />
-      {/* Play button */}
       <View style={st.videoPlayBtn}>
         <MaterialIcons name="play-arrow" size={28} color="#FFF" />
       </View>
-      {/* Customer info */}
       <View style={st.videoThumbInfo}>
         <Image source={{ uri: review.customerPhoto }} style={st.videoCustomerAvatar} contentFit="cover" />
         <View style={{ flex: 1 }}>
@@ -327,7 +90,6 @@ function VideoReviewThumb({ review, onPlay, colors, isDark }: {
           </View>
         </View>
       </View>
-      {/* Comment bubble */}
       <View style={st.videoCommentBubble}>
         <Text style={st.videoComment} numberOfLines={2}>{review.comment}</Text>
       </View>
@@ -337,7 +99,7 @@ function VideoReviewThumb({ review, onPlay, colors, isDark }: {
 
 // ── Video Player Modal ──
 function VideoPlayerModal({ review, visible, onClose, colors }: {
-  review: VideoReview | null; visible: boolean; onClose: () => void; colors: any;
+  review: CookVideoReview | null; visible: boolean; onClose: () => void; colors: any;
 }) {
   const insets = useSafeAreaInsets();
   const player = useVideoPlayer(review?.videoUrl || '', (p) => {
@@ -391,7 +153,7 @@ function VideoPlayerModal({ review, visible, onClose, colors }: {
 function CookCard({ cook, index, onBook, onViewProfile, onPlayVideo, colors, isDark }: {
   cook: Cook; index: number;
   onBook: (cook: Cook) => void; onViewProfile: (cook: Cook) => void;
-  onPlayVideo: (review: VideoReview) => void;
+  onPlayVideo: (review: CookVideoReview) => void;
   colors: any; isDark: boolean;
 }) {
   return (
@@ -532,7 +294,7 @@ function CookCard({ cook, index, onBook, onViewProfile, onPlayVideo, colors, isD
 // ── Cook Profile Modal ──
 function CookProfileModal({ cook, visible, onClose, onBook, onPlayVideo, colors, isDark }: {
   cook: Cook | null; visible: boolean; onClose: () => void;
-  onBook: (cook: Cook) => void; onPlayVideo: (review: VideoReview) => void;
+  onBook: (cook: Cook) => void; onPlayVideo: (review: CookVideoReview) => void;
   colors: any; isDark: boolean;
 }) {
   const insets = useSafeAreaInsets();
@@ -624,7 +386,7 @@ function CookProfileModal({ cook, visible, onClose, onBook, onPlayVideo, colors,
                 </View>
               </View>
               <View style={{ gap: 12, marginTop: 12 }}>
-                {cook.videoReviews.map((review, i) => (
+                {cook.videoReviews.map((review) => (
                   <VideoReviewThumb key={review.id} review={review} onPlay={onPlayVideo} colors={colors} isDark={isDark} />
                 ))}
               </View>
@@ -815,22 +577,80 @@ function BookingModal({ cook, visible, onClose, colors, isDark }: {
   );
 }
 
+// ── Loading Skeleton ──
+function CookSkeleton({ colors, isDark }: { colors: any; isDark: boolean }) {
+  return (
+    <View style={[ck.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View style={ck.cardHeader}>
+        <View style={[ck.photo, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]} />
+        <View style={{ flex: 1, gap: 8 }}>
+          <View style={{ width: '60%', height: 16, borderRadius: 8, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }} />
+          <View style={{ width: '40%', height: 12, borderRadius: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }} />
+          <View style={{ width: '50%', height: 12, borderRadius: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }} />
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {[1, 2, 3].map(i => (
+          <View key={i} style={{ width: 80, height: 28, borderRadius: 10, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }} />
+        ))}
+      </View>
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        {[1, 2, 3, 4].map(i => (
+          <View key={i} style={{ width: DISH_IMAGE_SIZE, height: DISH_IMAGE_SIZE, borderRadius: 14, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 // ── Main Screen ──
 export default function BookCookScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const [cooks, setCooks] = useState<Cook[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState('all');
   const [profileCook, setProfileCook] = useState<Cook | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [bookingCook, setBookingCook] = useState<Cook | null>(null);
   const [showBooking, setShowBooking] = useState(false);
-  const [activeVideo, setActiveVideo] = useState<VideoReview | null>(null);
+  const [activeVideo, setActiveVideo] = useState<CookVideoReview | null>(null);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
 
+  const loadCooks = useCallback(async () => {
+    const { data, error: fetchError } = await fetchCooks();
+    if (fetchError) {
+      setError(fetchError);
+    } else {
+      setCooks(data);
+      setError(null);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadCooks();
+  }, [loadCooks]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadCooks();
+    setRefreshing(false);
+  }, [loadCooks]);
+
   const filteredCooks = useMemo(() => {
-    if (activeFilter === 'all') return COOKS;
-    return COOKS.filter(c => c.speciality === activeFilter);
-  }, [activeFilter]);
+    if (activeFilter === 'all') return cooks;
+    return cooks.filter(c => c.speciality === activeFilter);
+  }, [activeFilter, cooks]);
+
+  const availableCount = useMemo(() => cooks.filter(c => c.isAvailable).length, [cooks]);
+  const avgRating = useMemo(() => {
+    if (cooks.length === 0) return '0.0';
+    return (cooks.reduce((s, c) => s + c.rating, 0) / cooks.length).toFixed(1);
+  }, [cooks]);
+  const totalVideoReviews = useMemo(() => cooks.reduce((s, c) => s + c.videoReviews.length, 0), [cooks]);
 
   const handleBook = useCallback((cook: Cook) => {
     setBookingCook(cook);
@@ -842,7 +662,7 @@ export default function BookCookScreen() {
     setShowProfile(true);
   }, []);
 
-  const handlePlayVideo = useCallback((review: VideoReview) => {
+  const handlePlayVideo = useCallback((review: CookVideoReview) => {
     setActiveVideo(review);
     setShowVideoPlayer(true);
   }, []);
@@ -853,6 +673,9 @@ export default function BookCookScreen() {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#D4AF37" colors={['#D4AF37']} />
+          }
         >
           {/* ═══ Header ═══ */}
           <LinearGradient
@@ -873,9 +696,9 @@ export default function BookCookScreen() {
               {/* Stats */}
               <View style={ck.statsRow}>
                 {[
-                  { label: 'Cooks Available', value: COOKS.filter(c => c.isAvailable).length.toString(), emoji: '✅' },
-                  { label: 'Avg Rating', value: '4.8', emoji: '⭐' },
-                  { label: 'Video Reviews', value: COOKS.reduce((s, c) => s + c.videoReviews.length, 0).toString(), emoji: '🎥' },
+                  { label: 'Cooks Available', value: availableCount.toString(), emoji: '✅' },
+                  { label: 'Avg Rating', value: avgRating, emoji: '⭐' },
+                  { label: 'Video Reviews', value: totalVideoReviews.toString(), emoji: '🎥' },
                 ].map((stat, i) => (
                   <View key={i} style={[ck.statCard, {
                     backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.80)',
@@ -942,25 +765,46 @@ export default function BookCookScreen() {
 
           {/* ═══ Cook Cards ═══ */}
           <View style={ck.cookList}>
-            {filteredCooks.map((cook, i) => (
-              <CookCard
-                key={cook.id}
-                cook={cook}
-                index={i}
-                onBook={handleBook}
-                onViewProfile={handleViewProfile}
-                onPlayVideo={handlePlayVideo}
-                colors={colors}
-                isDark={isDark}
-              />
-            ))}
-            {filteredCooks.length === 0 ? (
+            {loading ? (
+              <>
+                <CookSkeleton colors={colors} isDark={isDark} />
+                <CookSkeleton colors={colors} isDark={isDark} />
+              </>
+            ) : error ? (
+              <View style={[ck.emptyState, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Text style={{ fontSize: 36 }}>⚠️</Text>
+                <Text style={[ck.emptyTitle, { color: colors.textPrimary }]}>Failed to load cooks</Text>
+                <Text style={[ck.emptySub, { color: colors.textMuted }]}>{error}</Text>
+                <Pressable
+                  style={({ pressed }) => [ck.retryBtn, pressed && { opacity: 0.8 }]}
+                  onPress={() => { setLoading(true); loadCooks(); }}
+                >
+                  <LinearGradient colors={['#D4AF37', '#FFD700']} style={ck.retryBtnGrad}>
+                    <MaterialIcons name="refresh" size={16} color="#FFF" />
+                    <Text style={ck.retryBtnText}>Retry</Text>
+                  </LinearGradient>
+                </Pressable>
+              </View>
+            ) : filteredCooks.length === 0 ? (
               <View style={[ck.emptyState, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={{ fontSize: 36 }}>🔍</Text>
                 <Text style={[ck.emptyTitle, { color: colors.textPrimary }]}>No cooks found</Text>
                 <Text style={[ck.emptySub, { color: colors.textMuted }]}>Try a different cuisine filter</Text>
               </View>
-            ) : null}
+            ) : (
+              filteredCooks.map((cook, i) => (
+                <CookCard
+                  key={cook.id}
+                  cook={cook}
+                  index={i}
+                  onBook={handleBook}
+                  onViewProfile={handleViewProfile}
+                  onPlayVideo={handlePlayVideo}
+                  colors={colors}
+                  isDark={isDark}
+                />
+              ))
+            )}
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -1219,13 +1063,19 @@ const ck = StyleSheet.create({
   },
   bookBtnText: { fontSize: 14, fontWeight: '800', color: '#FFF' },
 
-  // Empty
+  // Empty / Error
   emptyState: {
     padding: 40, borderRadius: 20, borderWidth: 1,
     alignItems: 'center', gap: 8,
   },
   emptyTitle: { fontSize: 16, fontWeight: '700' },
-  emptySub: { fontSize: 13, fontWeight: '500' },
+  emptySub: { fontSize: 13, fontWeight: '500', textAlign: 'center' },
+  retryBtn: { marginTop: 8 },
+  retryBtnGrad: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12,
+  },
+  retryBtnText: { fontSize: 14, fontWeight: '700', color: '#FFF' },
 
   // Profile Modal
   modalRoot: { flex: 1 },
