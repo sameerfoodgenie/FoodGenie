@@ -75,20 +75,25 @@ export default function TabLayout() {
 
   const tabBarStyle = {
     height: Platform.select({
-      ios: insets.bottom + 64,
-      android: insets.bottom + 64,
-      default: 72,
+      ios: insets.bottom + 68,
+      android: insets.bottom + 68,
+      default: 74,
     }),
-    paddingTop: 8,
+    paddingTop: 10,
     paddingBottom: Platform.select({
-      ios: insets.bottom + 8,
-      android: insets.bottom + 8,
-      default: 8,
+      ios: insets.bottom + 10,
+      android: insets.bottom + 10,
+      default: 10,
     }),
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
     backgroundColor: colors.tabBarBg,
     borderTopWidth: 1,
     borderTopColor: colors.tabBarBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 8,
   };
 
   return (
@@ -101,9 +106,12 @@ export default function TabLayout() {
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: '600',
-          marginTop: 2,
-          letterSpacing: 0.1,
+          fontWeight: '700',
+          marginTop: 4,
+          letterSpacing: 0.2,
+        },
+        tabBarIconStyle: {
+          marginBottom: -2,
         },
       }}
     >
@@ -112,7 +120,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <MaterialIcons name={focused ? 'home-filled' : 'home'} size={26} color={color} />
+            <MaterialIcons name={focused ? 'home-filled' : 'home'} size={25} color={color} />
           ),
         }}
       />
@@ -121,7 +129,7 @@ export default function TabLayout() {
         options={{
           title: 'Foodies',
           tabBarIcon: ({ color, focused }) => (
-            <MaterialIcons name={focused ? 'local-fire-department' : 'local-fire-department'} size={26} color={color} />
+            <MaterialIcons name="local-fire-department" size={25} color={color} />
           ),
         }}
       />
@@ -133,14 +141,12 @@ export default function TabLayout() {
           tabBarLabelStyle: { display: 'none' },
         }}
       />
-      <Tabs.Screen name="grocery" options={{ href: null }} />
-      <Tabs.Screen name="cook" options={{ href: null }} />
       <Tabs.Screen
         name="master-chefs"
         options={{
           title: 'Chefs',
           tabBarIcon: ({ color, focused }) => (
-            <MaterialIcons name={focused ? 'restaurant' : 'restaurant-menu'} size={24} color={color} />
+            <MaterialIcons name={focused ? 'restaurant' : 'restaurant-menu'} size={25} color={color} />
           ),
         }}
       />
@@ -149,10 +155,12 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <MaterialIcons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
+            <MaterialIcons name={focused ? 'person' : 'person-outline'} size={25} color={color} />
           ),
         }}
       />
+      <Tabs.Screen name="grocery" options={{ href: null }} />
+      <Tabs.Screen name="cook" options={{ href: null }} />
       {/* Hide unused tabs */}
       <Tabs.Screen name="preferences" options={{ href: null }} />
       <Tabs.Screen name="account" options={{ href: null }} />
@@ -169,21 +177,21 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   postTabWrap: {
-    marginTop: -26,
+    marginTop: -22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   glowRing: {
     position: 'absolute',
-    width: 68,
-    height: 68,
-    borderRadius: 22,
+    width: 64,
+    height: 64,
+    borderRadius: 20,
     backgroundColor: 'rgba(212,175,55,0.18)',
   },
   postTabBtn: {
-    width: 58,
-    height: 58,
-    borderRadius: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,

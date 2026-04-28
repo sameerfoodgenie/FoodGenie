@@ -82,7 +82,7 @@ const QUICK_ACTIONS = [
   { id: 'offers', emoji: '🎟️', label: 'Offers', color: '#818CF8', route: '/coin-redeem' },
   { id: 'order', emoji: '📦', label: 'Order Food', color: '#FB923C', route: '/partner-apps' },
   { id: 'shows', emoji: '🎬', label: 'Shows', color: '#22D3EE', route: '/shows' },
-  { id: 'leaderboard', emoji: '🏆', label: 'Leaderboard', color: '#F59E0B', route: '/coin-leaderboard' },
+  { id: 'chefs', emoji: '👨‍🍳', label: 'Master Chefs', color: '#F59E0B', route: '/(tabs)/master-chefs' },
 ];
 
 // ── Feature Banner Card ──
@@ -461,13 +461,13 @@ const s = StyleSheet.create({
 
   /* ── Quick Actions ── */
   quickSection: { paddingHorizontal: 20, paddingTop: 24, gap: 12 },
-  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
   quickItem: {
     width: (SCREEN_W - 60) / 3, alignItems: 'center', gap: 8,
-    paddingVertical: 14, borderRadius: 16, borderWidth: 1,
+    paddingVertical: 16, borderRadius: 18, borderWidth: 1,
   },
-  quickItemIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  quickItemLabel: { fontSize: 11, fontWeight: '700' },
+  quickItemIcon: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  quickItemLabel: { fontSize: 11, fontWeight: '700', textAlign: 'center' },
 
   /* ── Section Title ── */
   sectionTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
