@@ -30,7 +30,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../../hooks/useTheme';
 import { useAuth, useAlert } from '../../template';
 import { fetchCooks, Cook, CookVideoReview, uploadVideoReview } from '../../services/cookService';
-import { createBooking } from '../../services/bookingService';
+import { createBooking, fetchCookBookings, Booking as CookBookingRecord } from '../../services/bookingService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const DISH_IMAGE_SIZE = 80;
@@ -695,6 +695,118 @@ function CookProfileModal({ cook, visible, onClose, onBook, onPlayVideo, onWrite
   );
 }
 
+// ── Weekly Calendar ──
+function WeeklyCalendar({ selectedDate, onSelectDate, blockedDates, loading, colors, isDark }: {
+  selectedDate: Date; onSelectDate: (d: Date) => void;
+  blockedDates: Set<string>; loading: boolean; colors: any; isDark: boolean;
+}) {
+  const today = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
+
+  const { weeks, monthLabel } = useMemo(() => {
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    const allDays: Date[] = [];
+    for (let i = 0; i < 35; i++) {
+      const d = new Date(startOfWeek);
+      d.setDate(d.getDate() + i);
+      allDays.push(d);
+    }
+    const wks: Date[][] = [];
+    for (let i = 0; i < allDays.length; i += 7) wks.push(allDays.slice(i, i + 7));
+    const months = new Set(allDays.filter(d => d >= today).map(d => d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })));
+    return { weeks: wks, monthLabel: Array.from(months).join(' – ') };
+  }, [today]);
+
+  const fmtKey = (d: Date) => d.toISOString().split('T')[0];
+  const todayKey = fmtKey(today);
+  const selKey = fmtKey(selectedDate);
+  const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  return (
+    <View style={cal.container}>
+      <View style={cal.header}>
+        <View style={{ flex: 1 }}>
+          <Text style={[cal.title, { color: colors.textPrimary }]}>Select Start Date</Text>
+          <Text style={[cal.monthLabel, { color: colors.textMuted }]}>{monthLabel}</Text>
+        </View>
+        <View style={cal.legend}>
+          <View style={cal.legendItem}>
+            <View style={[cal.legendDot, { backgroundColor: '#4ADE80' }]} />
+            <Text style={[cal.legendText, { color: colors.textMuted }]}>Open</Text>
+          </View>
+          <View style={cal.legendItem}>
+            <View style={[cal.legendDot, { backgroundColor: '#EF4444' }]} />
+            <Text style={[cal.legendText, { color: colors.textMuted }]}>Booked</Text>
+          </View>
+        </View>
+      </View>
+
+      {loading ? (
+        <View style={cal.loadingWrap}>
+          <ActivityIndicator size="small" color="#D4AF37" />
+          <Text style={[cal.loadingText, { color: colors.textMuted }]}>Checking availability...</Text>
+        </View>
+      ) : (
+        <>
+          <View style={cal.dayNamesRow}>
+            {DAY_NAMES.map(n => (
+              <View key={n} style={cal.dayNameCell}>
+                <Text style={[cal.dayNameText, { color: colors.textMuted }]}>{n}</Text>
+              </View>
+            ))}
+          </View>
+          {weeks.map((week, wi) => (
+            <View key={wi} style={cal.weekRow}>
+              {week.map((day, di) => {
+                const key = fmtKey(day);
+                const isPast = day < today;
+                const blocked = blockedDates.has(key);
+                const selected = key === selKey;
+                const isToday = key === todayKey;
+                const disabled = isPast || blocked;
+
+                return (
+                  <Pressable
+                    key={di}
+                    style={[
+                      cal.dayCell,
+                      selected && { backgroundColor: '#D4AF37', borderColor: '#B8960C', borderWidth: 2 },
+                      !selected && blocked && { backgroundColor: isDark ? 'rgba(239,68,68,0.12)' : 'rgba(239,68,68,0.06)' },
+                      !selected && !blocked && !isPast && { backgroundColor: isDark ? 'rgba(74,222,128,0.06)' : 'rgba(74,222,128,0.04)' },
+                      isPast && !selected && { opacity: 0.3 },
+                    ]}
+                    onPress={() => { if (!disabled) { Haptics.selectionAsync(); onSelectDate(day); } }}
+                    disabled={disabled}
+                  >
+                    <Text style={[
+                      cal.dayText,
+                      { color: selected ? '#FFF' : blocked ? '#EF4444' : colors.textPrimary },
+                      isToday && !selected && { color: '#D4AF37', fontWeight: '900' },
+                    ]}>
+                      {day.getDate()}
+                    </Text>
+                    {isToday && !selected ? <View style={cal.todayDot} /> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          ))}
+        </>
+      )}
+
+      <View style={[cal.selectedInfo, { backgroundColor: isDark ? 'rgba(212,175,55,0.08)' : 'rgba(212,175,55,0.04)' }]}>
+        <MaterialIcons name="event" size={16} color="#D4AF37" />
+        <Text style={[cal.selectedText, { color: colors.textSecondary }]}>
+          Starting:{' '}
+          <Text style={{ fontWeight: '800', color: '#D4AF37' }}>
+            {selectedDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+          </Text>
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 // ── Booking Confirmation Modal with plan selection ──
 function BookingModal({ cook, visible, onClose, onBooked, colors, isDark }: {
   cook: Cook | null; visible: boolean; onClose: () => void;
@@ -705,7 +817,40 @@ function BookingModal({ cook, visible, onClose, onBooked, colors, isDark }: {
   const [selectedPlan, setSelectedPlan] = useState<BookingPlan>('daily');
   const [notes, setNotes] = useState('');
   const [isBooking, setIsBooking] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [existingBookings, setExistingBookings] = useState<CookBookingRecord[]>([]);
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    if (cook && visible) {
+      setSelectedDate(new Date());
+      setLoadingAvailability(true);
+      fetchCookBookings(cook.id).then(({ data }) => {
+        setExistingBookings(data);
+        setLoadingAvailability(false);
+      });
+    }
+  }, [cook?.id, visible]);
+
+  const blockedDates = useMemo(() => {
+    const blocked = new Set<string>();
+    existingBookings.forEach(b => {
+      const start = new Date(b.startDate + 'T00:00:00');
+      const end = new Date(b.endDate + 'T00:00:00');
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        blocked.add(d.toISOString().split('T')[0]);
+      }
+    });
+    return blocked;
+  }, [existingBookings]);
+
+  const endDate = useMemo(() => {
+    const end = new Date(selectedDate);
+    if (selectedPlan === 'weekly') end.setDate(end.getDate() + 6);
+    else if (selectedPlan === 'monthly') end.setDate(end.getDate() + 29);
+    return end;
+  }, [selectedDate, selectedPlan]);
 
   if (!cook || !visible) return null;
 
@@ -730,6 +875,7 @@ function BookingModal({ cook, visible, onClose, onBooked, colors, isDark }: {
       totalAmount: getPrice(selectedPlan),
       perMealRate: cook.pricing.perMeal,
       notes,
+      startDate: selectedDate.toISOString().split('T')[0],
     });
     setIsBooking(false);
     if (error) {
@@ -796,6 +942,16 @@ function BookingModal({ cook, visible, onClose, onBooked, colors, isDark }: {
                 })}
               </View>
 
+              {/* Date Picker */}
+              <WeeklyCalendar
+                selectedDate={selectedDate}
+                onSelectDate={setSelectedDate}
+                blockedDates={blockedDates}
+                loading={loadingAvailability}
+                colors={colors}
+                isDark={isDark}
+              />
+
               {/* Summary */}
               <View style={[ck.bookingSummary, {
                 backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
@@ -809,6 +965,18 @@ function BookingModal({ cook, visible, onClose, onBooked, colors, isDark }: {
                   <Text style={[ck.bookingSummaryLabel, { color: colors.textMuted }]}>Plan</Text>
                   <Text style={[ck.bookingSummaryValue, { color: colors.textPrimary }]}>
                     {BOOKING_PLANS.find(p => p.id === selectedPlan)?.label}
+                  </Text>
+                </View>
+                <View style={ck.bookingSummaryRow}>
+                  <Text style={[ck.bookingSummaryLabel, { color: colors.textMuted }]}>Start Date</Text>
+                  <Text style={[ck.bookingSummaryValue, { color: colors.textPrimary }]}>
+                    {selectedDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </Text>
+                </View>
+                <View style={ck.bookingSummaryRow}>
+                  <Text style={[ck.bookingSummaryLabel, { color: colors.textMuted }]}>End Date</Text>
+                  <Text style={[ck.bookingSummaryValue, { color: colors.textPrimary }]}>
+                    {endDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </Text>
                 </View>
                 <View style={ck.bookingSummaryRow}>
@@ -1406,6 +1574,37 @@ const st = StyleSheet.create({
   bookingSavingsPill: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginTop: 2 },
   bookingSavingsText: { fontSize: 8, fontWeight: '800' },
   bookingPlanCheck: { position: 'absolute', top: 6, right: 6 },
+});
+
+const cal = StyleSheet.create({
+  container: { width: '100%', gap: 6 },
+  header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 },
+  title: { fontSize: 16, fontWeight: '800' },
+  monthLabel: { fontSize: 11, fontWeight: '500', marginTop: 2 },
+  legend: { flexDirection: 'row', gap: 10 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
+  legendText: { fontSize: 10, fontWeight: '600' },
+  loadingWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 30, gap: 8 },
+  loadingText: { fontSize: 12, fontWeight: '500' },
+  dayNamesRow: { flexDirection: 'row', marginBottom: 2 },
+  dayNameCell: { flex: 1, alignItems: 'center', paddingVertical: 4 },
+  dayNameText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.3 },
+  weekRow: { flexDirection: 'row', marginBottom: 3 },
+  dayCell: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    height: 36, borderRadius: 10, marginHorizontal: 1.5, position: 'relative',
+  },
+  dayText: { fontSize: 13, fontWeight: '600' },
+  todayDot: {
+    position: 'absolute', bottom: 3,
+    width: 4, height: 4, borderRadius: 2, backgroundColor: '#D4AF37',
+  },
+  selectedInfo: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, marginTop: 4,
+  },
+  selectedText: { fontSize: 13, fontWeight: '500' },
 });
 
 const rv = StyleSheet.create({

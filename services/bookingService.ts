@@ -60,21 +60,23 @@ export async function createBooking(params: {
   totalAmount: number;
   perMealRate: number;
   notes?: string;
+  startDate?: string;
 }): Promise<{ data: Booking | null; error: string | null }> {
   try {
     const supabase = getSupabaseClient();
     const today = new Date();
-    const startDate = today.toISOString().split('T')[0];
+    const startDate = params.startDate || today.toISOString().split('T')[0];
+    const baseDate = params.startDate ? new Date(params.startDate + 'T00:00:00') : today;
 
     let endDate: string;
     if (params.plan === 'daily') {
       endDate = startDate;
     } else if (params.plan === 'weekly') {
-      const end = new Date(today);
+      const end = new Date(baseDate);
       end.setDate(end.getDate() + 6);
       endDate = end.toISOString().split('T')[0];
     } else {
-      const end = new Date(today);
+      const end = new Date(baseDate);
       end.setDate(end.getDate() + 29);
       endDate = end.toISOString().split('T')[0];
     }
@@ -120,6 +122,25 @@ export async function fetchUserBookings(userId: string): Promise<{ data: Booking
     return { data: (data || []).map(mapRow), error: null };
   } catch (err: any) {
     return { data: [], error: err.message || 'Failed to fetch bookings' };
+  }
+}
+
+export async function fetchCookBookings(cookId: string): Promise<{ data: Booking[]; error: string | null }> {
+  try {
+    const supabase = getSupabaseClient();
+    const today = new Date().toISOString().split('T')[0];
+    const { data, error } = await supabase
+      .from('cook_bookings')
+      .select('*')
+      .eq('cook_id', cookId)
+      .in('status', ['pending', 'confirmed'])
+      .gte('end_date', today)
+      .order('start_date', { ascending: true });
+
+    if (error) return { data: [], error: error.message };
+    return { data: (data || []).map(mapRow), error: null };
+  } catch (err: any) {
+    return { data: [], error: err.message || 'Failed to fetch cook bookings' };
   }
 }
 
