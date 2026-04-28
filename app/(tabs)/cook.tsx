@@ -11,6 +11,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   TextInput,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -24,8 +25,10 @@ import Animated, {
   FadeInUp,
 } from 'react-native-reanimated';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../hooks/useTheme';
-import { fetchCooks, Cook, CookVideoReview } from '../../services/cookService';
+import { useAuth } from '../../template';
+import { fetchCooks, Cook, CookVideoReview, uploadVideoReview } from '../../services/cookService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const DISH_IMAGE_SIZE = 80;
@@ -320,10 +323,201 @@ function CookCard({ cook, index, onBook, onViewProfile, onPlayVideo, colors, isD
   );
 }
 
+// ── Video Review Upload Modal ──
+function VideoReviewUploadModal({ cook, visible, onClose, onSuccess, colors, isDark }: {
+  cook: Cook | null; visible: boolean; onClose: () => void;
+  onSuccess: () => void; colors: any; isDark: boolean;
+}) {
+  const { user } = useAuth();
+  const insets = useSafeAreaInsets();
+  const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [videoName, setVideoName] = useState('');
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const resetForm = useCallback(() => {
+    setVideoUri(null);
+    setVideoName('');
+    setRating(5);
+    setComment('');
+    setUploading(false);
+    setUploadError(null);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    resetForm();
+    onClose();
+  }, [resetForm, onClose]);
+
+  const pickFromGallery = useCallback(async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') { setUploadError('Gallery permission required'); return; }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['videos'],
+      quality: 0.7,
+      videoMaxDuration: 60,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setVideoUri(result.assets[0].uri);
+      setVideoName(result.assets[0].fileName || 'video.mp4');
+      setUploadError(null);
+    }
+  }, []);
+
+  const recordVideo = useCallback(async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') { setUploadError('Camera permission required'); return; }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['videos'],
+      quality: 0.7,
+      videoMaxDuration: 60,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setVideoUri(result.assets[0].uri);
+      setVideoName(result.assets[0].fileName || 'recorded_video.mp4');
+      setUploadError(null);
+    }
+  }, []);
+
+  const handleSubmit = useCallback(async () => {
+    if (!cook || !user || !videoUri) return;
+    if (!comment.trim()) { setUploadError('Please add a comment'); return; }
+    setUploading(true);
+    setUploadError(null);
+    const { error } = await uploadVideoReview({
+      cookId: cook.id,
+      userId: user.id,
+      customerName: user.username || user.email?.split('@')[0] || 'Customer',
+      customerPhotoUrl: '',
+      videoUri,
+      rating,
+      comment: comment.trim(),
+    });
+    setUploading(false);
+    if (error) {
+      setUploadError(error);
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      resetForm();
+      onSuccess();
+      onClose();
+    }
+  }, [cook, user, videoUri, rating, comment, resetForm, onSuccess, onClose]);
+
+  if (!cook || !visible) return null;
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <View style={rv.overlay}>
+          <Animated.View entering={FadeInUp.duration(400)} style={[rv.card, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 24 }]}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={rv.header}>
+                <Text style={[rv.title, { color: colors.textPrimary }]}>Video Review</Text>
+                <Pressable style={({ pressed }) => [rv.closeBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }, pressed && { opacity: 0.6 }]} onPress={handleClose}>
+                  <MaterialIcons name="close" size={22} color={colors.textMuted} />
+                </Pressable>
+              </View>
+
+              <View style={[rv.cookInfo, { borderBottomColor: colors.border }]}>
+                <Image source={{ uri: cook.photo }} style={rv.cookAvatar} contentFit="cover" />
+                <View>
+                  <Text style={[rv.cookName, { color: colors.textPrimary }]}>{cook.name}</Text>
+                  <Text style={[rv.cookSpec, { color: colors.textMuted }]}>{cook.speciality} Specialist</Text>
+                </View>
+              </View>
+
+              <Text style={[rv.sectionLabel, { color: colors.textSecondary }]}>Your Video</Text>
+              {videoUri ? (
+                <View style={[rv.videoPreview, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: colors.border }]}>
+                  <View style={rv.videoPreviewIcon}>
+                    <MaterialIcons name="videocam" size={28} color="#D4AF37" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[rv.videoFileName, { color: colors.textPrimary }]} numberOfLines={1}>{videoName}</Text>
+                    <Text style={rv.videoReady}>Ready to upload</Text>
+                  </View>
+                  <Pressable onPress={() => { setVideoUri(null); setVideoName(''); }} style={({ pressed }) => [pressed && { opacity: 0.6 }]} hitSlop={8}>
+                    <MaterialIcons name="delete-outline" size={22} color="#EF4444" />
+                  </Pressable>
+                </View>
+              ) : (
+                <View style={rv.videoPickerRow}>
+                  <Pressable style={({ pressed }) => [rv.pickerBtn, { backgroundColor: isDark ? 'rgba(212,175,55,0.12)' : 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.25)' }, pressed && { opacity: 0.8 }]} onPress={recordVideo}>
+                    <MaterialIcons name="videocam" size={28} color="#D4AF37" />
+                    <Text style={[rv.pickerBtnLabel, { color: colors.textPrimary }]}>Record</Text>
+                    <Text style={[rv.pickerBtnHint, { color: colors.textMuted }]}>Max 60s</Text>
+                  </Pressable>
+                  <Pressable style={({ pressed }) => [rv.pickerBtn, { backgroundColor: isDark ? 'rgba(129,140,248,0.12)' : 'rgba(129,140,248,0.06)', borderColor: 'rgba(129,140,248,0.25)' }, pressed && { opacity: 0.8 }]} onPress={pickFromGallery}>
+                    <MaterialIcons name="photo-library" size={28} color="#818CF8" />
+                    <Text style={[rv.pickerBtnLabel, { color: colors.textPrimary }]}>Gallery</Text>
+                    <Text style={[rv.pickerBtnHint, { color: colors.textMuted }]}>Choose video</Text>
+                  </Pressable>
+                </View>
+              )}
+
+              <Text style={[rv.sectionLabel, { color: colors.textSecondary, marginTop: 20 }]}>Your Rating</Text>
+              <View style={rv.starRow}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <Pressable key={star} onPress={() => { Haptics.selectionAsync(); setRating(star); }} hitSlop={4}>
+                    <MaterialIcons name={star <= rating ? 'star' : 'star-border'} size={36} color="#FFD700" />
+                  </Pressable>
+                ))}
+                <Text style={[rv.ratingLabel, { color: colors.textMuted }]}>
+                  {rating === 5 ? 'Excellent' : rating === 4 ? 'Great' : rating === 3 ? 'Good' : rating === 2 ? 'Fair' : 'Poor'}
+                </Text>
+              </View>
+
+              <Text style={[rv.sectionLabel, { color: colors.textSecondary, marginTop: 20 }]}>Your Comment</Text>
+              <TextInput
+                style={[rv.commentInput, { color: colors.textPrimary, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F5F5F5', borderColor: colors.border }]}
+                placeholder="Share your experience with this cook..."
+                placeholderTextColor={colors.textMuted}
+                value={comment}
+                onChangeText={setComment}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+                maxLength={300}
+              />
+              <Text style={[rv.charCount, { color: colors.textMuted }]}>{comment.length}/300</Text>
+
+              {uploadError ? (
+                <View style={rv.errorRow}>
+                  <MaterialIcons name="error-outline" size={16} color="#EF4444" />
+                  <Text style={rv.errorText}>{uploadError}</Text>
+                </View>
+              ) : null}
+
+              <Pressable
+                style={({ pressed }) => [rv.submitBtn, (!videoUri || !comment.trim() || uploading) && { opacity: 0.5 }, pressed && videoUri && comment.trim() && !uploading && { opacity: 0.85 }]}
+                onPress={handleSubmit}
+                disabled={!videoUri || !comment.trim() || uploading}
+              >
+                <LinearGradient colors={['#D4AF37', '#FFD700']} style={rv.submitBtnGrad}>
+                  {uploading ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <MaterialIcons name="cloud-upload" size={20} color="#FFF" />
+                  )}
+                  <Text style={rv.submitBtnText}>{uploading ? 'Uploading...' : 'Submit Review'}</Text>
+                </LinearGradient>
+              </Pressable>
+            </ScrollView>
+          </Animated.View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
 // ── Cook Profile Modal ──
-function CookProfileModal({ cook, visible, onClose, onBook, onPlayVideo, colors, isDark }: {
+function CookProfileModal({ cook, visible, onClose, onBook, onPlayVideo, onWriteReview, colors, isDark }: {
   cook: Cook | null; visible: boolean; onClose: () => void;
   onBook: (cook: Cook) => void; onPlayVideo: (review: CookVideoReview) => void;
+  onWriteReview: (cook: Cook) => void;
   colors: any; isDark: boolean;
 }) {
   const insets = useSafeAreaInsets();
@@ -421,6 +615,17 @@ function CookProfileModal({ cook, visible, onClose, onBook, onPlayVideo, colors,
               </View>
             </>
           ) : null}
+
+          {/* Add Review Button */}
+          <Pressable
+            style={({ pressed }) => [rv.addReviewBtn, pressed && { opacity: 0.85 }]}
+            onPress={() => { onClose(); setTimeout(() => onWriteReview(cook), 350); }}
+          >
+            <LinearGradient colors={['#818CF8', '#6366F1']} style={rv.addReviewBtnGrad}>
+              <MaterialIcons name="videocam" size={18} color="#FFF" />
+              <Text style={rv.addReviewBtnText}>Add Your Video Review</Text>
+            </LinearGradient>
+          </Pressable>
 
           {/* Pricing Plans */}
           <Text style={[ck.modalSectionTitle, { color: colors.textPrimary, marginTop: 24 }]}>Booking Plans</Text>
@@ -650,6 +855,8 @@ export default function BookCookScreen() {
   const [showBooking, setShowBooking] = useState(false);
   const [activeVideo, setActiveVideo] = useState<CookVideoReview | null>(null);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [reviewCook, setReviewCook] = useState<Cook | null>(null);
+  const [showReviewUpload, setShowReviewUpload] = useState(false);
 
   const loadCooks = useCallback(async () => {
     const { data, error: fetchError } = await fetchCooks();
@@ -737,6 +944,15 @@ export default function BookCookScreen() {
     setActiveVideo(review);
     setShowVideoPlayer(true);
   }, []);
+
+  const handleWriteReview = useCallback((cook: Cook) => {
+    setReviewCook(cook);
+    setShowReviewUpload(true);
+  }, []);
+
+  const handleReviewSuccess = useCallback(async () => {
+    await loadCooks();
+  }, [loadCooks]);
 
   return (
     <View style={[ck.container, { backgroundColor: colors.background }]}>
@@ -956,6 +1172,7 @@ export default function BookCookScreen() {
         onClose={() => { setShowProfile(false); setTimeout(() => setProfileCook(null), 300); }}
         onBook={handleBook}
         onPlayVideo={handlePlayVideo}
+        onWriteReview={handleWriteReview}
         colors={colors}
         isDark={isDark}
       />
@@ -973,6 +1190,15 @@ export default function BookCookScreen() {
         visible={showVideoPlayer}
         onClose={() => { setShowVideoPlayer(false); setTimeout(() => setActiveVideo(null), 300); }}
         colors={colors}
+      />
+
+      <VideoReviewUploadModal
+        cook={reviewCook}
+        visible={showReviewUpload}
+        onClose={() => { setShowReviewUpload(false); setTimeout(() => setReviewCook(null), 300); }}
+        onSuccess={handleReviewSuccess}
+        colors={colors}
+        isDark={isDark}
       />
     </View>
   );
@@ -1114,6 +1340,85 @@ const st = StyleSheet.create({
   bookingSavingsPill: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginTop: 2 },
   bookingSavingsText: { fontSize: 8, fontWeight: '800' },
   bookingPlanCheck: { position: 'absolute', top: 6, right: 6 },
+});
+
+const rv = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'flex-end' as const,
+  },
+  card: {
+    maxHeight: '90%',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  header: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    marginBottom: 16,
+  },
+  title: { fontSize: 20, fontWeight: '900' as const },
+  closeBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center' as const, justifyContent: 'center' as const,
+  },
+  cookInfo: {
+    flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12,
+    marginBottom: 20, paddingBottom: 16, borderBottomWidth: 1,
+  },
+  cookAvatar: { width: 48, height: 48, borderRadius: 16, borderWidth: 2, borderColor: '#D4AF37' },
+  cookName: { fontSize: 16, fontWeight: '800' as const },
+  cookSpec: { fontSize: 12, fontWeight: '500' as const },
+  sectionLabel: { fontSize: 13, fontWeight: '700' as const, textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 10 },
+  videoPickerRow: { flexDirection: 'row' as const, gap: 12 },
+  pickerBtn: {
+    flex: 1, alignItems: 'center' as const, gap: 6,
+    paddingVertical: 20, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed' as const,
+  },
+  pickerBtnLabel: { fontSize: 14, fontWeight: '700' as const },
+  pickerBtnHint: { fontSize: 10, fontWeight: '500' as const },
+  videoPreview: {
+    flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12,
+    padding: 14, borderRadius: 16, borderWidth: 1,
+  },
+  videoPreviewIcon: {
+    width: 48, height: 48, borderRadius: 14,
+    backgroundColor: 'rgba(212,175,55,0.10)',
+    alignItems: 'center' as const, justifyContent: 'center' as const,
+  },
+  videoFileName: { fontSize: 14, fontWeight: '700' as const },
+  videoReady: { fontSize: 11, fontWeight: '600' as const, marginTop: 2, color: '#4ADE80' },
+  starRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4 },
+  ratingLabel: { fontSize: 13, fontWeight: '600' as const, marginLeft: 8 },
+  commentInput: {
+    minHeight: 80, borderRadius: 14, borderWidth: 1,
+    paddingHorizontal: 14, paddingTop: 12, paddingBottom: 12,
+    fontSize: 14, fontWeight: '500' as const, lineHeight: 21,
+  },
+  charCount: { fontSize: 11, fontWeight: '500' as const, textAlign: 'right' as const, marginTop: 4 },
+  errorRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6, marginTop: 8 },
+  errorText: { fontSize: 13, fontWeight: '600' as const, color: '#EF4444' },
+  submitBtn: { marginTop: 16, marginBottom: 8 },
+  submitBtnGrad: {
+    flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 8,
+    paddingVertical: 15, borderRadius: 16,
+  },
+  submitBtnText: { fontSize: 16, fontWeight: '800' as const, color: '#FFF' },
+  addReviewBtn: { marginTop: 16 },
+  addReviewBtnGrad: {
+    flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 8,
+    paddingVertical: 13, borderRadius: 14,
+  },
+  addReviewBtnText: { fontSize: 14, fontWeight: '800' as const, color: '#FFF' },
 });
 
 const ck = StyleSheet.create({
