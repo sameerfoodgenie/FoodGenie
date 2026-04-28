@@ -66,6 +66,9 @@ export const COIN_RULES = {
   streak_bonus_7: { amount: 25, label: '7-day streak bonus', icon: '🔥' },
   streak_bonus_14: { amount: 50, label: '14-day streak bonus', icon: '🔥' },
   streak_bonus_30: { amount: 100, label: '30-day streak bonus', icon: '🔥' },
+  meal_plan_generated: { amount: 10, label: 'Generated meal plan', icon: '🍽️' },
+  ai_chat_plan: { amount: 5, label: 'AI meal chat plan', icon: '🧠' },
+  cook_booked: { amount: 15, label: 'Booked a cook', icon: '👨‍🍳' },
 } as const;
 
 export const MAX_DAILY_LIKES = 20;

@@ -286,6 +286,31 @@ export default function HomeScreen() {
           </Animated.View>
         </View>
 
+        {/* ═══════ Feature Banners (Top) ═══════ */}
+        <View style={s.featureSection}>
+          <Animated.View entering={FadeIn.delay(80).duration(300)} style={s.featureSectionHeader}>
+            <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>For You</Text>
+            {currentStreak > 0 ? (
+              <View style={s.streakBadge}>
+                <Text style={{ fontSize: 12 }}>🔥</Text>
+                <Text style={s.streakText}>{currentStreak}d streak</Text>
+              </View>
+            ) : null}
+          </Animated.View>
+          <View style={s.featureBannerList}>
+            {FEATURE_BANNERS.map((banner, i) => (
+              <FeatureBannerCard
+                key={banner.id}
+                banner={banner}
+                index={i}
+                onPress={() => router.push(banner.route as any)}
+                colors={colors}
+                isDark={isDark}
+              />
+            ))}
+          </View>
+        </View>
+
         {/* ═══════ Banner Carousel ═══════ */}
         <Animated.View entering={FadeInDown.delay(100).duration(400)} style={s.bannerSection}>
           <ScrollView
@@ -404,30 +429,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* ═══════ Feature Banners ═══════ */}
-        <View style={s.featureSection}>
-          <Animated.View entering={FadeIn.delay(380).duration(300)} style={s.featureSectionHeader}>
-            <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>For You</Text>
-            {currentStreak > 0 ? (
-              <View style={s.streakBadge}>
-                <Text style={{ fontSize: 12 }}>🔥</Text>
-                <Text style={s.streakText}>{currentStreak}d streak</Text>
-              </View>
-            ) : null}
-          </Animated.View>
-          <View style={s.featureBannerList}>
-            {FEATURE_BANNERS.map((banner, i) => (
-              <FeatureBannerCard
-                key={banner.id}
-                banner={banner}
-                index={i}
-                onPress={() => router.push(banner.route as any)}
-                colors={colors}
-                isDark={isDark}
-              />
-            ))}
-          </View>
-        </View>
+
 
         {/* ═══════ Community Feed Preview ═══════ */}
         {feedPosts.length > 0 ? (
@@ -607,7 +609,7 @@ const s = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
 
   /* ── Feature Banners ── */
-  featureSection: { paddingTop: 24, gap: 12 },
+  featureSection: { paddingTop: 8, gap: 12, paddingHorizontal: 0 },
   featureSectionHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, marginBottom: 2,

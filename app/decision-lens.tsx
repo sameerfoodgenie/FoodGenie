@@ -17,8 +17,10 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../template';
+import { useCoin } from '../hooks/useCoin';
 import { loadPreferences, loadAdvancedPreferences } from '../services/preferencesService';
 import { generateMealPlan, TodayPlan, WeeklyPlan, MonthlyPlan, MealItem } from '../services/mealPlannerService';
+import { COIN_RULES } from '../services/coinService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -257,7 +259,10 @@ export default function AajKhaneScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
+  const { earnCoins } = useCoin();
   const [activeTab, setActiveTab] = useState<PlanTab>('today');
+  const [showCookPrompt, setShowCookPrompt] = useState(false);
+  const [coinAwarded, setCoinAwarded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [todayPlan, setTodayPlan] = useState<TodayPlan | null>(null);
@@ -296,6 +301,13 @@ export default function AajKhaneScreen() {
       if (tab === 'today') setTodayPlan(data);
       else if (tab === 'weekly') setWeeklyPlan(data);
       else setMonthlyPlan(data);
+      // Award coins for generating plan
+      const coinKey = `${tab}-${Date.now()}`;
+      if (!coinAwarded.has(tab)) {
+        setCoinAwarded(prev => new Set(prev).add(tab));
+        earnCoins(COIN_RULES.meal_plan_generated.amount, 'meal_plan_generated', { planType: tab });
+      }
+      setShowCookPrompt(true);
     }
     setLoading(false);
   }, [prefs, loadUserPrefs]);
@@ -456,10 +468,80 @@ export default function AajKhaneScreen() {
             </View>
           ) : null}
 
+          {/* Book a Cook Prompt */}
+          {showCookPrompt && !loading && !error ? (
+            <Animated.View entering={FadeInDown.delay(200).duration(400)} style={[s.cookPromptCard, { backgroundColor: colors.surface, borderColor: 'rgba(212,175,55,0.25)' }]}>
+              <View style={s.cookPromptHeader}>
+                <View style={s.cookPromptIconWrap}>
+                  <Text style={{ fontSize: 28 }}>👨‍🍳</Text>
+                </View>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={[s.cookPromptTitle, { color: colors.textPrimary }]}>Want an expert cook?</Text>
+                  <Text style={[s.cookPromptSub, { color: colors.textMuted }]}>Let a professional cook prepare these meals for you</Text>
+                </View>
+              </View>
+              <Pressable
+                style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/(tabs)/cook' as any); }}
+              >
+                <LinearGradient colors={['#FF6B6B', '#FF8E53']} style={s.cookPromptBtn}>
+                  <MaterialIcons name="restaurant" size={18} color="#FFF" />
+                  <Text style={s.cookPromptBtnText}>Book a Cook</Text>
+                  <View style={s.cookPromptCoinBadge}>
+                    <Text style={{ fontSize: 10 }}>🪙</Text>
+                    <Text style={s.cookPromptCoinText}>+{COIN_RULES.cook_booked.amount}</Text>
+                  </View>
+                </LinearGradient>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [s.cookPromptDismiss, pressed && { opacity: 0.6 }]}
+                onPress={() => setShowCookPrompt(false)}
+              >
+                <Text style={[s.cookPromptDismissText, { color: colors.textMuted }]}>Maybe later</Text>
+              </Pressable>
+            </Animated.View>
+          ) : null}
+
+          {/* Service Cards */}
+          {!loading && !error ? (
+            <Animated.View entering={FadeInDown.delay(250).duration(300)} style={s.serviceCards}>
+              <Pressable
+                style={({ pressed }) => [s.serviceCardItem, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/(tabs)/cook' as any); }}
+              >
+                <View style={[s.serviceCardIcon, { backgroundColor: 'rgba(255,107,107,0.10)' }]}>
+                  <Text style={{ fontSize: 24 }}>👨‍🍳</Text>
+                </View>
+                <Text style={[s.serviceCardTitle, { color: colors.textPrimary }]}>Book a Cook</Text>
+                <Text style={[s.serviceCardSub, { color: colors.textMuted }]}>Hire experts</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [s.serviceCardItem, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/(tabs)/grocery' as any); }}
+              >
+                <View style={[s.serviceCardIcon, { backgroundColor: 'rgba(74,222,128,0.10)' }]}>
+                  <Text style={{ fontSize: 24 }}>🛒</Text>
+                </View>
+                <Text style={[s.serviceCardTitle, { color: colors.textPrimary }]}>Smart Grocery</Text>
+                <Text style={[s.serviceCardSub, { color: colors.textMuted }]}>Budget bundles</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [s.serviceCardItem, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
+                onPress={() => { Haptics.selectionAsync(); router.push('/ai-meal-chat' as any); }}
+              >
+                <View style={[s.serviceCardIcon, { backgroundColor: 'rgba(139,92,246,0.10)' }]}>
+                  <Text style={{ fontSize: 24 }}>🧠</Text>
+                </View>
+                <Text style={[s.serviceCardTitle, { color: colors.textPrimary }]}>AI Chat</Text>
+                <Text style={[s.serviceCardSub, { color: colors.textMuted }]}>Plan meals</Text>
+              </Pressable>
+            </Animated.View>
+          ) : null}
+
           {/* Regenerate Button */}
           {!loading && !error ? (
             <Animated.View entering={FadeInDown.delay(300).duration(300)} style={s.regenerateWrap}>
-              <Pressable style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]} onPress={() => fetchPlan(activeTab)}>
+              <Pressable style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]} onPress={() => { setCoinAwarded(prev => { const n = new Set(prev); n.delete(activeTab); return n; }); fetchPlan(activeTab); }}>
                 <LinearGradient colors={['#D4AF37', '#FFD700']} style={s.regenerateBtn}>
                   <MaterialIcons name="auto-awesome" size={18} color="#FFF" />
                   <Text style={s.regenerateText}>Regenerate Plan</Text>
@@ -526,6 +608,40 @@ const s = StyleSheet.create({
   monthlyStatValue: { fontSize: 16, fontWeight: '900' },
   monthlyStatLabel: { fontSize: 9, fontWeight: '600' },
   weekList: { gap: 12 },
+  // Cook Prompt
+  cookPromptCard: {
+    padding: 16, borderRadius: 18, borderWidth: 1.5, gap: 12,
+    shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3,
+  },
+  cookPromptHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  cookPromptIconWrap: {
+    width: 52, height: 52, borderRadius: 16,
+    backgroundColor: 'rgba(255,107,107,0.10)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  cookPromptTitle: { fontSize: 16, fontWeight: '800' },
+  cookPromptSub: { fontSize: 12, fontWeight: '500', lineHeight: 17 },
+  cookPromptBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    paddingVertical: 13, borderRadius: 14,
+  },
+  cookPromptBtnText: { fontSize: 15, fontWeight: '800', color: '#FFF' },
+  cookPromptCoinBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    backgroundColor: 'rgba(255,255,255,0.25)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10,
+  },
+  cookPromptCoinText: { fontSize: 10, fontWeight: '800', color: '#FFF' },
+  cookPromptDismiss: { alignSelf: 'center', paddingVertical: 4 },
+  cookPromptDismissText: { fontSize: 12, fontWeight: '600' },
+  // Service Cards in Decision Lens
+  serviceCards: { flexDirection: 'row', gap: 10 },
+  serviceCardItem: {
+    flex: 1, alignItems: 'center', gap: 6,
+    paddingVertical: 14, borderRadius: 16, borderWidth: 1,
+  },
+  serviceCardIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  serviceCardTitle: { fontSize: 12, fontWeight: '800' },
+  serviceCardSub: { fontSize: 9, fontWeight: '600' },
   regenerateWrap: { alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, gap: 12 },
   regenerateBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 16 },
   regenerateText: { fontSize: 16, fontWeight: '800', color: '#FFF' },

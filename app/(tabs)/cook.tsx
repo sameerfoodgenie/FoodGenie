@@ -29,8 +29,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../hooks/useTheme';
 import { useAuth, useAlert } from '../../template';
+import { useCoin } from '../../hooks/useCoin';
 import { fetchCooks, Cook, CookVideoReview, uploadVideoReview } from '../../services/cookService';
 import { createBooking, fetchCookBookings, Booking as CookBookingRecord } from '../../services/bookingService';
+import { COIN_RULES } from '../../services/coinService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const DISH_IMAGE_SIZE = 80;
@@ -814,6 +816,7 @@ function BookingModal({ cook, visible, onClose, onBooked, colors, isDark }: {
 }) {
   const { user } = useAuth();
   const { showAlert } = useAlert();
+  const { earnCoins: earnCoinsFn } = useCoin();
   const [selectedPlan, setSelectedPlan] = useState<BookingPlan>('daily');
   const [notes, setNotes] = useState('');
   const [isBooking, setIsBooking] = useState(false);
@@ -883,6 +886,8 @@ function BookingModal({ cook, visible, onClose, onBooked, colors, isDark }: {
       return;
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // Award coins for booking
+    earnCoinsFn(COIN_RULES.cook_booked.amount, 'cook_booked', { cookName: cook.name, plan: selectedPlan });
     setNotes('');
     setSelectedPlan('daily');
     onClose();

@@ -19,8 +19,10 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../template';
+import { useCoin } from '../hooks/useCoin';
 import { loadPreferences, loadAdvancedPreferences } from '../services/preferencesService';
 import { sendMealChat } from '../services/mealPlannerService';
+import { COIN_RULES } from '../services/coinService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -38,6 +40,7 @@ const QUICK_PROMPTS = [
   { emoji: '🛒', label: 'Grocery budget', message: 'Calculate my weekly grocery budget based on healthy Indian meals. Break down by category: vegetables, grains, dairy, protein, and spices.' },
   { emoji: '💪', label: 'High protein', message: 'Suggest high-protein Indian meals for the week that are easy to prepare. Include protein grams for each meal.' },
   { emoji: '🥗', label: 'Low calorie', message: 'Plan low-calorie meals for this week under 1500 calories per day. Include calorie breakdown.' },
+  { emoji: '👨‍🍳', label: 'Book a cook', message: 'I want to book an expert cook. Help me choose the right plan (daily, weekly, or monthly) based on my preferences and budget.' },
 ];
 
 // ── Inline Bold Text Renderer ──
@@ -379,8 +382,11 @@ export default function AIMealChatScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
+  const { earnCoins } = useCoin();
   const flatListRef = useRef<FlatList>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [chatCoinsAwarded, setChatCoinsAwarded] = useState(0);
+  const [showCookBanner, setShowCookBanner] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [prefs, setPrefs] = useState<any>(null);
@@ -431,17 +437,31 @@ export default function AIMealChatScreen() {
 
     const { data, error } = await sendMealChat(text.trim(), prefs || {}, history);
 
+    const aiContent = error
+      ? `Sorry, I encountered an error: ${error}. Please try again.`
+      : data || 'I could not generate a response. Please try again.';
+
     const assistantMsg: ChatMessage = {
       id: `ai-${Date.now()}`,
       role: 'assistant',
-      content: error
-        ? `Sorry, I encountered an error: ${error}. Please try again.`
-        : data || 'I could not generate a response. Please try again.',
+      content: aiContent,
       timestamp: new Date(),
     };
 
     setMessages(prev => [...prev, assistantMsg]);
     setIsLoading(false);
+
+    // Award coins for AI chat interaction (max 3 per session)
+    if (!error && chatCoinsAwarded < 3) {
+      earnCoins(COIN_RULES.ai_chat_plan.amount, 'ai_chat_plan', { message: text.trim().slice(0, 50) });
+      setChatCoinsAwarded(prev => prev + 1);
+    }
+
+    // Show cook booking banner if meal plan discussed
+    const lowerContent = aiContent.toLowerCase();
+    if (lowerContent.includes('meal') || lowerContent.includes('plan') || lowerContent.includes('cook') || lowerContent.includes('dinner') || lowerContent.includes('lunch')) {
+      setShowCookBanner(true);
+    }
 
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true });
@@ -508,6 +528,36 @@ export default function AIMealChatScreen() {
             onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
             ListFooterComponent={isLoading ? <TypingBubble colors={colors} /> : null}
           />
+
+          {/* Cook Booking Banner */}
+          {showCookBanner && !showQuickPrompts ? (
+            <Animated.View entering={FadeInDown.duration(300)} style={[s.cookBanner, { backgroundColor: isDark ? 'rgba(255,107,107,0.10)' : 'rgba(255,107,107,0.06)', borderColor: 'rgba(255,107,107,0.20)' }]}>
+              <View style={s.cookBannerContent}>
+                <Text style={{ fontSize: 22 }}>👨‍🍳</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.cookBannerTitle, { color: colors.textPrimary }]}>Want a cook to prepare this?</Text>
+                  <Text style={[s.cookBannerSub, { color: colors.textMuted }]}>Book an expert cook and earn 🪙 +{COIN_RULES.cook_booked.amount} coins</Text>
+                </View>
+              </View>
+              <View style={s.cookBannerActions}>
+                <Pressable
+                  style={({ pressed }) => [s.cookBannerBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/(tabs)/cook' as any); }}
+                >
+                  <LinearGradient colors={['#FF6B6B', '#FF8E53']} style={s.cookBannerBtnGrad}>
+                    <MaterialIcons name="restaurant" size={14} color="#FFF" />
+                    <Text style={s.cookBannerBtnText}>Book a Cook</Text>
+                  </LinearGradient>
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [pressed && { opacity: 0.6 }]}
+                  onPress={() => setShowCookBanner(false)}
+                >
+                  <Text style={[s.cookBannerDismiss, { color: colors.textMuted }]}>Dismiss</Text>
+                </Pressable>
+              </View>
+            </Animated.View>
+          ) : null}
 
           {/* Quick Prompts */}
           {showQuickPrompts ? (
@@ -599,6 +649,22 @@ const s = StyleSheet.create({
   input: { fontSize: 15, fontWeight: '500', lineHeight: 21, paddingVertical: 0 },
   sendBtn: {},
   sendBtnGrad: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  // Cook Banner
+  cookBanner: {
+    marginHorizontal: 16, marginBottom: 8,
+    padding: 14, borderRadius: 16, borderWidth: 1, gap: 10,
+  },
+  cookBannerContent: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  cookBannerTitle: { fontSize: 14, fontWeight: '800' },
+  cookBannerSub: { fontSize: 11, fontWeight: '500', marginTop: 1 },
+  cookBannerActions: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 32 },
+  cookBannerBtn: {},
+  cookBannerBtnGrad: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 16, paddingVertical: 9, borderRadius: 12,
+  },
+  cookBannerBtnText: { fontSize: 13, fontWeight: '800', color: '#FFF' },
+  cookBannerDismiss: { fontSize: 12, fontWeight: '600' },
 });
 
 const cb = StyleSheet.create({
