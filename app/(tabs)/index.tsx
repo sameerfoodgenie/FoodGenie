@@ -32,26 +32,41 @@ const BANNER_W = SCREEN_W - 40;
 const BANNER_H = 180;
 const SERVICE_CARD_W = (SCREEN_W - 52) / 2;
 
-const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-function getWeekDates(): { dayName: string; date: Date; dateStr: string }[] {
-  const now = new Date();
-  const day = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
-  monday.setHours(0, 0, 0, 0);
-  return DAY_NAMES.map((name, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    return { dayName: name, date: d, dateStr: d.toISOString().split('T')[0] };
-  });
-}
-
-function getPostsForDay(posts: FoodPost[], dateStr: string): FoodPost[] {
-  return posts.filter(p => new Date(p.timestamp).toISOString().split('T')[0] === dateStr);
-}
-
 const MEAL_EMOJI: Record<string, string> = { breakfast: '☀️', lunch: '🍽', dinner: '🌙', snack: '🍿' };
+
+// ── Feature Banners data ──
+const FEATURE_BANNERS = [
+  {
+    id: 'aaj-khane',
+    title: 'Aaj Khane Kya Hai? 🤔',
+    subtitle: 'Not sure what to eat today? Tap to get instant meal ideas based on your mood, budget & cravings',
+    cta: 'Decide Now',
+    gradient: ['#FF6B6B', '#FF8E53', '#FFB347'] as const,
+    icon: 'restaurant' as const,
+    accentEmoji: '🍛',
+    route: '/decision-lens',
+  },
+  {
+    id: 'ai-planner',
+    title: 'Let AI Plan Your Meals 🧠',
+    subtitle: 'Get a personalized weekly & monthly meal plan powered by AI — balanced nutrition, zero stress',
+    cta: 'Plan My Meals',
+    gradient: ['#6C3CE0', '#8B5CF6', '#B794F4'] as const,
+    icon: 'auto-awesome' as const,
+    accentEmoji: '📅',
+    route: '/daily-meals',
+  },
+  {
+    id: 'grocery-deals',
+    title: 'Best Grocery Deals 💰',
+    subtitle: 'Smart bundles matched to your meals — save up to 30% on weekly groceries from top stores',
+    cta: 'See Deals',
+    gradient: ['#059669', '#10B981', '#6EE7B7'] as const,
+    icon: 'local-offer' as const,
+    accentEmoji: '🛒',
+    route: '/(tabs)/grocery',
+  },
+];
 
 // ── Banner data ──
 const BANNERS = [
@@ -123,38 +138,44 @@ const QUICK_ACTIONS = [
   { id: 'leaderboard', emoji: '🏆', label: 'Leaderboard', color: '#F59E0B', route: '/coin-leaderboard' },
 ];
 
-// ── Week Day Mini Card ──
-function DayMiniCard({
-  dayName, posts, isToday, onPress, colors,
+// ── Feature Banner Card ──
+function FeatureBannerCard({
+  banner, index, onPress, colors, isDark,
 }: {
-  dayName: string; posts: FoodPost[]; isToday: boolean; onPress: () => void; colors: any;
+  banner: typeof FEATURE_BANNERS[0]; index: number; onPress: () => void; colors: any; isDark: boolean;
 }) {
-  const hasMeal = posts.length > 0;
-  const latestPost = hasMeal ? posts[0] : null;
   return (
-    <Pressable
-      style={({ pressed }) => [
-        s.dayMini,
-        {
-          backgroundColor: isToday
-            ? 'rgba(212,175,55,0.10)'
-            : colors.surface,
-          borderColor: isToday ? 'rgba(212,175,55,0.30)' : colors.border,
-        },
-        pressed && { opacity: 0.85, transform: [{ scale: 0.95 }] },
-      ]}
-      onPress={() => { Haptics.selectionAsync(); onPress(); }}
-    >
-      <Text style={[s.dayMiniName, { color: isToday ? '#D4AF37' : colors.textMuted }]}>{dayName}</Text>
-      {hasMeal ? (
-        <View style={[s.dayMiniDot, { backgroundColor: '#4ADE80' }]} />
-      ) : (
-        <View style={[s.dayMiniDot, { backgroundColor: isToday ? 'rgba(212,175,55,0.30)' : colors.border }]} />
-      )}
-      {isToday ? (
-        <View style={s.dayMiniTodayLine} />
-      ) : null}
-    </Pressable>
+    <Animated.View entering={FadeInDown.delay(400 + index * 100).duration(400)}>
+      <Pressable
+        style={({ pressed }) => [pressed && { opacity: 0.95, transform: [{ scale: 0.98 }] }]}
+        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onPress(); }}
+      >
+        <LinearGradient
+          colors={banner.gradient as unknown as string[]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={s.featureBanner}
+        >
+          {/* Decorative circles */}
+          <View style={[s.featureCircle, { width: 120, height: 120, top: -30, right: -20, backgroundColor: 'rgba(255,255,255,0.10)' }]} />
+          <View style={[s.featureCircle, { width: 80, height: 80, bottom: -20, left: 30, backgroundColor: 'rgba(255,255,255,0.07)' }]} />
+
+          <View style={s.featureContent}>
+            <View style={s.featureTextArea}>
+              <Text style={s.featureTitle}>{banner.title}</Text>
+              <Text style={s.featureSubtitle}>{banner.subtitle}</Text>
+              <View style={s.featureCta}>
+                <Text style={s.featureCtaText}>{banner.cta}</Text>
+                <MaterialIcons name="arrow-forward" size={14} color="#FFF" />
+              </View>
+            </View>
+            <View style={s.featureIconWrap}>
+              <Text style={s.featureAccentEmoji}>{banner.accentEmoji}</Text>
+            </View>
+          </View>
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -197,13 +218,6 @@ export default function HomeScreen() {
 
   const name = profile?.full_name || user?.username || 'Food Lover';
   const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
-
-  const weekDates = useMemo(() => getWeekDates(), []);
-  const todayStr = new Date().toISOString().split('T')[0];
-  const weekMeals = useMemo(() => weekDates.map(wd => ({
-    ...wd, posts: getPostsForDay(myPosts, wd.dateStr), isToday: wd.dateStr === todayStr,
-  })), [weekDates, myPosts, todayStr]);
-  const weekMealCount = weekMeals.reduce((sum, d) => sum + d.posts.length, 0);
 
   const [mealPickerVisible, setMealPickerVisible] = useState(false);
   const [selectedDayForMeal, setSelectedDayForMeal] = useState<string | null>(null);
@@ -400,37 +414,29 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* ═══════ Weekly Meals (Compact) ═══════ */}
-        <View style={s.weekSection}>
-          <Animated.View entering={FadeIn.delay(400).duration(300)} style={s.weekHeader}>
-            <View style={s.weekHeaderLeft}>
-              <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>This Week</Text>
-              <View style={s.weekCountBadge}>
-                <Text style={s.weekCountText}>{weekMealCount} meals</Text>
-              </View>
-            </View>
+        {/* ═══════ Feature Banners ═══════ */}
+        <View style={s.featureSection}>
+          <Animated.View entering={FadeIn.delay(380).duration(300)} style={s.featureSectionHeader}>
+            <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>For You</Text>
             {currentStreak > 0 ? (
               <View style={s.streakBadge}>
                 <Text style={{ fontSize: 12 }}>🔥</Text>
-                <Text style={s.streakText}>{currentStreak}d</Text>
+                <Text style={s.streakText}>{currentStreak}d streak</Text>
               </View>
             ) : null}
           </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(420).duration(300)}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.weekScroll}>
-              {weekMeals.map((day) => (
-                <DayMiniCard
-                  key={day.dayName}
-                  dayName={day.dayName}
-                  posts={day.posts}
-                  isToday={day.isToday}
-                  onPress={() => handleAddMeal(day.dateStr)}
-                  colors={colors}
-                />
-              ))}
-            </ScrollView>
-          </Animated.View>
+          <View style={s.featureBannerList}>
+            {FEATURE_BANNERS.map((banner, i) => (
+              <FeatureBannerCard
+                key={banner.id}
+                banner={banner}
+                index={i}
+                onPress={() => router.push(banner.route as any)}
+                colors={colors}
+                isDark={isDark}
+              />
+            ))}
+          </View>
         </View>
 
         {/* ═══════ Community Feed Preview ═══════ */}
@@ -610,31 +616,42 @@ const s = StyleSheet.create({
   /* ── Section Title ── */
   sectionTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
 
-  /* ── Week Section ── */
-  weekSection: { paddingTop: 24, gap: 12 },
-  weekHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
-  weekHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  weekCountBadge: {
-    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
-    backgroundColor: 'rgba(74,222,128,0.10)', borderWidth: 1, borderColor: 'rgba(74,222,128,0.20)',
+  /* ── Feature Banners ── */
+  featureSection: { paddingTop: 24, gap: 12 },
+  featureSectionHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, marginBottom: 2,
   },
-  weekCountText: { fontSize: 10, fontWeight: '700', color: '#22C55E' },
+  featureBannerList: { paddingHorizontal: 20, gap: 12 },
+  featureBanner: {
+    borderRadius: 20, overflow: 'hidden', position: 'relative',
+    paddingHorizontal: 20, paddingVertical: 20, minHeight: 130,
+  },
+  featureCircle: { position: 'absolute', borderRadius: 999 },
+  featureContent: {
+    flexDirection: 'row', alignItems: 'center', gap: 12, zIndex: 2,
+  },
+  featureTextArea: { flex: 1, gap: 6 },
+  featureTitle: { fontSize: 18, fontWeight: '900', color: '#FFF', letterSpacing: -0.3 },
+  featureSubtitle: { fontSize: 12, fontWeight: '500', color: 'rgba(255,255,255,0.85)', lineHeight: 17 },
+  featureCta: {
+    flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
+    marginTop: 6, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+  },
+  featureCtaText: { fontSize: 12, fontWeight: '700', color: '#FFF' },
+  featureIconWrap: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  featureAccentEmoji: { fontSize: 32 },
   streakBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10,
     backgroundColor: 'rgba(255,107,107,0.08)', borderWidth: 1, borderColor: 'rgba(255,107,107,0.15)',
   },
   streakText: { fontSize: 11, fontWeight: '700', color: '#FF6B6B' },
-  weekScroll: { paddingHorizontal: 20, gap: 8 },
-  dayMini: {
-    width: 44, height: 56, borderRadius: 12, borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center', gap: 6, position: 'relative',
-  },
-  dayMiniName: { fontSize: 10, fontWeight: '700' },
-  dayMiniDot: { width: 6, height: 6, borderRadius: 3 },
-  dayMiniTodayLine: {
-    position: 'absolute', bottom: 0, width: 20, height: 2.5, borderRadius: 1.5, backgroundColor: '#D4AF37',
-  },
 
   /* ── Feed ── */
   feedSection: { paddingTop: 24 },
