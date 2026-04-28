@@ -18,7 +18,6 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInRight, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePosts, FoodPost } from '../../contexts/PostContext';
-import { useCreator, CREATOR_TIERS } from '../../contexts/CreatorContext';
 import { useAuth } from '@/template';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useCoin } from '../../hooks/useCoin';
@@ -82,7 +81,7 @@ const QUICK_ACTIONS = [
   { id: 'trending', emoji: '🔥', label: 'Trending', color: '#FF6B6B', route: '/explore' },
   { id: 'offers', emoji: '🎟️', label: 'Offers', color: '#818CF8', route: '/coin-redeem' },
   { id: 'order', emoji: '📦', label: 'Order Food', color: '#FB923C', route: '/partner-apps' },
-  { id: 'creator', emoji: '🎬', label: 'Creator', color: '#22D3EE', route: '/creator-dashboard' },
+  { id: 'shows', emoji: '🎬', label: 'Shows', color: '#22D3EE', route: '/shows' },
   { id: 'leaderboard', emoji: '🏆', label: 'Leaderboard', color: '#F59E0B', route: '/coin-leaderboard' },
 ];
 
@@ -132,7 +131,6 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { feedPosts, myPosts, refreshFeed } = usePosts();
-  const { isCreatorUnlocked } = useCreator();
   const { unreadCount } = useNotifications(user?.id || null);
   const { balance, currentStreak } = useCoin();
   const { colors, isDark } = useTheme();
@@ -307,11 +305,7 @@ export default function HomeScreen() {
                   ]}
                   onPress={() => {
                     Haptics.selectionAsync();
-                    if (action.id === 'creator') {
-                      router.push(isCreatorUnlocked ? '/creator-studio' : '/creator-dashboard');
-                    } else {
-                      router.push(action.route as any);
-                    }
+                    router.push(action.route as any);
                   }}
                 >
                   <View style={[s.quickItemIcon, { backgroundColor: `${action.color}12` }]}>

@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -55,7 +55,7 @@ const MASTER_CHEFS: MasterChef[] = [
     name: 'Chef Meera',
     handle: 'meera_kitchen',
     specialty: 'Home Style Cooking',
-    tagline: 'Bringing grandma\'s recipes to your kitchen with a modern twist.',
+    tagline: "Bringing grandma's recipes to your kitchen with a modern twist.",
     avatarUri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
     coverUri: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80',
     followers: 8700,
@@ -157,11 +157,9 @@ function ChefCard({ chef, index, isFollowing, onToggleFollow, onPress, colors }:
             colors={['transparent', 'rgba(0,0,0,0.55)']}
             style={StyleSheet.absoluteFillObject}
           />
-          {/* Specialty badge */}
           <View style={[styles.specialtyBadge, { backgroundColor: `${chef.badgeColor}DD` }]}>
             <Text style={styles.specialtyText}>{chef.specialty}</Text>
           </View>
-          {/* Rating */}
           <View style={styles.ratingBadge}>
             <MaterialIcons name="star" size={12} color="#FFD700" />
             <Text style={styles.ratingText}>{chef.rating}</Text>
@@ -171,7 +169,6 @@ function ChefCard({ chef, index, isFollowing, onToggleFollow, onPress, colors }:
         {/* Chef info */}
         <View style={styles.chefInfo}>
           <View style={styles.chefInfoLeft}>
-            {/* Avatar */}
             <View style={[styles.chefAvatarWrap, { borderColor: chef.badgeColor }]}>
               <Image source={{ uri: chef.avatarUri }} style={styles.chefAvatar} contentFit="cover" transition={150} />
               {chef.isVerified ? (
@@ -180,7 +177,6 @@ function ChefCard({ chef, index, isFollowing, onToggleFollow, onPress, colors }:
                 </View>
               ) : null}
             </View>
-
             <View style={styles.chefTextBlock}>
               <View style={styles.chefNameRow}>
                 <Text style={[styles.chefName, { color: colors.textPrimary }]}>{chef.name}</Text>
@@ -189,7 +185,6 @@ function ChefCard({ chef, index, isFollowing, onToggleFollow, onPress, colors }:
             </View>
           </View>
 
-          {/* Follow button */}
           <Pressable
             style={({ pressed }) => [
               styles.followBtn,
@@ -214,12 +209,10 @@ function ChefCard({ chef, index, isFollowing, onToggleFollow, onPress, colors }:
           </Pressable>
         </View>
 
-        {/* Tagline */}
         <Text style={[styles.chefTagline, { color: colors.textSecondary }]} numberOfLines={2}>
           {chef.tagline}
         </Text>
 
-        {/* Stats row */}
         <View style={[styles.chefStats, { borderTopColor: colors.border }]}>
           <View style={styles.chefStatItem}>
             <Text style={[styles.chefStatValue, { color: colors.textPrimary }]}>{formatFollowers(chef.followers + (isFollowing ? 1 : 0))}</Text>
@@ -237,7 +230,6 @@ function ChefCard({ chef, index, isFollowing, onToggleFollow, onPress, colors }:
           </View>
         </View>
 
-        {/* Action row */}
         <View style={styles.chefActions}>
           <Pressable
             style={({ pressed }) => [
@@ -326,32 +318,19 @@ export default function MasterChefsScreen() {
           keyExtractor={item => item.id}
           renderItem={renderChef}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
           ListHeaderComponent={
             <View>
               {/* Header */}
               <LinearGradient colors={headerGradient} style={styles.headerGradient}>
                 <View style={styles.header}>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.backBtn,
-                      { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.80)', borderColor: colors.border },
-                      pressed && { opacity: 0.7 },
-                    ]}
-                    onPress={() => { Haptics.selectionAsync(); router.back(); }}
-                  >
-                    <MaterialIcons name="arrow-back" size={22} color={colors.textPrimary} />
-                  </Pressable>
-                  <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Master Chefs</Text>
-                  <View style={{ width: 44 }} />
+                  <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Master Chefs 👨‍🍳</Text>
                 </View>
 
                 {/* Hero section */}
                 <Animated.View entering={FadeIn.duration(500)} style={styles.heroSection}>
-                  <Text style={styles.heroEmoji}>👨‍🍳</Text>
-                  <Text style={[styles.heroTitle, { color: isDark ? '#FFD700' : '#8B6914' }]}>Curated Experts</Text>
                   <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
-                    Follow top chefs, watch their shows, and learn their secret recipes
+                    Follow top chefs, watch their shows, and learn secret recipes
                   </Text>
                   <View style={styles.heroStats}>
                     <View style={styles.heroStatItem}>
@@ -431,35 +410,25 @@ export default function MasterChefsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-
-  /* Header */
   headerGradient: { paddingBottom: 8 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
-  backBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1,
-  },
-  headerTitle: { fontSize: 20, fontWeight: '800' },
-
-  /* Hero */
+  headerTitle: { fontSize: 22, fontWeight: '900', letterSpacing: -0.3 },
   heroSection: {
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingBottom: 20,
-    gap: 8,
+    gap: 10,
   },
-  heroEmoji: { fontSize: 48, marginBottom: 4 },
-  heroTitle: { fontSize: 24, fontWeight: '900', letterSpacing: -0.3 },
   heroSubtitle: { fontSize: 14, fontWeight: '500', textAlign: 'center', lineHeight: 20, maxWidth: 300 },
   heroStats: {
-    flexDirection: 'row', alignItems: 'center', gap: 0,
-    marginTop: 12,
+    flexDirection: 'row', alignItems: 'center',
+    marginTop: 8,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 18,
@@ -473,8 +442,6 @@ const styles = StyleSheet.create({
   heroStatValue: { fontSize: 20, fontWeight: '900' },
   heroStatLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
   heroStatDivider: { width: 1, height: 30 },
-
-  /* Filters */
   filterSection: { marginTop: 12 },
   filterScroll: { paddingHorizontal: 16, gap: 8 },
   filterChip: {
@@ -493,8 +460,6 @@ const styles = StyleSheet.create({
   filterEmoji: { fontSize: 16 },
   filterLabel: { fontSize: 13, fontWeight: '700' },
   filterLabelActive: { color: '#D4AF37' },
-
-  /* Section header */
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -505,8 +470,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontSize: 17, fontWeight: '800' },
   sectionCount: { fontSize: 12, fontWeight: '600' },
-
-  /* Chef Card */
   chefCard: {
     marginHorizontal: 16,
     marginBottom: 16,
@@ -519,125 +482,65 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 4,
   },
-  chefCover: {
-    width: '100%',
-    height: 140,
-    position: 'relative',
-  },
+  chefCover: { width: '100%', height: 140, position: 'relative' },
   specialtyBadge: {
-    position: 'absolute',
-    bottom: 12,
-    left: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 12,
+    position: 'absolute', bottom: 12, left: 12,
+    paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12,
   },
   specialtyText: { fontSize: 12, fontWeight: '800', color: '#FFF', letterSpacing: 0.3 },
   ratingBadge: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
+    position: 'absolute', top: 12, right: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12,
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
   ratingText: { fontSize: 12, fontWeight: '800', color: '#FFF' },
-
-  /* Chef info row */
   chefInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 14,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingTop: 14,
   },
   chefInfoLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   chefAvatarWrap: {
     width: 50, height: 50, borderRadius: 25,
-    borderWidth: 2.5,
-    overflow: 'hidden',
-    position: 'relative',
+    borderWidth: 2.5, overflow: 'hidden', position: 'relative',
   },
   chefAvatar: { width: '100%', height: '100%' },
   verifiedBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#FFF',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: 'absolute', bottom: -2, right: -2,
+    width: 20, height: 20, borderRadius: 10,
+    backgroundColor: '#FFF', alignItems: 'center', justifyContent: 'center',
   },
   chefTextBlock: { flex: 1, gap: 1 },
   chefNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   chefName: { fontSize: 16, fontWeight: '800' },
   chefHandle: { fontSize: 13, fontWeight: '500' },
-
-  /* Follow button */
-  followBtn: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    minWidth: 90,
-  },
+  followBtn: { borderRadius: 20, overflow: 'hidden', minWidth: 90 },
   followBtnGrad: {
-    paddingHorizontal: 20,
-    paddingVertical: 9,
-    borderRadius: 20,
-    alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 9, borderRadius: 20, alignItems: 'center',
   },
   followBtnText: { fontSize: 13, fontWeight: '800', color: '#FFF' },
-
-  /* Tagline */
   chefTagline: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    fontSize: 13,
-    fontWeight: '500',
-    lineHeight: 19,
+    paddingHorizontal: 16, paddingTop: 10,
+    fontSize: 13, fontWeight: '500', lineHeight: 19,
   },
-
-  /* Stats */
   chefStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 16,
-    marginTop: 14,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    justifyContent: 'space-around',
+    flexDirection: 'row', alignItems: 'center',
+    marginHorizontal: 16, marginTop: 14, paddingTop: 14,
+    borderTopWidth: 1, justifyContent: 'space-around',
   },
   chefStatItem: { alignItems: 'center', gap: 2 },
   chefStatValue: { fontSize: 16, fontWeight: '900' },
   chefStatLabel: { fontSize: 11, fontWeight: '600' },
   chefStatDivider: { width: 1, height: 28 },
-
-  /* Actions */
   chefActions: {
-    flexDirection: 'row',
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 16,
+    flexDirection: 'row', gap: 10,
+    paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16,
   },
   actionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 11,
-    borderRadius: 14,
-    borderWidth: 1,
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, paddingVertical: 11, borderRadius: 14, borderWidth: 1,
   },
   actionBtnText: { fontSize: 13, fontWeight: '700' },
-
-  /* Empty */
   emptyState: { alignItems: 'center', paddingTop: 60, gap: 10 },
   emptyEmoji: { fontSize: 48 },
   emptyTitle: { fontSize: 18, fontWeight: '700' },
