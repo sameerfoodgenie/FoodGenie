@@ -93,25 +93,7 @@ const BANNERS = [
   },
 ];
 
-// ── Service cards ──
-const SERVICE_CARDS = [
-  {
-    id: 'book-cook',
-    title: 'Book a Cook',
-    subtitle: 'Hire expert home cooks',
-    emoji: '👨‍🍳',
-    iconBg: '#FF6B6B',
-    route: '/(tabs)/cook',
-  },
-  {
-    id: 'smart-grocery',
-    title: 'Smart Grocery',
-    subtitle: 'Budget-friendly bundles',
-    emoji: '🛒',
-    iconBg: '#4ADE80',
-    route: '/(tabs)/grocery',
-  },
-];
+
 
 // ── Quick action items ──
 const QUICK_ACTIONS = [
@@ -331,42 +313,6 @@ export default function HomeScreen() {
           </View>
         </Animated.View>
 
-        {/* ═══════ Main Service Cards (Book a Cook / Smart Grocery) ═══════ */}
-        <View style={s.serviceSection}>
-          <Animated.View entering={FadeInDown.delay(160).duration(350)} style={s.serviceSectionHeader}>
-            <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>What would you like?</Text>
-          </Animated.View>
-          <View style={s.serviceRow}>
-            {SERVICE_CARDS.map((card, i) => (
-              <Animated.View key={card.id} entering={FadeInDown.delay(200 + i * 80).duration(350)}>
-                <Pressable
-                  style={({ pressed }) => [
-                    s.serviceCard,
-                    {
-                      backgroundColor: colors.surface,
-                      borderColor: colors.border,
-                      shadowColor: isDark ? '#000' : 'rgba(0,0,0,0.08)',
-                    },
-                    pressed && { opacity: 0.92, transform: [{ scale: 0.97 }] },
-                  ]}
-                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push(card.route as any); }}
-                >
-                  <View style={[s.serviceIconWrap, { backgroundColor: `${card.iconBg}15` }]}>
-                    <Text style={{ fontSize: 30 }}>{card.emoji}</Text>
-                  </View>
-                  <View style={s.serviceTextWrap}>
-                    <View style={s.serviceTitleRow}>
-                      <Text style={[s.serviceTitle, { color: colors.textPrimary }]}>{card.title}</Text>
-                      <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
-                    </View>
-                    <Text style={[s.serviceSubtitle, { color: colors.textMuted }]}>{card.subtitle}</Text>
-                  </View>
-                </Pressable>
-              </Animated.View>
-            ))}
-          </View>
-        </View>
-
         {/* ═══════ Quick Actions Grid ═══════ */}
         <View style={s.quickSection}>
           <Animated.View entering={FadeIn.delay(300).duration(300)}>
@@ -579,23 +525,6 @@ const s = StyleSheet.create({
   bannerDots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 12 },
   bannerDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: 'rgba(0,0,0,0.10)' },
   bannerDotActive: { width: 22, backgroundColor: '#D4AF37' },
-
-  /* ── Service Cards ── */
-  serviceSection: { paddingHorizontal: 20, paddingTop: 22 },
-  serviceSectionHeader: { marginBottom: 12 },
-  serviceRow: { gap: 12 },
-  serviceCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    padding: 16, borderRadius: 18, borderWidth: 1,
-    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
-  },
-  serviceIconWrap: {
-    width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
-  },
-  serviceTextWrap: { flex: 1, gap: 2 },
-  serviceTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  serviceTitle: { fontSize: 16, fontWeight: '800' },
-  serviceSubtitle: { fontSize: 12, fontWeight: '500' },
 
   /* ── Quick Actions ── */
   quickSection: { paddingHorizontal: 20, paddingTop: 24, gap: 12 },

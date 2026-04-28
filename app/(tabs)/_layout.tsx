@@ -135,21 +135,11 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="grocery"
-        options={{
-          title: 'Grocery',
-          tabBarIcon: ({ color, focused }) => (
-            <MaterialIcons name={focused ? 'shopping-cart' : 'shopping-cart'} size={24} color={color} />
-          ),
-        }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="cook"
-        options={{
-          title: 'Book Cook',
-          tabBarIcon: ({ color, focused }) => (
-            <MaterialIcons name={focused ? 'restaurant' : 'restaurant'} size={24} color={color} />
-          ),
-        }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="profile"
