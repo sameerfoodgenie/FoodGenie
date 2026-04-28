@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,6 @@ import {
   Platform,
   RefreshControl,
   Modal,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -28,8 +26,6 @@ import { useTheme } from '../../hooks/useTheme';
 import { fetchProfile, UserProfile } from '../../services/profileService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const BANNER_W = SCREEN_W - 40;
-const BANNER_H = 180;
 const SERVICE_CARD_W = (SCREEN_W - 52) / 2;
 
 const MEAL_EMOJI: Record<string, string> = { breakfast: '☀️', lunch: '🍽', dinner: '🌙', snack: '🍿' };
@@ -58,45 +54,7 @@ const FEATURE_BANNERS = [
   },
 ];
 
-// ── Banner data ──
-const BANNERS = [
-  {
-    id: '1',
-    title: 'Earn Genie Coins',
-    subtitle: 'Post meals daily and earn rewards!',
-    cta: 'Start Earning',
-    gradient: ['#6C3CE0', '#8B5CF6', '#A78BFA'] as const,
-    emoji: '🪙',
-    route: '/coin-wallet',
-  },
-  {
-    id: '2',
-    title: 'Trending Dishes',
-    subtitle: 'Discover what foodies love today',
-    cta: 'Explore Now',
-    gradient: ['#E8590C', '#FB923C', '#FDBA74'] as const,
-    emoji: '🔥',
-    route: '/explore',
-  },
-  {
-    id: '3',
-    title: 'Redeem Rewards',
-    subtitle: 'Use coins for vouchers & perks',
-    cta: 'Redeem Now',
-    gradient: ['#0891B2', '#22D3EE', '#67E8F9'] as const,
-    emoji: '🎁',
-    route: '/coin-redeem',
-  },
-  {
-    id: '4',
-    title: 'Creator Studio',
-    subtitle: 'Become a home chef, build your audience',
-    cta: 'Get Started',
-    gradient: ['#DC2626', '#F87171', '#FCA5A5'] as const,
-    emoji: '👨‍🍳',
-    route: '/creator-dashboard',
-  },
-];
+
 
 // ── Service cards ──
 const SERVICE_CARDS = [
@@ -180,8 +138,7 @@ export default function HomeScreen() {
   const { colors, isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [activeBanner, setActiveBanner] = useState(0);
-  const bannerRef = useRef<ScrollView>(null);
+
 
   useEffect(() => {
     if (user?.id) {
@@ -189,22 +146,7 @@ export default function HomeScreen() {
     }
   }, [user?.id]);
 
-  // Auto-scroll banners
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveBanner(prev => {
-        const next = (prev + 1) % BANNERS.length;
-        bannerRef.current?.scrollTo({ x: next * (BANNER_W + 12), animated: true });
-        return next;
-      });
-    }, 4000);
-    return () => clearInterval(timer);
-  }, []);
 
-  const handleBannerScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const idx = Math.round(e.nativeEvent.contentOffset.x / (BANNER_W + 12));
-    setActiveBanner(idx);
-  }, []);
 
   const name = profile?.full_name || user?.username || 'Food Lover';
   const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -311,54 +253,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* ═══════ Banner Carousel ═══════ */}
-        <Animated.View entering={FadeInDown.delay(100).duration(400)} style={s.bannerSection}>
-          <ScrollView
-            ref={bannerRef}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={handleBannerScroll}
-            snapToInterval={BANNER_W + 12}
-            decelerationRate="fast"
-            contentContainerStyle={{ paddingHorizontal: 20, paddingRight: 32 }}
-          >
-            {BANNERS.map((banner, i) => (
-              <Pressable
-                key={banner.id}
-                style={({ pressed }) => [pressed && { opacity: 0.95, transform: [{ scale: 0.99 }] }]}
-                onPress={() => { Haptics.selectionAsync(); router.push(banner.route as any); }}
-              >
-                <LinearGradient
-                  colors={banner.gradient as unknown as string[]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[s.bannerCard, i < BANNERS.length - 1 && { marginRight: 12 }]}
-                >
-                  <View style={s.bannerContent}>
-                    <Text style={s.bannerTitle}>{banner.title}</Text>
-                    <Text style={s.bannerSubtitle}>{banner.subtitle}</Text>
-                    <View style={s.bannerCta}>
-                      <Text style={s.bannerCtaText}>{banner.cta}</Text>
-                      <MaterialIcons name="arrow-forward" size={14} color="#FFF" />
-                    </View>
-                  </View>
-                  <View style={s.bannerEmojiWrap}>
-                    <Text style={s.bannerEmoji}>{banner.emoji}</Text>
-                  </View>
-                  {/* Decorative */}
-                  <View style={[s.bannerCircle, { width: 140, height: 140, top: -40, right: -30, backgroundColor: 'rgba(255,255,255,0.10)' }]} />
-                  <View style={[s.bannerCircle, { width: 90, height: 90, bottom: -25, left: 50, backgroundColor: 'rgba(255,255,255,0.08)' }]} />
-                </LinearGradient>
-              </Pressable>
-            ))}
-          </ScrollView>
-          <View style={s.bannerDots}>
-            {BANNERS.map((_, i) => (
-              <View key={i} style={[s.bannerDot, activeBanner === i && s.bannerDotActive]} />
-            ))}
-          </View>
-        </Animated.View>
+
 
         {/* ═══════ Main Service Cards (Book a Cook / Smart Grocery) ═══════ */}
         <View style={s.serviceSection}>
@@ -551,32 +446,7 @@ const s = StyleSheet.create({
   searchPlaceholder: { flex: 1, fontSize: 14, fontWeight: '500' },
   searchDivider: { width: 1, height: 20 },
 
-  /* ── Banner ── */
-  bannerSection: { marginBottom: 4 },
-  bannerCard: {
-    width: BANNER_W, height: BANNER_H, borderRadius: 20,
-    overflow: 'hidden', flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 22, paddingVertical: 20,
-  },
-  bannerContent: { flex: 1, gap: 6, zIndex: 2 },
-  bannerTitle: { fontSize: 20, fontWeight: '900', color: '#FFF', letterSpacing: -0.3 },
-  bannerSubtitle: { fontSize: 12, fontWeight: '500', color: 'rgba(255,255,255,0.80)', lineHeight: 17 },
-  bannerCta: {
-    flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
-    marginTop: 8, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.20)',
-  },
-  bannerCtaText: { fontSize: 12, fontWeight: '700', color: '#FFF' },
-  bannerEmojiWrap: {
-    width: 70, height: 70, borderRadius: 35,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center', justifyContent: 'center', marginLeft: 8, zIndex: 2,
-  },
-  bannerEmoji: { fontSize: 36 },
-  bannerCircle: { position: 'absolute', borderRadius: 999 },
-  bannerDots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 12 },
-  bannerDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: 'rgba(0,0,0,0.10)' },
-  bannerDotActive: { width: 22, backgroundColor: '#D4AF37' },
+
 
   /* ── Service Cards ── */
   serviceSection: { paddingHorizontal: 20, paddingTop: 22 },
