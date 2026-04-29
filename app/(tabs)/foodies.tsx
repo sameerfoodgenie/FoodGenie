@@ -364,11 +364,11 @@ function DetailModal({ card, visible, onClose, colors, isDark, userEmotion, onEm
             locations={[0, 0.2, 0.5, 1]}
             style={StyleSheet.absoluteFillObject}
           />
-          <SafeAreaView edges={['top']} style={sty.detailTopBar}>
+          <View style={[sty.detailTopBar, { paddingTop: insets.top + 8 }]}>
             <Pressable style={({ pressed }) => [sty.detailBackBtn, pressed && { opacity: 0.7 }]} onPress={() => { Haptics.selectionAsync(); onClose(); }}>
               <MaterialIcons name="close" size={24} color="#FFF" />
             </Pressable>
-          </SafeAreaView>
+          </View>
           <View style={sty.detailHeroInfo}>
             <View style={sty.detailCreatorRow}>
               <Image source={{ uri: card.creatorAvatar }} style={sty.detailCreatorAvatar} contentFit="cover" />
@@ -753,7 +753,7 @@ const sty = StyleSheet.create({
   detailHero: { height: SCREEN_H * 0.42, position: 'relative' },
   detailTopBar: {
     position: 'absolute', top: 0, left: 0, right: 0,
-    flexDirection: 'row', paddingHorizontal: 16, paddingTop: 8, zIndex: 10,
+    flexDirection: 'row', paddingHorizontal: 16, zIndex: 10,
   },
   detailBackBtn: {
     width: 44, height: 44, borderRadius: 22,
