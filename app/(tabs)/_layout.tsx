@@ -141,15 +141,7 @@ export default function TabLayout() {
           tabBarLabelStyle: { display: 'none' },
         }}
       />
-      <Tabs.Screen
-        name="master-chefs"
-        options={{
-          title: 'Chefs',
-          tabBarIcon: ({ color, focused }) => (
-            <MaterialIcons name={focused ? 'restaurant' : 'restaurant-menu'} size={25} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="master-chefs" options={{ href: null }} />
       <Tabs.Screen
         name="profile"
         options={{
