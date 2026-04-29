@@ -33,7 +33,7 @@ const MEAL_EMOJI: Record<string, string> = { breakfast: '☀️', lunch: '🍽',
 const FEATURE_BANNERS = [
   {
     id: 'aaj-khane',
-    title: 'Aaj Khane Kya Hai? 🤔',
+    title: 'Aaj Khane Me Kya Hai? 🤔',
     subtitle: 'AI-powered meal plan from breakfast to dinner — with calories, nutrition & weekly/monthly planner',
     cta: 'See Today\'s Plan',
     gradient: ['#FF6B6B', '#FF8E53', '#FFB347'] as const,

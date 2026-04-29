@@ -344,7 +344,7 @@ export default function AajKhaneScreen() {
               <MaterialIcons name="arrow-back" size={22} color="#FFF" />
             </Pressable>
             <View style={{ flex: 1 }}>
-              <Text style={s.headerTitle}>Aaj Khane Kya Hai? 🤔</Text>
+              <Text style={s.headerTitle}>Aaj Khane Me Kya Hai? 🤔</Text>
               <Text style={s.headerSub}>AI-powered meal plans based on your preferences</Text>
             </View>
           </View>
