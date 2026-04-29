@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import {
   ActivityIndicator,
   TextInput,
   KeyboardAvoidingView,
+  FlatList,
+  ViewToken,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -1063,6 +1065,141 @@ function CookSkeleton({ colors, isDark }: { colors: any; isDark: boolean }) {
   );
 }
 
+// ── Top Cook Banner Carousel ──
+function TopCookBanner({ cooks, onBook, onViewProfile, colors, isDark }: {
+  cooks: Cook[]; onBook: (cook: Cook) => void;
+  onViewProfile: (cook: Cook) => void; colors: any; isDark: boolean;
+}) {
+  const [activeBanner, setActiveBanner] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const topCooks = useMemo(() => {
+    return [...cooks]
+      .filter(c => c.isAvailable)
+      .sort((a, b) => b.rating - a.rating || b.reviews - a.reviews)
+      .slice(0, 5);
+  }, [cooks]);
+
+  // Auto-scroll
+  useEffect(() => {
+    if (topCooks.length <= 1) return;
+    timerRef.current = setInterval(() => {
+      setActiveBanner(prev => {
+        const next = (prev + 1) % topCooks.length;
+        flatListRef.current?.scrollToIndex({ index: next, animated: true });
+        return next;
+      });
+    }, 4000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [topCooks.length]);
+
+  const onViewableChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    if (viewableItems.length > 0 && viewableItems[0].index != null) {
+      setActiveBanner(viewableItems[0].index);
+    }
+  }).current;
+
+  const BANNER_W = SCREEN_W - 40;
+
+  if (topCooks.length === 0) return null;
+
+  return (
+    <Animated.View entering={FadeInDown.delay(60).duration(400)} style={banner.container}>
+      <View style={banner.headerRow}>
+        <View style={banner.headerLeft}>
+          <MaterialIcons name="star" size={16} color="#FFD700" />
+          <Text style={[banner.headerTitle, { color: colors.textPrimary }]}>Top Rated Cooks</Text>
+        </View>
+        <View style={banner.dotsRow}>
+          {topCooks.map((_, i) => (
+            <View key={i} style={[banner.dot, i === activeBanner && banner.dotActive]} />
+          ))}
+        </View>
+      </View>
+
+      <FlatList
+        ref={flatListRef}
+        data={topCooks}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={BANNER_W + 12}
+        decelerationRate="fast"
+        contentContainerStyle={{ paddingHorizontal: 0 }}
+        keyExtractor={item => `banner-${item.id}`}
+        onViewableItemsChanged={onViewableChanged}
+        viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
+        renderItem={({ item: cook, index }) => (
+          <Pressable
+            style={({ pressed }) => [
+              banner.card,
+              { width: BANNER_W, marginRight: index < topCooks.length - 1 ? 12 : 0 },
+              pressed && { opacity: 0.96, transform: [{ scale: 0.99 }] },
+            ]}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onViewProfile(cook); }}
+          >
+            <Image source={{ uri: cook.photo }} style={banner.bgImage} contentFit="cover" transition={300} />
+            <LinearGradient
+              colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.85)']}
+              locations={[0, 0.4, 1]}
+              style={StyleSheet.absoluteFillObject}
+            />
+
+            {/* Featured badge */}
+            <View style={banner.featuredBadge}>
+              <MaterialIcons name="verified" size={12} color="#FFF" />
+              <Text style={banner.featuredText}>Featured Chef</Text>
+            </View>
+
+            {/* Rating badge */}
+            <View style={banner.ratingBadge}>
+              <MaterialIcons name="star" size={13} color="#FFD700" />
+              <Text style={banner.ratingText}>{cook.rating}</Text>
+            </View>
+
+            {/* Info overlay */}
+            <View style={banner.infoOverlay}>
+              <View style={banner.infoRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={banner.cookName}>{cook.name}</Text>
+                  <Text style={banner.cookSpec}>{cook.speciality} Specialist • {cook.experience}</Text>
+                  <View style={banner.tagRow}>
+                    {cook.expertise.slice(0, 3).map(tag => (
+                      <View key={tag} style={banner.tag}>
+                        <Text style={banner.tagText}>{tag}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+                <View style={banner.priceBlock}>
+                  <Text style={banner.priceLabel}>from</Text>
+                  <Text style={banner.priceValue}>₹{cook.pricing.perMeal}</Text>
+                  <Text style={banner.priceUnit}>/meal</Text>
+                </View>
+              </View>
+
+              <Pressable
+                style={({ pressed }) => [banner.bookBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+                onPress={(e) => { e.stopPropagation(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); onBook(cook); }}
+              >
+                <LinearGradient colors={['#D4AF37', '#FFD700']} style={banner.bookBtnGrad}>
+                  <MaterialIcons name="event-available" size={16} color="#FFF" />
+                  <Text style={banner.bookBtnText}>Book Now</Text>
+                  <View style={banner.coinBadge}>
+                    <Text style={{ fontSize: 9 }}>🪙</Text>
+                    <Text style={banner.coinText}>+{COIN_RULES.cook_booked.amount}</Text>
+                  </View>
+                </LinearGradient>
+              </Pressable>
+            </View>
+          </Pressable>
+        )}
+      />
+    </Animated.View>
+  );
+}
+
 // ── Main Screen ──
 export default function BookCookScreen() {
   const insets = useSafeAreaInsets();
@@ -1200,7 +1337,7 @@ export default function BookCookScreen() {
             <Animated.View entering={FadeIn.duration(400)} style={ck.headerContent}>
               <View style={ck.headerRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[ck.headerTitle, { color: colors.textPrimary }]}>Book a Cook</Text>
+                  <Text style={[ck.headerTitle, { color: colors.textPrimary }]}>Book a Cook 👨‍🍳</Text>
                   <Text style={[ck.headerSub, { color: colors.textMuted }]}>Hire expert home cooks for authentic meals</Text>
                 </View>
                 <Pressable
@@ -1230,6 +1367,17 @@ export default function BookCookScreen() {
               </View>
             </Animated.View>
           </LinearGradient>
+
+          {/* ═══ Top Cook Banner Ads ═══ */}
+          {!loading && cooks.length > 0 ? (
+            <TopCookBanner
+              cooks={cooks}
+              onBook={handleBook}
+              onViewProfile={handleViewProfile}
+              colors={colors}
+              isDark={isDark}
+            />
+          ) : null}
 
           {/* ═══ Search Bar ═══ */}
           <Animated.View entering={FadeInDown.delay(50).duration(300)} style={st.searchSection}>
@@ -1579,6 +1727,72 @@ const st = StyleSheet.create({
   bookingSavingsPill: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginTop: 2 },
   bookingSavingsText: { fontSize: 8, fontWeight: '800' },
   bookingPlanCheck: { position: 'absolute', top: 6, right: 6 },
+});
+
+const banner = StyleSheet.create({
+  container: { paddingTop: 16, gap: 10 },
+  headerRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, marginBottom: 8,
+  },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  headerTitle: { fontSize: 16, fontWeight: '800', letterSpacing: -0.2 },
+  dotsRow: { flexDirection: 'row', gap: 5 },
+  dot: {
+    width: 6, height: 6, borderRadius: 3,
+    backgroundColor: 'rgba(212,175,55,0.25)',
+  },
+  dotActive: { width: 18, backgroundColor: '#D4AF37', borderRadius: 3 },
+  card: {
+    height: 200, borderRadius: 22, overflow: 'hidden',
+    marginLeft: 20, position: 'relative',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.20, shadowRadius: 16, elevation: 8,
+  },
+  bgImage: { ...StyleSheet.absoluteFillObject },
+  featuredBadge: {
+    position: 'absolute', top: 12, left: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10,
+    backgroundColor: 'rgba(212,175,55,0.90)',
+  },
+  featuredText: { fontSize: 10, fontWeight: '800', color: '#FFF', letterSpacing: 0.3 },
+  ratingBadge: {
+    position: 'absolute', top: 12, right: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    paddingHorizontal: 9, paddingVertical: 5, borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  ratingText: { fontSize: 12, fontWeight: '900', color: '#FFF' },
+  infoOverlay: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    paddingHorizontal: 14, paddingBottom: 14, paddingTop: 8, gap: 10,
+  },
+  infoRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
+  cookName: { fontSize: 20, fontWeight: '900', color: '#FFF', letterSpacing: -0.3 },
+  cookSpec: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.80)', marginTop: 2 },
+  tagRow: { flexDirection: 'row', gap: 5, marginTop: 6 },
+  tag: {
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+  },
+  tagText: { fontSize: 9, fontWeight: '700', color: '#FFF' },
+  priceBlock: { alignItems: 'center' },
+  priceLabel: { fontSize: 9, fontWeight: '600', color: 'rgba(255,255,255,0.60)' },
+  priceValue: { fontSize: 22, fontWeight: '900', color: '#FFD700' },
+  priceUnit: { fontSize: 9, fontWeight: '600', color: 'rgba(255,255,255,0.60)' },
+  bookBtn: { borderRadius: 14, overflow: 'hidden' },
+  bookBtnGrad: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    paddingVertical: 11, paddingHorizontal: 16,
+  },
+  bookBtnText: { fontSize: 14, fontWeight: '800', color: '#FFF' },
+  coinBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8, marginLeft: 4,
+  },
+  coinText: { fontSize: 9, fontWeight: '800', color: '#FFF' },
 });
 
 const cal = StyleSheet.create({
