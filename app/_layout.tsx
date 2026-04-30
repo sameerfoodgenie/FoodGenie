@@ -72,6 +72,7 @@ function RootInner() {
           <Stack.Screen name="coin-leaderboard" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="episode-player" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
 
+          <Stack.Screen name="app-demo" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="ai-meal-chat" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="booking-history" options={{ headerShown: false, animation: 'slide_from_right' }} />
         </Stack>
