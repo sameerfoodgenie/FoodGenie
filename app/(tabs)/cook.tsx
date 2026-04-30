@@ -540,11 +540,11 @@ function CookProfileModal({ cook, visible, onClose, onBook, onPlayVideo, onWrite
             locations={[0, 0.3, 1]}
             style={StyleSheet.absoluteFillObject}
           />
-          <SafeAreaView edges={['top']} style={ck.modalTopBar}>
+          <View style={[ck.modalTopBar, { paddingTop: insets.top + 8 }]}>
             <Pressable style={({ pressed }) => [ck.modalBackBtn, pressed && { opacity: 0.7 }]} onPress={onClose}>
               <MaterialIcons name="close" size={24} color="#FFF" />
             </Pressable>
-          </SafeAreaView>
+          </View>
           <View style={ck.modalHeroInfo}>
             <Text style={ck.modalCookName}>{cook.name}</Text>
             <Text style={ck.modalCookSpec}>{cook.speciality} Specialist | {cook.experience} exp</Text>
