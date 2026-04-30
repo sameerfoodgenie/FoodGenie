@@ -324,6 +324,15 @@ export default function ProfileScreen() {
                   </LinearGradient>
                   <Text style={[s.actionBtnText, { color: colors.textPrimary }]}>Admin</Text>
                 </Pressable>
+                <Pressable
+                  style={({ pressed }) => [s.actionBtn, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] }]}
+                  onPress={() => { Haptics.selectionAsync(); router.push('/app-demo' as any); }}
+                >
+                  <LinearGradient colors={isDark ? ['rgba(255,107,107,0.15)', 'rgba(255,107,107,0.05)'] : ['rgba(255,107,107,0.08)', 'rgba(255,107,107,0.02)']} style={s.actionBtnIcon}>
+                    <MaterialIcons name="slideshow" size={16} color="#FF6B6B" />
+                  </LinearGradient>
+                  <Text style={[s.actionBtnText, { color: colors.textPrimary }]}>Demo</Text>
+                </Pressable>
               </Animated.View>
 
               {/* ═══ Stats Row ═══ */}
@@ -516,7 +525,7 @@ const s = StyleSheet.create({
   levelHint: { fontSize: 10, fontWeight: '600' },
 
   /* Action Buttons */
-  actionRow: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 14, gap: 8 },
+  actionRow: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 14, gap: 6, flexWrap: 'wrap' },
   actionBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
     paddingVertical: 11, borderRadius: 14, borderWidth: 1,
