@@ -176,6 +176,93 @@ export async function uploadVideoReview(params: {
   }
 }
 
+export interface CookAvailability {
+  status: 'available' | 'partial' | 'busy';
+  nextAvailableDate: string | null; // ISO date string
+  bookedDaysNext7: number;
+}
+
+export async function fetchCookAvailability(cookIds: string[]): Promise<{ data: Record<string, CookAvailability>; error: string | null }> {
+  try {
+    if (cookIds.length === 0) return { data: {}, error: null };
+    const supabase = getSupabaseClient();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split('T')[0];
+    const next7 = new Date(today);
+    next7.setDate(next7.getDate() + 6);
+    const next7Str = next7.toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from('cook_bookings')
+      .select('cook_id, start_date, end_date, status')
+      .in('cook_id', cookIds)
+      .in('status', ['pending', 'confirmed'])
+      .gte('end_date', todayStr)
+      .order('start_date', { ascending: true });
+
+    if (error) return { data: {}, error: error.message };
+
+    const result: Record<string, CookAvailability> = {};
+
+    for (const cookId of cookIds) {
+      const bookings = (data || []).filter(b => b.cook_id === cookId);
+
+      if (bookings.length === 0) {
+        result[cookId] = { status: 'available', nextAvailableDate: null, bookedDaysNext7: 0 };
+        continue;
+      }
+
+      // Calculate booked days in next 7 days
+      const bookedDays = new Set<string>();
+      for (const b of bookings) {
+        const bStart = new Date(b.start_date + 'T00:00:00');
+        const bEnd = new Date(b.end_date + 'T00:00:00');
+        for (let d = new Date(Math.max(bStart.getTime(), today.getTime())); d <= bEnd && d <= next7; d.setDate(d.getDate() + 1)) {
+          bookedDays.add(d.toISOString().split('T')[0]);
+        }
+      }
+
+      const bookedCount = bookedDays.size;
+
+      // Find next available date (first day not booked starting from today)
+      let nextAvail: string | null = null;
+      if (bookedCount > 0) {
+        const allBookedDays = new Set<string>();
+        for (const b of bookings) {
+          const bStart = new Date(b.start_date + 'T00:00:00');
+          const bEnd = new Date(b.end_date + 'T00:00:00');
+          for (let d = new Date(bStart); d <= bEnd; d.setDate(d.getDate() + 1)) {
+            allBookedDays.add(d.toISOString().split('T')[0]);
+          }
+        }
+        // Find the first unbooked day starting from today
+        for (let i = 0; i < 60; i++) {
+          const check = new Date(today);
+          check.setDate(check.getDate() + i);
+          const checkStr = check.toISOString().split('T')[0];
+          if (!allBookedDays.has(checkStr)) {
+            nextAvail = checkStr;
+            break;
+          }
+        }
+      }
+
+      if (bookedCount >= 7) {
+        result[cookId] = { status: 'busy', nextAvailableDate: nextAvail, bookedDaysNext7: bookedCount };
+      } else if (bookedCount >= 3) {
+        result[cookId] = { status: 'partial', nextAvailableDate: nextAvail, bookedDaysNext7: bookedCount };
+      } else {
+        result[cookId] = { status: 'available', nextAvailableDate: nextAvail, bookedDaysNext7: bookedCount };
+      }
+    }
+
+    return { data: result, error: null };
+  } catch (err: any) {
+    return { data: {}, error: err.message || 'Failed to fetch availability' };
+  }
+}
+
 export async function fetchCooksBySpeciality(speciality: string): Promise<{ data: Cook[]; error: string | null }> {
   try {
     const supabase = getSupabaseClient();

@@ -32,7 +32,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../../hooks/useTheme';
 import { useAuth, useAlert } from '../../template';
 import { useCoin } from '../../hooks/useCoin';
-import { fetchCooks, Cook, CookVideoReview, uploadVideoReview } from '../../services/cookService';
+import { fetchCooks, Cook, CookVideoReview, uploadVideoReview, fetchCookAvailability, CookAvailability } from '../../services/cookService';
 import { createBooking, fetchCookBookings, Booking as CookBookingRecord } from '../../services/bookingService';
 import { COIN_RULES } from '../../services/coinService';
 
@@ -187,12 +187,83 @@ function VideoPlayerModal({ review, visible, onClose, colors }: {
   );
 }
 
+// ── Availability Indicator ──
+function AvailabilityIndicator({ availability, cook, colors, isDark }: {
+  availability: CookAvailability | undefined;
+  cook: Cook;
+  colors: any;
+  isDark: boolean;
+}) {
+  // Determine status
+  let status: 'available' | 'partial' | 'busy' = 'available';
+  let label = 'Available';
+  let color = '#4ADE80';
+  let bgColor = 'rgba(74,222,128,0.10)';
+  let icon: 'check-circle' | 'schedule' | 'block' = 'check-circle';
+  let nextDate: string | null = null;
+
+  if (!cook.isAvailable) {
+    status = 'busy';
+    label = 'Unavailable';
+    color = '#EF4444';
+    bgColor = 'rgba(239,68,68,0.10)';
+    icon = 'block';
+  } else if (availability) {
+    status = availability.status;
+    if (status === 'partial') {
+      label = `${7 - availability.bookedDaysNext7}/7 days free`;
+      color = '#F59E0B';
+      bgColor = 'rgba(245,158,11,0.10)';
+      icon = 'schedule';
+      nextDate = availability.nextAvailableDate;
+    } else if (status === 'busy') {
+      label = 'Fully Booked';
+      color = '#EF4444';
+      bgColor = 'rgba(239,68,68,0.10)';
+      icon = 'block';
+      nextDate = availability.nextAvailableDate;
+    } else {
+      label = 'Available';
+      color = '#4ADE80';
+      bgColor = 'rgba(74,222,128,0.10)';
+      icon = 'check-circle';
+    }
+  }
+
+  const formatNextDate = (dateStr: string | null) => {
+    if (!dateStr) return null;
+    const d = new Date(dateStr + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (d.getTime() === today.getTime()) return 'Today';
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    if (d.getTime() === tomorrow.getTime()) return 'Tomorrow';
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  };
+
+  return (
+    <View style={[avail.container, { backgroundColor: bgColor, borderColor: color + '30' }]}>
+      <View style={[avail.dot, { backgroundColor: color }]} />
+      <MaterialIcons name={icon} size={12} color={color} />
+      <Text style={[avail.label, { color }]}>{label}</Text>
+      {nextDate && status !== 'available' ? (
+        <View style={[avail.nextBadge, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+          <MaterialIcons name="event" size={10} color={colors.textMuted} />
+          <Text style={[avail.nextText, { color: colors.textMuted }]}>Next: {formatNextDate(nextDate)}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 // ── Cook Card ──
-function CookCard({ cook, index, onBook, onViewProfile, onPlayVideo, colors, isDark, searchQuery = '' }: {
+function CookCard({ cook, index, onBook, onViewProfile, onPlayVideo, colors, isDark, searchQuery = '', availability }: {
   cook: Cook; index: number;
   onBook: (cook: Cook) => void; onViewProfile: (cook: Cook) => void;
   onPlayVideo: (review: CookVideoReview) => void;
   colors: any; isDark: boolean; searchQuery?: string;
+  availability?: CookAvailability;
 }) {
   return (
     <Animated.View entering={FadeInDown.delay(80 + index * 70).duration(350)}>
@@ -208,18 +279,17 @@ function CookCard({ cook, index, onBook, onViewProfile, onPlayVideo, colors, isD
         <View style={ck.cardHeader}>
           <View style={ck.photoWrap}>
             <Image source={{ uri: cook.photo }} style={ck.photo} contentFit="cover" transition={200} />
-            {cook.isAvailable ? (
-              <View style={ck.availBadge}>
-                <View style={ck.availDot} />
-              </View>
-            ) : null}
+            <View style={[ck.availBadge, {
+              borderColor: !cook.isAvailable ? '#EF4444' : availability?.status === 'partial' ? '#F59E0B' : availability?.status === 'busy' ? '#EF4444' : '#4ADE80',
+            }]}>
+              <View style={[ck.availDot, {
+                backgroundColor: !cook.isAvailable ? '#EF4444' : availability?.status === 'partial' ? '#F59E0B' : availability?.status === 'busy' ? '#EF4444' : '#4ADE80',
+              }]} />
+            </View>
           </View>
           <View style={{ flex: 1 }}>
             <View style={ck.nameRow}>
               <HighlightText text={cook.name} query={searchQuery} style={[ck.cookName, { color: colors.textPrimary }]} />
-              {!cook.isAvailable ? (
-                <View style={ck.unavailTag}><Text style={ck.unavailText}>Busy</Text></View>
-              ) : null}
             </View>
             <HighlightText text={`${cook.speciality} Specialist`} query={searchQuery} style={[ck.speciality, { color: colors.textMuted }]} />
             <View style={ck.ratingRow}>
@@ -292,6 +362,9 @@ function CookCard({ cook, index, onBook, onViewProfile, onPlayVideo, colors, isD
             </ScrollView>
           </View>
         ) : null}
+
+        {/* Availability Indicator */}
+        <AvailabilityIndicator availability={availability} cook={cook} colors={colors} isDark={isDark} />
 
         {/* Price & Book */}
         <View style={ck.bottomRow}>
@@ -1222,6 +1295,7 @@ export default function BookCookScreen() {
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [reviewCook, setReviewCook] = useState<Cook | null>(null);
   const [showReviewUpload, setShowReviewUpload] = useState(false);
+  const [cookAvailability, setCookAvailability] = useState<Record<string, CookAvailability>>({});
 
   const loadCooks = useCallback(async () => {
     const { data, error: fetchError } = await fetchCooks();
@@ -1230,6 +1304,12 @@ export default function BookCookScreen() {
     } else {
       setCooks(data);
       setError(null);
+      // Fetch availability for all cooks
+      const cookIds = data.map(c => c.id);
+      if (cookIds.length > 0) {
+        const { data: availData } = await fetchCookAvailability(cookIds);
+        setCookAvailability(availData);
+      }
     }
     setLoading(false);
   }, []);
@@ -1538,6 +1618,7 @@ export default function BookCookScreen() {
                   colors={colors}
                   isDark={isDark}
                   searchQuery={debouncedQuery}
+                  availability={cookAvailability[cook.id]}
                 />
               ))
             )}
@@ -1905,6 +1986,40 @@ const rv = StyleSheet.create({
   addReviewBtnText: { fontSize: 14, fontWeight: '800' as const, color: '#FFF' },
 });
 
+const avail = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  nextBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginLeft: 'auto',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  nextText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+});
+
 const ck = StyleSheet.create({
   container: { flex: 1 },
 
@@ -1947,9 +2062,9 @@ const ck = StyleSheet.create({
     position: 'absolute', bottom: -2, right: -2,
     width: 18, height: 18, borderRadius: 9,
     backgroundColor: '#FFF', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: '#FFF',
+    borderWidth: 2,
   },
-  availDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#4ADE80' },
+  availDot: { width: 10, height: 10, borderRadius: 5 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   cookName: { fontSize: 17, fontWeight: '800' },
   unavailTag: {
