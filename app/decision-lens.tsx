@@ -14,7 +14,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeInRight, FadeInUp } from 'react-native-reanimated';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../template';
 import { useCoin } from '../hooks/useCoin';
@@ -87,7 +87,6 @@ function MealCard({ meal, index, colors, isDark }: {
           </View>
         </View>
 
-        {/* Macro row */}
         <View style={mc.macroRow}>
           <View style={[mc.macroItem, { backgroundColor: 'rgba(239,68,68,0.08)' }]}>
             <Text style={[mc.macroValue, { color: '#EF4444' }]}>{meal.protein}g</Text>
@@ -109,7 +108,6 @@ function MealCard({ meal, index, colors, isDark }: {
           ) : null}
         </View>
 
-        {/* Expanded details */}
         {expanded && meal.ingredients ? (
           <Animated.View entering={FadeIn.duration(250)} style={[mc.expandedSection, { borderTopColor: colors.border }]}>
             <Text style={[mc.ingredientsTitle, { color: colors.textPrimary }]}>Ingredients</Text>
@@ -137,7 +135,7 @@ function MealCard({ meal, index, colors, isDark }: {
   );
 }
 
-// ── Weekly Day Row ──
+// ── Weekly Day Card ──
 function WeeklyDayCard({ day, dayIndex, colors, isDark }: {
   day: { day: string; totalCalories: number; meals: MealItem[] };
   dayIndex: number; colors: any; isDark: boolean;
@@ -253,6 +251,89 @@ function MonthlyWeekCard({ week, index, colors, isDark }: {
   );
 }
 
+// ── "What Next?" Decision Card ──
+function WhatNextCard({ planData, activeTab, colors, isDark, router }: {
+  planData: string; activeTab: PlanTab; colors: any; isDark: boolean; router: any;
+}) {
+  return (
+    <Animated.View entering={FadeInUp.delay(200).duration(500)}>
+      <View style={[wn.container, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.01)' }]}>
+        <Text style={[wn.title, { color: colors.textPrimary }]}>What would you like to do? 🤔</Text>
+        <Text style={[wn.subtitle, { color: colors.textMuted }]}>Your meal plan is ready. Choose your path:</Text>
+
+        <View style={wn.optionsRow}>
+          {/* Cook Myself */}
+          <Pressable
+            style={({ pressed }) => [wn.optionCard, {
+              backgroundColor: isDark ? 'rgba(74,222,128,0.08)' : 'rgba(74,222,128,0.04)',
+              borderColor: 'rgba(74,222,128,0.25)',
+            }, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              router.push({
+                pathname: '/grocery-cart',
+                params: { planData, planType: activeTab },
+              });
+            }}
+          >
+            <LinearGradient colors={['#4ADE80', '#22C55E']} style={wn.optionIcon}>
+              <Text style={{ fontSize: 28 }}>🧑‍🍳</Text>
+            </LinearGradient>
+            <Text style={[wn.optionTitle, { color: colors.textPrimary }]}>Cook Myself</Text>
+            <Text style={[wn.optionDesc, { color: colors.textMuted }]}>Get grocery cart with ingredients, quantities & estimated costs</Text>
+            <View style={wn.optionFeatures}>
+              <View style={wn.featureTag}>
+                <MaterialIcons name="shopping-cart" size={11} color="#4ADE80" />
+                <Text style={[wn.featureText, { color: '#4ADE80' }]}>Auto Grocery Cart</Text>
+              </View>
+              <View style={wn.featureTag}>
+                <MaterialIcons name="savings" size={11} color="#4ADE80" />
+                <Text style={[wn.featureText, { color: '#4ADE80' }]}>Save ~15%</Text>
+              </View>
+            </View>
+            <LinearGradient colors={['#4ADE80', '#22C55E']} style={wn.optionCta}>
+              <MaterialIcons name="arrow-forward" size={16} color="#FFF" />
+              <Text style={wn.optionCtaText}>View Grocery Cart</Text>
+            </LinearGradient>
+          </Pressable>
+
+          {/* Book a Cook */}
+          <Pressable
+            style={({ pressed }) => [wn.optionCard, {
+              backgroundColor: isDark ? 'rgba(255,107,107,0.08)' : 'rgba(255,107,107,0.04)',
+              borderColor: 'rgba(255,107,107,0.25)',
+            }, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              router.push('/(tabs)/cook' as any);
+            }}
+          >
+            <LinearGradient colors={['#FF6B6B', '#FF8E53']} style={wn.optionIcon}>
+              <Text style={{ fontSize: 28 }}>👨‍🍳</Text>
+            </LinearGradient>
+            <Text style={[wn.optionTitle, { color: colors.textPrimary }]}>Book a Cook</Text>
+            <Text style={[wn.optionDesc, { color: colors.textMuted }]}>Hire expert home cooks with cuisine specialization & flexible plans</Text>
+            <View style={wn.optionFeatures}>
+              <View style={wn.featureTag}>
+                <MaterialIcons name="verified" size={11} color="#FF6B6B" />
+                <Text style={[wn.featureText, { color: '#FF6B6B' }]}>100+ Cooks</Text>
+              </View>
+              <View style={wn.featureTag}>
+                <MaterialIcons name="event" size={11} color="#FF6B6B" />
+                <Text style={[wn.featureText, { color: '#FF6B6B' }]}>Day/Week/Month</Text>
+              </View>
+            </View>
+            <LinearGradient colors={['#FF6B6B', '#FF8E53']} style={wn.optionCta}>
+              <MaterialIcons name="arrow-forward" size={16} color="#FFF" />
+              <Text style={wn.optionCtaText}>Browse Cooks</Text>
+            </LinearGradient>
+          </Pressable>
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
+
 // ── Main Screen ──
 export default function AajKhaneScreen() {
   const router = useRouter();
@@ -261,7 +342,6 @@ export default function AajKhaneScreen() {
   const { user } = useAuth();
   const { earnCoins } = useCoin();
   const [activeTab, setActiveTab] = useState<PlanTab>('today');
-  const [showCookPrompt, setShowCookPrompt] = useState(false);
   const [coinAwarded, setCoinAwarded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -270,6 +350,13 @@ export default function AajKhaneScreen() {
   const [monthlyPlan, setMonthlyPlan] = useState<MonthlyPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [prefs, setPrefs] = useState<any>(null);
+
+  // Serialize current plan for passing to grocery cart
+  const currentPlanData = useMemo(() => {
+    const plan = activeTab === 'today' ? todayPlan : activeTab === 'weekly' ? weeklyPlan : monthlyPlan;
+    if (!plan) return '{}';
+    try { return JSON.stringify(plan); } catch { return '{}'; }
+  }, [activeTab, todayPlan, weeklyPlan, monthlyPlan]);
 
   const loadUserPrefs = useCallback(async () => {
     if (!user) return {};
@@ -301,16 +388,13 @@ export default function AajKhaneScreen() {
       if (tab === 'today') setTodayPlan(data);
       else if (tab === 'weekly') setWeeklyPlan(data);
       else setMonthlyPlan(data);
-      // Award coins for generating plan
-      const coinKey = `${tab}-${Date.now()}`;
       if (!coinAwarded.has(tab)) {
         setCoinAwarded(prev => new Set(prev).add(tab));
         earnCoins(COIN_RULES.meal_plan_generated.amount, 'meal_plan_generated', { planType: tab });
       }
-      setShowCookPrompt(true);
     }
     setLoading(false);
-  }, [prefs, loadUserPrefs]);
+  }, [prefs, loadUserPrefs, coinAwarded, earnCoins]);
 
   useEffect(() => {
     loadUserPrefs().then(p => fetchPlan('today', p));
@@ -329,6 +413,8 @@ export default function AajKhaneScreen() {
     setRefreshing(false);
   }, [activeTab, fetchPlan]);
 
+  const hasPlan = (activeTab === 'today' && todayPlan) || (activeTab === 'weekly' && weeklyPlan) || (activeTab === 'monthly' && monthlyPlan);
+
   return (
     <View style={[s.container, { backgroundColor: colors.background }]}>
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
@@ -345,7 +431,7 @@ export default function AajKhaneScreen() {
             </Pressable>
             <View style={{ flex: 1 }}>
               <Text style={s.headerTitle}>Aaj Khane Me Kya Hai? 🤔</Text>
-              <Text style={s.headerSub}>AI-powered meal plans based on your preferences</Text>
+              <Text style={s.headerSub}>AI-powered daily food planning ecosystem</Text>
             </View>
           </View>
 
@@ -397,7 +483,6 @@ export default function AajKhaneScreen() {
             </View>
           ) : activeTab === 'today' && todayPlan ? (
             <View style={s.content}>
-              {/* Nutrition Summary */}
               <Animated.View entering={FadeIn.duration(400)} style={[s.nutritionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={[s.nutritionTitle, { color: colors.textPrimary }]}>Today's Nutrition</Text>
                 <Text style={[s.nutritionDate, { color: colors.textMuted }]}>{todayPlan.date}</Text>
@@ -408,8 +493,6 @@ export default function AajKhaneScreen() {
                   <NutritionRing label="Fat" value={todayPlan.totalFat} unit="g" color="#818CF8" />
                 </View>
               </Animated.View>
-
-              {/* Meal Cards */}
               <View style={s.mealList}>
                 {todayPlan.meals.map((meal, i) => (
                   <MealCard key={i} meal={meal} index={i} colors={colors} isDark={isDark} />
@@ -430,7 +513,6 @@ export default function AajKhaneScreen() {
                   </View>
                 </View>
               </Animated.View>
-
               <View style={s.dayList}>
                 {weeklyPlan.days.map((day, i) => (
                   <WeeklyDayCard key={i} day={day} dayIndex={i} colors={colors} isDark={isDark} />
@@ -459,7 +541,6 @@ export default function AajKhaneScreen() {
                   </View>
                 </View>
               </Animated.View>
-
               <View style={s.weekList}>
                 {monthlyPlan.weeks.map((week, i) => (
                   <MonthlyWeekCard key={i} week={week} index={i} colors={colors} isDark={isDark} />
@@ -468,80 +549,26 @@ export default function AajKhaneScreen() {
             </View>
           ) : null}
 
-          {/* Book a Cook Prompt */}
-          {showCookPrompt && !loading && !error ? (
-            <Animated.View entering={FadeInDown.delay(200).duration(400)} style={[s.cookPromptCard, { backgroundColor: colors.surface, borderColor: 'rgba(212,175,55,0.25)' }]}>
-              <View style={s.cookPromptHeader}>
-                <View style={s.cookPromptIconWrap}>
-                  <Text style={{ fontSize: 28 }}>👨‍🍳</Text>
-                </View>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Text style={[s.cookPromptTitle, { color: colors.textPrimary }]}>Want an expert cook?</Text>
-                  <Text style={[s.cookPromptSub, { color: colors.textMuted }]}>Let a professional cook prepare these meals for you</Text>
-                </View>
-              </View>
-              <Pressable
-                style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
-                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/(tabs)/cook' as any); }}
-              >
-                <LinearGradient colors={['#FF6B6B', '#FF8E53']} style={s.cookPromptBtn}>
-                  <MaterialIcons name="restaurant" size={18} color="#FFF" />
-                  <Text style={s.cookPromptBtnText}>Book a Cook</Text>
-                  <View style={s.cookPromptCoinBadge}>
-                    <Text style={{ fontSize: 10 }}>🪙</Text>
-                    <Text style={s.cookPromptCoinText}>+{COIN_RULES.cook_booked.amount}</Text>
-                  </View>
-                </LinearGradient>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [s.cookPromptDismiss, pressed && { opacity: 0.6 }]}
-                onPress={() => setShowCookPrompt(false)}
-              >
-                <Text style={[s.cookPromptDismissText, { color: colors.textMuted }]}>Maybe later</Text>
-              </Pressable>
-            </Animated.View>
+          {/* ═══ "What Next?" Decision Section ═══ */}
+          {hasPlan && !loading && !error ? (
+            <View style={s.decisionSection}>
+              <WhatNextCard
+                planData={currentPlanData}
+                activeTab={activeTab}
+                colors={colors}
+                isDark={isDark}
+                router={router}
+              />
+            </View>
           ) : null}
 
-          {/* Service Cards */}
-          {!loading && !error ? (
-            <Animated.View entering={FadeInDown.delay(250).duration(300)} style={s.serviceCards}>
-              <Pressable
-                style={({ pressed }) => [s.serviceCardItem, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
-                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/(tabs)/cook' as any); }}
-              >
-                <View style={[s.serviceCardIcon, { backgroundColor: 'rgba(255,107,107,0.10)' }]}>
-                  <Text style={{ fontSize: 24 }}>👨‍🍳</Text>
-                </View>
-                <Text style={[s.serviceCardTitle, { color: colors.textPrimary }]}>Book a Cook</Text>
-                <Text style={[s.serviceCardSub, { color: colors.textMuted }]}>Hire experts</Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [s.serviceCardItem, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
-                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/(tabs)/grocery' as any); }}
-              >
-                <View style={[s.serviceCardIcon, { backgroundColor: 'rgba(74,222,128,0.10)' }]}>
-                  <Text style={{ fontSize: 24 }}>🛒</Text>
-                </View>
-                <Text style={[s.serviceCardTitle, { color: colors.textPrimary }]}>Smart Grocery</Text>
-                <Text style={[s.serviceCardSub, { color: colors.textMuted }]}>Budget bundles</Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [s.serviceCardItem, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
-                onPress={() => { Haptics.selectionAsync(); router.push('/ai-meal-chat' as any); }}
-              >
-                <View style={[s.serviceCardIcon, { backgroundColor: 'rgba(139,92,246,0.10)' }]}>
-                  <Text style={{ fontSize: 24 }}>🧠</Text>
-                </View>
-                <Text style={[s.serviceCardTitle, { color: colors.textPrimary }]}>AI Chat</Text>
-                <Text style={[s.serviceCardSub, { color: colors.textMuted }]}>Plan meals</Text>
-              </Pressable>
-            </Animated.View>
-          ) : null}
-
-          {/* Regenerate Button */}
+          {/* ═══ AI Chat & Regenerate ═══ */}
           {!loading && !error ? (
             <Animated.View entering={FadeInDown.delay(300).duration(300)} style={s.regenerateWrap}>
-              <Pressable style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]} onPress={() => { setCoinAwarded(prev => { const n = new Set(prev); n.delete(activeTab); return n; }); fetchPlan(activeTab); }}>
+              <Pressable
+                style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+                onPress={() => { setCoinAwarded(prev => { const n = new Set(prev); n.delete(activeTab); return n; }); fetchPlan(activeTab); }}
+              >
                 <LinearGradient colors={['#D4AF37', '#FFD700']} style={s.regenerateBtn}>
                   <MaterialIcons name="auto-awesome" size={18} color="#FFF" />
                   <Text style={s.regenerateText}>Regenerate Plan</Text>
@@ -571,10 +598,7 @@ const s = StyleSheet.create({
   headerTitle: { fontSize: 22, fontWeight: '900', color: '#FFF', letterSpacing: -0.3 },
   headerSub: { fontSize: 12, fontWeight: '500', color: 'rgba(255,255,255,0.85)', marginTop: 2 },
   tabRow: { flexDirection: 'row', gap: 8 },
-  tab: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
-    paddingVertical: 10, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.15)',
-  },
+  tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 10, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.15)' },
   tabActive: { backgroundColor: 'rgba(255,255,255,0.95)' },
   tabLabel: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.85)' },
   tabLabelActive: { color: '#FF6B6B' },
@@ -608,45 +632,28 @@ const s = StyleSheet.create({
   monthlyStatValue: { fontSize: 16, fontWeight: '900' },
   monthlyStatLabel: { fontSize: 9, fontWeight: '600' },
   weekList: { gap: 12 },
-  // Cook Prompt
-  cookPromptCard: {
-    padding: 16, borderRadius: 18, borderWidth: 1.5, gap: 12,
-    shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3,
-  },
-  cookPromptHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  cookPromptIconWrap: {
-    width: 52, height: 52, borderRadius: 16,
-    backgroundColor: 'rgba(255,107,107,0.10)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  cookPromptTitle: { fontSize: 16, fontWeight: '800' },
-  cookPromptSub: { fontSize: 12, fontWeight: '500', lineHeight: 17 },
-  cookPromptBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    paddingVertical: 13, borderRadius: 14,
-  },
-  cookPromptBtnText: { fontSize: 15, fontWeight: '800', color: '#FFF' },
-  cookPromptCoinBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: 'rgba(255,255,255,0.25)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10,
-  },
-  cookPromptCoinText: { fontSize: 10, fontWeight: '800', color: '#FFF' },
-  cookPromptDismiss: { alignSelf: 'center', paddingVertical: 4 },
-  cookPromptDismissText: { fontSize: 12, fontWeight: '600' },
-  // Service Cards in Decision Lens
-  serviceCards: { flexDirection: 'row', gap: 10 },
-  serviceCardItem: {
-    flex: 1, alignItems: 'center', gap: 6,
-    paddingVertical: 14, borderRadius: 16, borderWidth: 1,
-  },
-  serviceCardIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  serviceCardTitle: { fontSize: 12, fontWeight: '800' },
-  serviceCardSub: { fontSize: 9, fontWeight: '600' },
-  regenerateWrap: { alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, gap: 12 },
+  decisionSection: { paddingHorizontal: 20, paddingTop: 8 },
+  regenerateWrap: { alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, gap: 12 },
   regenerateBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 16 },
   regenerateText: { fontSize: 16, fontWeight: '800', color: '#FFF' },
   chatLink: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   chatLinkText: { fontSize: 13, fontWeight: '600', color: '#D4AF37' },
+});
+
+const wn = StyleSheet.create({
+  container: { padding: 20, borderRadius: 24, gap: 14 },
+  title: { fontSize: 20, fontWeight: '900', letterSpacing: -0.3, textAlign: 'center' },
+  subtitle: { fontSize: 13, fontWeight: '500', textAlign: 'center' },
+  optionsRow: { flexDirection: 'row', gap: 12 },
+  optionCard: { flex: 1, padding: 16, borderRadius: 20, borderWidth: 1.5, alignItems: 'center', gap: 10 },
+  optionIcon: { width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  optionTitle: { fontSize: 15, fontWeight: '900', textAlign: 'center' },
+  optionDesc: { fontSize: 11, fontWeight: '500', textAlign: 'center', lineHeight: 16 },
+  optionFeatures: { gap: 6, width: '100%' },
+  featureTag: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'center' },
+  featureText: { fontSize: 10, fontWeight: '700' },
+  optionCta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, width: '100%' },
+  optionCtaText: { fontSize: 12, fontWeight: '800', color: '#FFF' },
 });
 
 const nr = StyleSheet.create({

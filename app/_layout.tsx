@@ -74,6 +74,7 @@ function RootInner() {
 
           <Stack.Screen name="app-demo" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="ai-meal-chat" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="grocery-cart" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="booking-history" options={{ headerShown: false, animation: 'slide_from_right' }} />
         </Stack>
       </View>
