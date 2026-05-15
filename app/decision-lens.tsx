@@ -58,8 +58,8 @@ function NutritionRing({ label, value, unit, color, size = 64 }: {
 }
 
 // ── Meal Card ──
-function MealCard({ meal, index, colors, isDark }: {
-  meal: MealItem; index: number; colors: any; isDark: boolean;
+function MealCard({ meal, index, colors, isDark, router }: {
+  meal: MealItem; index: number; colors: any; isDark: boolean; router: any;
 }) {
   const [expanded, setExpanded] = useState(false);
   const config = MEAL_ICONS[meal.type] || MEAL_ICONS.lunch;
@@ -386,7 +386,7 @@ function WhatNextCard({ planData, activeTab, colors, isDark, router }: {
               backgroundColor: isDark ? 'rgba(129,140,248,0.08)' : 'rgba(129,140,248,0.04)',
               borderColor: 'rgba(129,140,248,0.25)',
             }, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push({ pathname: '/recipe-videos' as any, params: { planData: currentPlanData } }); }}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push({ pathname: '/recipe-videos' as any, params: { planData } }); }}
           >
             <LinearGradient colors={['#818CF8', '#6366F1']} style={wn.optionIconSmall}>
               <Text style={{ fontSize: 24 }}>🎬</Text>
@@ -576,7 +576,7 @@ export default function AajKhaneScreen() {
               </Animated.View>
               <View style={s.mealList}>
                 {todayPlan.meals.map((meal, i) => (
-                  <MealCard key={i} meal={meal} index={i} colors={colors} isDark={isDark} />
+                  <MealCard key={i} meal={meal} index={i} colors={colors} isDark={isDark} router={router} />
                 ))}
               </View>
             </View>
