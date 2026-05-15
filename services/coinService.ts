@@ -87,25 +87,48 @@ export const REDEEM_CATEGORIES = [
     ],
   },
   {
+    id: 'recipe_videos',
+    title: 'Recipe Video Access',
+    icon: '🎬',
+    color: '#818CF8',
+    items: [
+      { id: 'rv1', name: 'Full Recipe Video Unlock', coins: 20, desc: 'Unlock any single recipe video', image: '▶️' },
+      { id: 'rv2', name: 'Premium Chef Recipe', coins: 50, desc: 'Premium master chef recipe video', image: '👑' },
+      { id: 'rv3', name: 'Full Cooking Class', coins: 100, desc: 'Complete step-by-step cooking class', image: '🎓' },
+      { id: 'rv4', name: 'Weekly Video Pass', coins: 150, desc: 'Unlimited recipe videos for 7 days', image: '🎫' },
+    ],
+  },
+  {
+    id: 'cook_discounts',
+    title: 'Cook Booking Discounts',
+    icon: '👨‍🍳',
+    color: '#FF6B6B',
+    items: [
+      { id: 'cd1', name: '10% Cook Booking Discount', coins: 200, desc: 'Valid for one booking', image: '🏷️' },
+      { id: 'cd2', name: '25% Off Weekly Booking', coins: 500, desc: 'Weekly cook plan discount', image: '📅' },
+      { id: 'cd3', name: 'Free Trial Meal', coins: 100, desc: 'One free meal from any cook', image: '🍽' },
+    ],
+  },
+  {
+    id: 'grocery_coupons',
+    title: 'Grocery Coupons',
+    icon: '🛒',
+    color: '#4ADE80',
+    items: [
+      { id: 'gc1', name: '₹100 Off Grocery Order', coins: 300, desc: 'Min order ₹500 on any partner', image: '🛍️' },
+      { id: 'gc2', name: 'Free Delivery Coupon', coins: 150, desc: 'Zepto/Blinkit/BigBasket', image: '🚚' },
+      { id: 'gc3', name: '₹250 Off Monthly Grocery', coins: 800, desc: 'Valid on orders above ₹2000', image: '💰' },
+    ],
+  },
+  {
     id: 'live',
     title: 'Live Show Access',
     icon: '📺',
-    color: '#FF6B6B',
+    color: '#FB923C',
     items: [
       { id: 'l1', name: 'Live Cooking Session', coins: 200, desc: 'Access one live session', image: '👨‍🍳' },
       { id: 'l2', name: 'VIP Live Pass (Week)', coins: 500, desc: 'All live sessions for 7 days', image: '⭐' },
       { id: 'l3', name: 'Monthly Live Pass', coins: 1500, desc: 'Unlimited live access', image: '🎬' },
-    ],
-  },
-  {
-    id: 'classes',
-    title: 'Masterchef Classes',
-    icon: '🎓',
-    color: '#4ADE80',
-    items: [
-      { id: 'c1', name: 'Beginner Class', coins: 300, desc: 'Learn cooking basics', image: '📚' },
-      { id: 'c2', name: 'Regional Cuisine Class', coins: 800, desc: 'Master regional dishes', image: '🍛' },
-      { id: 'c3', name: 'Premium Masterclass', coins: 2000, desc: 'Celebrity chef masterclass', image: '👑' },
     ],
   },
   {

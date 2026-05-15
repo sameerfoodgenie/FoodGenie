@@ -124,6 +124,40 @@ function MealCard({ meal, index, colors, isDark }: {
                 <Text style={[mc.tipText, { color: colors.textSecondary }]}>{meal.tip}</Text>
               </View>
             ) : null}
+
+            {/* Meal Quick Actions */}
+            <View style={mc.mealActions}>
+              <Pressable style={[mc.mealActionBtn, { backgroundColor: 'rgba(74,222,128,0.08)', borderColor: 'rgba(74,222,128,0.20)' }]}>
+                <MaterialIcons name="add-shopping-cart" size={14} color="#4ADE80" />
+                <Text style={[mc.mealActionText, { color: '#4ADE80' }]}>Add to Cart</Text>
+              </Pressable>
+              <Pressable style={[mc.mealActionBtn, { backgroundColor: 'rgba(129,140,248,0.08)', borderColor: 'rgba(129,140,248,0.20)' }]}>
+                <MaterialIcons name="play-circle" size={14} color="#818CF8" />
+                <Text style={[mc.mealActionText, { color: '#818CF8' }]}>Recipe Video</Text>
+              </Pressable>
+              <Pressable style={[mc.mealActionBtn, { backgroundColor: 'rgba(251,146,60,0.08)', borderColor: 'rgba(251,146,60,0.20)' }]}>
+                <MaterialIcons name="delivery-dining" size={14} color="#FB923C" />
+                <Text style={[mc.mealActionText, { color: '#FB923C' }]}>Order</Text>
+              </Pressable>
+            </View>
+
+            {/* Recipe Video Card */}
+            <View style={[mc.recipeVideoCard, { backgroundColor: isDark ? 'rgba(129,140,248,0.06)' : 'rgba(129,140,248,0.03)', borderColor: 'rgba(129,140,248,0.15)' }]}>
+              <View style={mc.recipeVideoRow}>
+                <View style={mc.recipeVideoIcon}>
+                  <MaterialIcons name="play-circle-filled" size={28} color="#818CF8" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[mc.recipeVideoTitle, { color: colors.textPrimary }]}>Watch Master Chef Recipe</Text>
+                  <Text style={[mc.recipeVideoSub, { color: colors.textMuted }]}>Learn {meal.name} from expert chefs</Text>
+                </View>
+                <View style={mc.recipeTokenBadge}>
+                  <Text style={{ fontSize: 10 }}>🪙</Text>
+                  <Text style={mc.recipeTokenText}>20</Text>
+                </View>
+              </View>
+              <Text style={[mc.recipeVideoHint, { color: colors.textMuted }]}>Free preview available • Unlock full recipe with AI tokens</Text>
+            </View>
           </Animated.View>
         ) : null}
 
@@ -251,84 +285,125 @@ function MonthlyWeekCard({ week, index, colors, isDark }: {
   );
 }
 
-// ── "What Next?" Decision Card ──
+// ── "What Next?" Decision Card (3 options: Cook Myself, Book a Cook, Order Food) ──
 function WhatNextCard({ planData, activeTab, colors, isDark, router }: {
   planData: string; activeTab: PlanTab; colors: any; isDark: boolean; router: any;
 }) {
+  const options = [
+    {
+      id: 'cook',
+      title: 'Cook Myself',
+      desc: 'Auto grocery cart with ingredients, quantity and estimated cost',
+      emoji: '🧑‍🍳',
+      gradient: ['#4ADE80', '#22C55E'] as const,
+      color: '#4ADE80',
+      features: [
+        { icon: 'shopping-cart' as const, text: 'Auto Grocery Cart' },
+        { icon: 'savings' as const, text: 'Save ~15%' },
+      ],
+      cta: 'View Grocery Cart',
+      onPress: () => router.push({ pathname: '/grocery-cart', params: { planData, planType: activeTab } }),
+    },
+    {
+      id: 'book',
+      title: 'Book a Cook',
+      desc: 'Hire trained home cooks based on cuisine and dish expertise',
+      emoji: '👨‍🍳',
+      gradient: ['#FF6B6B', '#FF8E53'] as const,
+      color: '#FF6B6B',
+      features: [
+        { icon: 'verified' as const, text: '100+ Cooks' },
+        { icon: 'event' as const, text: 'Day/Week/Month' },
+      ],
+      cta: 'Browse Cooks',
+      onPress: () => router.push('/(tabs)/cook' as any),
+    },
+    {
+      id: 'order',
+      title: 'Order Food',
+      desc: 'Order similar dishes from restaurant and delivery partners',
+      emoji: '🍔',
+      gradient: ['#FB923C', '#F97316'] as const,
+      color: '#FB923C',
+      features: [
+        { icon: 'delivery-dining' as const, text: 'Zomato/Swiggy/ONDC' },
+        { icon: 'compare-arrows' as const, text: 'Compare prices' },
+      ],
+      cta: 'Find Food Options',
+      onPress: () => router.push('/partner-apps' as any),
+    },
+  ];
+
   return (
     <Animated.View entering={FadeInUp.delay(200).duration(500)}>
       <View style={[wn.container, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.01)' }]}>
         <Text style={[wn.title, { color: colors.textPrimary }]}>What would you like to do? 🤔</Text>
         <Text style={[wn.subtitle, { color: colors.textMuted }]}>Your meal plan is ready. Choose your path:</Text>
 
-        <View style={wn.optionsRow}>
-          {/* Cook Myself */}
-          <Pressable
-            style={({ pressed }) => [wn.optionCard, {
-              backgroundColor: isDark ? 'rgba(74,222,128,0.08)' : 'rgba(74,222,128,0.04)',
-              borderColor: 'rgba(74,222,128,0.25)',
-            }, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-              router.push({
-                pathname: '/grocery-cart',
-                params: { planData, planType: activeTab },
-              });
-            }}
-          >
-            <LinearGradient colors={['#4ADE80', '#22C55E']} style={wn.optionIcon}>
-              <Text style={{ fontSize: 28 }}>🧑‍🍳</Text>
-            </LinearGradient>
-            <Text style={[wn.optionTitle, { color: colors.textPrimary }]}>Cook Myself</Text>
-            <Text style={[wn.optionDesc, { color: colors.textMuted }]}>Get grocery cart with ingredients, quantities & estimated costs</Text>
-            <View style={wn.optionFeatures}>
-              <View style={wn.featureTag}>
-                <MaterialIcons name="shopping-cart" size={11} color="#4ADE80" />
-                <Text style={[wn.featureText, { color: '#4ADE80' }]}>Auto Grocery Cart</Text>
-              </View>
-              <View style={wn.featureTag}>
-                <MaterialIcons name="savings" size={11} color="#4ADE80" />
-                <Text style={[wn.featureText, { color: '#4ADE80' }]}>Save ~15%</Text>
-              </View>
-            </View>
-            <LinearGradient colors={['#4ADE80', '#22C55E']} style={wn.optionCta}>
-              <MaterialIcons name="arrow-forward" size={16} color="#FFF" />
-              <Text style={wn.optionCtaText}>View Grocery Cart</Text>
-            </LinearGradient>
-          </Pressable>
-
-          {/* Book a Cook */}
-          <Pressable
-            style={({ pressed }) => [wn.optionCard, {
-              backgroundColor: isDark ? 'rgba(255,107,107,0.08)' : 'rgba(255,107,107,0.04)',
-              borderColor: 'rgba(255,107,107,0.25)',
-            }, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-              router.push('/(tabs)/cook' as any);
-            }}
-          >
-            <LinearGradient colors={['#FF6B6B', '#FF8E53']} style={wn.optionIcon}>
-              <Text style={{ fontSize: 28 }}>👨‍🍳</Text>
-            </LinearGradient>
-            <Text style={[wn.optionTitle, { color: colors.textPrimary }]}>Book a Cook</Text>
-            <Text style={[wn.optionDesc, { color: colors.textMuted }]}>Hire expert home cooks with cuisine specialization & flexible plans</Text>
-            <View style={wn.optionFeatures}>
-              <View style={wn.featureTag}>
-                <MaterialIcons name="verified" size={11} color="#FF6B6B" />
-                <Text style={[wn.featureText, { color: '#FF6B6B' }]}>100+ Cooks</Text>
-              </View>
-              <View style={wn.featureTag}>
-                <MaterialIcons name="event" size={11} color="#FF6B6B" />
-                <Text style={[wn.featureText, { color: '#FF6B6B' }]}>Day/Week/Month</Text>
-              </View>
-            </View>
-            <LinearGradient colors={['#FF6B6B', '#FF8E53']} style={wn.optionCta}>
-              <MaterialIcons name="arrow-forward" size={16} color="#FFF" />
-              <Text style={wn.optionCtaText}>Browse Cooks</Text>
-            </LinearGradient>
-          </Pressable>
+        <View style={wn.optionsColumn}>
+          {options.map((opt, i) => (
+            <Animated.View key={opt.id} entering={FadeInDown.delay(200 + i * 100).duration(350)}>
+              <Pressable
+                style={({ pressed }) => [wn.optionRow, {
+                  backgroundColor: isDark ? `${opt.color}12` : `${opt.color}06`,
+                  borderColor: `${opt.color}30`,
+                }, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); opt.onPress(); }}
+              >
+                <LinearGradient colors={opt.gradient as unknown as string[]} style={wn.optionIconSmall}>
+                  <Text style={{ fontSize: 24 }}>{opt.emoji}</Text>
+                </LinearGradient>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <Text style={[wn.optionTitleRow, { color: colors.textPrimary }]}>{opt.title}</Text>
+                  <Text style={[wn.optionDescRow, { color: colors.textMuted }]}>{opt.desc}</Text>
+                  <View style={wn.featuresInline}>
+                    {opt.features.map((f, fi) => (
+                      <View key={fi} style={wn.featureTag}>
+                        <MaterialIcons name={f.icon} size={10} color={opt.color} />
+                        <Text style={[wn.featureText, { color: opt.color }]}>{f.text}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+                <View style={[wn.optionArrow, { backgroundColor: `${opt.color}20` }]}>
+                  <MaterialIcons name="arrow-forward" size={16} color={opt.color} />
+                </View>
+              </Pressable>
+            </Animated.View>
+          ))}
         </View>
+
+        {/* Watch Recipe Videos CTA */}
+        <Animated.View entering={FadeInDown.delay(550).duration(350)}>
+          <Pressable
+            style={({ pressed }) => [wn.recipeVideoCard, {
+              backgroundColor: isDark ? 'rgba(129,140,248,0.08)' : 'rgba(129,140,248,0.04)',
+              borderColor: 'rgba(129,140,248,0.25)',
+            }, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/(tabs)/master-chefs' as any); }}
+          >
+            <LinearGradient colors={['#818CF8', '#6366F1']} style={wn.optionIconSmall}>
+              <Text style={{ fontSize: 24 }}>🎬</Text>
+            </LinearGradient>
+            <View style={{ flex: 1, gap: 3 }}>
+              <Text style={[wn.optionTitleRow, { color: colors.textPrimary }]}>Watch Recipe Videos</Text>
+              <Text style={[wn.optionDescRow, { color: colors.textMuted }]}>Learn from master chefs — unlock with AI tokens</Text>
+              <View style={wn.featuresInline}>
+                <View style={wn.featureTag}>
+                  <Text style={{ fontSize: 9 }}>🪙</Text>
+                  <Text style={[wn.featureText, { color: '#818CF8' }]}>20-100 tokens</Text>
+                </View>
+                <View style={wn.featureTag}>
+                  <MaterialIcons name="play-circle" size={10} color="#818CF8" />
+                  <Text style={[wn.featureText, { color: '#818CF8' }]}>Free preview</Text>
+                </View>
+              </View>
+            </View>
+            <View style={[wn.optionArrow, { backgroundColor: 'rgba(129,140,248,0.20)' }]}>
+              <MaterialIcons name="arrow-forward" size={16} color="#818CF8" />
+            </View>
+          </Pressable>
+        </Animated.View>
       </View>
     </Animated.View>
   );
@@ -644,16 +719,25 @@ const wn = StyleSheet.create({
   container: { padding: 20, borderRadius: 24, gap: 14 },
   title: { fontSize: 20, fontWeight: '900', letterSpacing: -0.3, textAlign: 'center' },
   subtitle: { fontSize: 13, fontWeight: '500', textAlign: 'center' },
-  optionsRow: { flexDirection: 'row', gap: 12 },
-  optionCard: { flex: 1, padding: 16, borderRadius: 20, borderWidth: 1.5, alignItems: 'center', gap: 10 },
-  optionIcon: { width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  optionTitle: { fontSize: 15, fontWeight: '900', textAlign: 'center' },
-  optionDesc: { fontSize: 11, fontWeight: '500', textAlign: 'center', lineHeight: 16 },
-  optionFeatures: { gap: 6, width: '100%' },
-  featureTag: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'center' },
+  optionsColumn: { gap: 10 },
+  optionRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    padding: 14, borderRadius: 18, borderWidth: 1.5,
+  },
+  optionIconSmall: { width: 50, height: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  optionTitleRow: { fontSize: 15, fontWeight: '900' },
+  optionDescRow: { fontSize: 11, fontWeight: '500', lineHeight: 16 },
+  featuresInline: { flexDirection: 'row', gap: 10, marginTop: 2 },
+  featureTag: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   featureText: { fontSize: 10, fontWeight: '700' },
-  optionCta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, width: '100%' },
-  optionCtaText: { fontSize: 12, fontWeight: '800', color: '#FFF' },
+  optionArrow: {
+    width: 32, height: 32, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  recipeVideoCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    padding: 14, borderRadius: 18, borderWidth: 1.5,
+  },
 });
 
 const nr = StyleSheet.create({
@@ -687,6 +771,24 @@ const mc = StyleSheet.create({
   tipBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: 10, borderRadius: 10, borderWidth: 1 },
   tipText: { flex: 1, fontSize: 12, fontWeight: '500', lineHeight: 17 },
   expandHint: { alignItems: 'center' },
+  mealActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  mealActionBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 4, paddingVertical: 8, borderRadius: 10, borderWidth: 1,
+  },
+  mealActionText: { fontSize: 10, fontWeight: '700' },
+  recipeVideoCard: { padding: 12, borderRadius: 14, borderWidth: 1, marginTop: 6, gap: 6 },
+  recipeVideoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  recipeVideoIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(129,140,248,0.10)', alignItems: 'center', justifyContent: 'center' },
+  recipeVideoTitle: { fontSize: 13, fontWeight: '800' },
+  recipeVideoSub: { fontSize: 11, fontWeight: '500' },
+  recipeTokenBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
+    backgroundColor: 'rgba(212,175,55,0.10)',
+  },
+  recipeTokenText: { fontSize: 12, fontWeight: '900', color: '#D4AF37' },
+  recipeVideoHint: { fontSize: 10, fontWeight: '500' },
 });
 
 const wd = StyleSheet.create({

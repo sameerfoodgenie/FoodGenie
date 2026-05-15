@@ -60,7 +60,7 @@ const SERVICE_CARDS = [
   {
     id: 'book-cook',
     title: 'Book a Cook',
-    subtitle: 'Hire expert home cooks',
+    subtitle: 'Hire trained home cooks',
     emoji: '👨‍🍳',
     iconBg: '#FF6B6B',
     route: '/(tabs)/cook',
@@ -68,19 +68,26 @@ const SERVICE_CARDS = [
   {
     id: 'smart-grocery',
     title: 'Smart Grocery',
-    subtitle: 'Budget-friendly bundles',
+    subtitle: 'Plan meals and buy without overspending',
     emoji: '🛒',
     iconBg: '#4ADE80',
     route: '/(tabs)/grocery',
+  },
+  {
+    id: 'order-food',
+    title: 'Order Food',
+    subtitle: 'Compare and order from food partners',
+    emoji: '🍔',
+    iconBg: '#FB923C',
+    route: '/partner-apps',
   },
 ];
 
 // ── Quick action items ──
 const QUICK_ACTIONS = [
-  { id: 'coins', emoji: '🪙', label: 'Coins', color: '#D4AF37', route: '/coin-wallet' },
+  { id: 'redeem', emoji: '🎁', label: 'Redeem Coins', color: '#D4AF37', route: '/coin-redeem' },
   { id: 'trending', emoji: '🔥', label: 'Trending', color: '#FF6B6B', route: '/explore' },
   { id: 'offers', emoji: '🎟️', label: 'Offers', color: '#818CF8', route: '/coin-redeem' },
-  { id: 'order', emoji: '📦', label: 'Order Food', color: '#FB923C', route: '/partner-apps' },
   { id: 'shows', emoji: '🎬', label: 'Shows', color: '#22D3EE', route: '/shows' },
   { id: 'chefs', emoji: '👨‍🍳', label: 'Master Chefs', color: '#F59E0B', route: '/(tabs)/master-chefs' },
 ];
@@ -461,7 +468,7 @@ const s = StyleSheet.create({
 
   /* ── Quick Actions ── */
   quickSection: { paddingHorizontal: 20, paddingTop: 24, gap: 12 },
-  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
+  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   quickItem: {
     width: (SCREEN_W - 60) / 3, alignItems: 'center', gap: 8,
     paddingVertical: 16, borderRadius: 18, borderWidth: 1,
