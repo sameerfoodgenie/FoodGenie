@@ -17,15 +17,15 @@ export const theme = {
   warning: '#F59E0B',
   error: '#EF4444',
 
-  // Backgrounds - Warm cream
-  background: '#FDF8F0',
-  backgroundSecondary: '#FAF5ED',
-  backgroundTertiary: '#F5EFE5',
+  // Backgrounds - Clean white
+  background: '#FFFFFF',
+  backgroundSecondary: '#F8F9FA',
+  backgroundTertiary: '#F1F3F5',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
 
   // Text
-  textPrimary: '#1A1A2E',
+  textPrimary: '#0F172A',
   textSecondary: '#6B7280',
   textMuted: '#9CA3AF',
   textOnPrimary: '#FFFFFF',

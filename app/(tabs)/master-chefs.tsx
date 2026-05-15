@@ -420,22 +420,20 @@ export default function MasterChefsScreen() {
 
                 {/* Token Economy Banner */}
                 <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-                  <View style={[st.tokenBanner, { backgroundColor: isDark ? 'rgba(212,175,55,0.10)' : 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.20)' }]}>
+                  <View style={[st.tokenBanner, { backgroundColor: isDark ? 'rgba(212,175,55,0.10)' : 'rgba(212,175,55,0.04)', borderColor: 'rgba(212,175,55,0.15)' }]}>
                     <View style={st.tokenBannerRow}>
                       <Text style={{ fontSize: 20 }}>🎬</Text>
                       <View style={{ flex: 1 }}>
                         <Text style={[st.tokenBannerTitle, { color: colors.textPrimary }]}>Unlock Recipe Videos</Text>
                         <Text style={[st.tokenBannerSub, { color: colors.textMuted }]}>
-                          Free preview • 20 tokens for full recipe • 50 for premium • 100 for classes
+                          Watch free preview • Unlock full recipe with 15-30 tokens
                         </Text>
                       </View>
                     </View>
                     <View style={st.tokenPriceRow}>
                       {[
-                        { label: 'Short Preview', tokens: 'Free', color: '#4ADE80' },
-                        { label: 'Full Recipe', tokens: '20', color: '#D4AF37' },
-                        { label: 'Premium', tokens: '50', color: '#FF6B6B' },
-                        { label: 'Class', tokens: '100', color: '#818CF8' },
+                        { label: 'Free Preview', tokens: 'Free', color: '#4ADE80' },
+                        { label: 'Full Recipe', tokens: '15-30', color: '#D4AF37' },
                       ].map(t => (
                         <View key={t.label} style={[st.tokenPriceItem, { backgroundColor: `${t.color}10` }]}>
                           <Text style={[st.tokenPriceLabel, { color: t.color }]}>{t.tokens === 'Free' ? '✓' : '🪙'} {t.tokens}</Text>

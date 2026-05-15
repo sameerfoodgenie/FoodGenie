@@ -131,7 +131,10 @@ function MealCard({ meal, index, colors, isDark }: {
                 <MaterialIcons name="add-shopping-cart" size={14} color="#4ADE80" />
                 <Text style={[mc.mealActionText, { color: '#4ADE80' }]}>Add to Cart</Text>
               </Pressable>
-              <Pressable style={[mc.mealActionBtn, { backgroundColor: 'rgba(129,140,248,0.08)', borderColor: 'rgba(129,140,248,0.20)' }]}>
+              <Pressable
+                style={[mc.mealActionBtn, { backgroundColor: 'rgba(129,140,248,0.08)', borderColor: 'rgba(129,140,248,0.20)' }]}
+                onPress={() => { Haptics.selectionAsync(); router.push({ pathname: '/recipe-videos' as any, params: { planData: JSON.stringify({ meals: [meal] }) } }); }}
+              >
                 <MaterialIcons name="play-circle" size={14} color="#818CF8" />
                 <Text style={[mc.mealActionText, { color: '#818CF8' }]}>Recipe Video</Text>
               </Pressable>
@@ -142,7 +145,10 @@ function MealCard({ meal, index, colors, isDark }: {
             </View>
 
             {/* Recipe Video Card */}
-            <View style={[mc.recipeVideoCard, { backgroundColor: isDark ? 'rgba(129,140,248,0.06)' : 'rgba(129,140,248,0.03)', borderColor: 'rgba(129,140,248,0.15)' }]}>
+            <Pressable
+              style={[mc.recipeVideoCard, { backgroundColor: isDark ? 'rgba(129,140,248,0.06)' : 'rgba(129,140,248,0.03)', borderColor: 'rgba(129,140,248,0.15)' }]}
+              onPress={() => { Haptics.selectionAsync(); router.push({ pathname: '/recipe-videos' as any, params: { planData: JSON.stringify({ meals: [meal] }) } }); }}
+            >
               <View style={mc.recipeVideoRow}>
                 <View style={mc.recipeVideoIcon}>
                   <MaterialIcons name="play-circle-filled" size={28} color="#818CF8" />
@@ -156,8 +162,8 @@ function MealCard({ meal, index, colors, isDark }: {
                   <Text style={mc.recipeTokenText}>20</Text>
                 </View>
               </View>
-              <Text style={[mc.recipeVideoHint, { color: colors.textMuted }]}>Free preview available • Unlock full recipe with AI tokens</Text>
-            </View>
+              <Text style={[mc.recipeVideoHint, { color: colors.textMuted }]}>Free preview available • Unlock full recipe with tokens</Text>
+            </Pressable>
           </Animated.View>
         ) : null}
 
@@ -380,18 +386,18 @@ function WhatNextCard({ planData, activeTab, colors, isDark, router }: {
               backgroundColor: isDark ? 'rgba(129,140,248,0.08)' : 'rgba(129,140,248,0.04)',
               borderColor: 'rgba(129,140,248,0.25)',
             }, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/(tabs)/master-chefs' as any); }}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push({ pathname: '/recipe-videos' as any, params: { planData: currentPlanData } }); }}
           >
             <LinearGradient colors={['#818CF8', '#6366F1']} style={wn.optionIconSmall}>
               <Text style={{ fontSize: 24 }}>🎬</Text>
             </LinearGradient>
             <View style={{ flex: 1, gap: 3 }}>
               <Text style={[wn.optionTitleRow, { color: colors.textPrimary }]}>Watch Recipe Videos</Text>
-              <Text style={[wn.optionDescRow, { color: colors.textMuted }]}>Learn from master chefs — unlock with AI tokens</Text>
+              <Text style={[wn.optionDescRow, { color: colors.textMuted }]}>Learn from master chefs — free preview, unlock full with tokens</Text>
               <View style={wn.featuresInline}>
                 <View style={wn.featureTag}>
                   <Text style={{ fontSize: 9 }}>🪙</Text>
-                  <Text style={[wn.featureText, { color: '#818CF8' }]}>20-100 tokens</Text>
+                  <Text style={[wn.featureText, { color: '#818CF8' }]}>15-30 tokens</Text>
                 </View>
                 <View style={wn.featureTag}>
                   <MaterialIcons name="play-circle" size={10} color="#818CF8" />

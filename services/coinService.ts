@@ -92,10 +92,10 @@ export const REDEEM_CATEGORIES = [
     icon: '🎬',
     color: '#818CF8',
     items: [
-      { id: 'rv1', name: 'Full Recipe Video Unlock', coins: 20, desc: 'Unlock any single recipe video', image: '▶️' },
-      { id: 'rv2', name: 'Premium Chef Recipe', coins: 50, desc: 'Premium master chef recipe video', image: '👑' },
-      { id: 'rv3', name: 'Full Cooking Class', coins: 100, desc: 'Complete step-by-step cooking class', image: '🎓' },
-      { id: 'rv4', name: 'Weekly Video Pass', coins: 150, desc: 'Unlimited recipe videos for 7 days', image: '🎫' },
+      { id: 'rv1', name: 'Unlock Breakfast Recipe', coins: 20, desc: 'Full breakfast recipe from master chef', image: '☀️' },
+      { id: 'rv2', name: 'Unlock Lunch Recipe', coins: 30, desc: 'Full lunch recipe from master chef', image: '🍽️' },
+      { id: 'rv3', name: 'Unlock Snack Recipe', coins: 15, desc: 'Full snack recipe from master chef', image: '🍿' },
+      { id: 'rv4', name: 'Unlock Dinner Recipe', coins: 30, desc: 'Full dinner recipe from master chef', image: '🌙' },
     ],
   },
   {
