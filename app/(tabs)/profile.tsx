@@ -317,12 +317,12 @@ export default function ProfileScreen() {
                 </Pressable>
                 <Pressable
                   style={({ pressed }) => [s.actionBtn, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] }]}
-                  onPress={() => { Haptics.selectionAsync(); router.push('/admin' as any); }}
+                  onPress={() => { Haptics.selectionAsync(); router.push('/subscription' as any); }}
                 >
-                  <LinearGradient colors={isDark ? ['rgba(74,222,128,0.15)', 'rgba(74,222,128,0.05)'] : ['rgba(74,222,128,0.08)', 'rgba(74,222,128,0.02)']} style={s.actionBtnIcon}>
-                    <MaterialIcons name="admin-panel-settings" size={16} color="#4ADE80" />
+                  <LinearGradient colors={isDark ? ['rgba(255,215,0,0.15)', 'rgba(255,215,0,0.05)'] : ['rgba(255,215,0,0.10)', 'rgba(255,215,0,0.03)']} style={s.actionBtnIcon}>
+                    <MaterialIcons name="auto-awesome" size={16} color="#D4AF37" />
                   </LinearGradient>
-                  <Text style={[s.actionBtnText, { color: colors.textPrimary }]}>Admin</Text>
+                  <Text style={[s.actionBtnText, { color: colors.textPrimary }]}>AI Tokens</Text>
                 </Pressable>
 
               </Animated.View>

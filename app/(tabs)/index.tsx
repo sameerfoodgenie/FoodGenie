@@ -86,8 +86,8 @@ const SERVICE_CARDS = [
 // ── Quick action items ──
 const QUICK_ACTIONS = [
   { id: 'redeem', emoji: '🎁', label: 'Redeem Coins', color: '#D4AF37', route: '/coin-redeem' },
+  { id: 'tokens', emoji: '✨', label: 'AI Tokens', color: '#FFD700', route: '/subscription' },
   { id: 'trending', emoji: '🔥', label: 'Trending', color: '#FF6B6B', route: '/explore' },
-  { id: 'offers', emoji: '🎟️', label: 'Offers', color: '#818CF8', route: '/coin-redeem' },
   { id: 'shows', emoji: '🎬', label: 'Shows', color: '#22D3EE', route: '/shows' },
   { id: 'chefs', emoji: '👨‍🍳', label: 'Master Chefs', color: '#F59E0B', route: '/(tabs)/master-chefs' },
 ];
