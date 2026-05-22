@@ -41,7 +41,7 @@ const GRID_SIZE = (SCREEN_W - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS;
 const LEVELS = [
   { id: 'newbie', name: 'Newbie', emoji: '🌱', minPosts: 0, color: '#9CA3AF' },
   { id: 'explorer', name: 'Explorer', emoji: '🧭', minPosts: 3, color: '#3B82F6' },
-  { id: 'creator', name: 'Creator', emoji: '⭐', minPosts: 10, color: '#D4AF37' },
+  { id: 'creator', name: 'Creator', emoji: '⭐', minPosts: 10, color: '#F5B731' },
   { id: 'legend', name: 'Food Legend', emoji: '👑', minPosts: 25, color: '#FFD700' },
 ];
 
@@ -172,7 +172,7 @@ export default function ProfileScreen() {
 
   const headerGradient = isDark
     ? ['#0A0A0F', '#14141C', '#1A1510'] as const
-    : ['#FDF8F0', '#FFF8E1', '#FFECB3'] as const;
+    : ['#FFFDF8', '#FFF9F0', '#FFF3E0'] as const;
 
   return (
     <View style={[s.container, { backgroundColor: colors.background }]}>
@@ -224,9 +224,9 @@ export default function ProfileScreen() {
                     {/* Avatar + Info Row */}
                     <View style={s.profileTop}>
                       <View style={s.avatarSection}>
-                        <LinearGradient colors={['#D4AF37', '#FFD700', '#B8960C']} style={s.avatarRing}>
+                        <LinearGradient colors={['#F5B731', '#FDD85D', '#D9A020']} style={s.avatarRing}>
                           <View style={[s.avatarInner, { backgroundColor: isDark ? '#14141C' : '#FFF' }]}>
-                            <LinearGradient colors={['#D4AF37', '#FFD700']} style={s.avatar}>
+                            <LinearGradient colors={['#F5B731', '#FDD85D']} style={s.avatar}>
                               <Text style={s.avatarText}>{initials}</Text>
                             </LinearGradient>
                           </View>
@@ -281,7 +281,7 @@ export default function ProfileScreen() {
                       <View style={[s.levelBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
                         <Animated.View entering={FadeIn.delay(300).duration(600)}>
                           <LinearGradient
-                            colors={['#D4AF37', '#FFD700']}
+                            colors={['#F5B731', '#FDD85D']}
                             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                             style={[s.levelBarFill, { width: `${Math.max(5, levelProgress * 100)}%` }]}
                           />
@@ -302,7 +302,7 @@ export default function ProfileScreen() {
                   onPress={() => { Haptics.selectionAsync(); router.push('/(tabs)/preferences'); }}
                 >
                   <LinearGradient colors={isDark ? ['rgba(212,175,55,0.15)', 'rgba(212,175,55,0.05)'] : ['rgba(212,175,55,0.08)', 'rgba(212,175,55,0.02)']} style={s.actionBtnIcon}>
-                    <MaterialIcons name="edit" size={16} color="#D4AF37" />
+                    <MaterialIcons name="edit" size={16} color="#F5B731" />
                   </LinearGradient>
                   <Text style={[s.actionBtnText, { color: colors.textPrimary }]}>Edit Profile</Text>
                 </Pressable>
@@ -320,7 +320,7 @@ export default function ProfileScreen() {
                   onPress={() => { Haptics.selectionAsync(); router.push('/subscription' as any); }}
                 >
                   <LinearGradient colors={isDark ? ['rgba(255,215,0,0.15)', 'rgba(255,215,0,0.05)'] : ['rgba(255,215,0,0.10)', 'rgba(255,215,0,0.03)']} style={s.actionBtnIcon}>
-                    <MaterialIcons name="auto-awesome" size={16} color="#D4AF37" />
+                    <MaterialIcons name="auto-awesome" size={16} color="#F5B731" />
                   </LinearGradient>
                   <Text style={[s.actionBtnText, { color: colors.textPrimary }]}>AI Tokens</Text>
                 </Pressable>
@@ -331,7 +331,7 @@ export default function ProfileScreen() {
               <Animated.View entering={FadeInDown.delay(140).duration(380)} style={s.statsWrap}>
                 <View style={[s.statsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   {[
-                    { label: 'Posts', value: totalPostCount, icon: 'grid-on' as const, color: '#D4AF37' },
+                    { label: 'Posts', value: totalPostCount, icon: 'grid-on' as const, color: '#F5B731' },
                     { label: 'Followers', value: followerCount, icon: 'people' as const, color: '#818CF8' },
                     { label: 'Following', value: followingCount, icon: 'person-add' as const, color: '#4ADE80' },
                     { label: 'Coins', value: coinBalance, icon: 'stars' as const, color: '#FFD700' },
@@ -371,8 +371,8 @@ export default function ProfileScreen() {
                       style={[s.tab, active && s.tabActive]}
                       onPress={() => { Haptics.selectionAsync(); setActiveTab(tab.id); }}
                     >
-                      <MaterialIcons name={tab.icon} size={21} color={active ? '#D4AF37' : colors.textMuted} />
-                      <Text style={[s.tabLabel, { color: active ? '#D4AF37' : colors.textMuted }]}>{tab.label}</Text>
+                      <MaterialIcons name={tab.icon} size={21} color={active ? '#F5B731' : colors.textMuted} />
+                      <Text style={[s.tabLabel, { color: active ? '#F5B731' : colors.textMuted }]}>{tab.label}</Text>
                     </Pressable>
                   );
                 })}
@@ -547,7 +547,7 @@ const s = StyleSheet.create({
     marginTop: 18,
   },
   tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12 },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: '#D4AF37' },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: '#F5B731' },
   tabLabel: { fontSize: 12, fontWeight: '700' },
 
   /* Shows */

@@ -106,7 +106,7 @@ function formatCount(n: number): string {
 const CATEGORY_LABELS: Record<string, { emoji: string; label: string; color: string }> = {
   trending: { emoji: '🔥', label: 'Trending', color: '#FF6B6B' },
   nearby: { emoji: '📍', label: 'Near You', color: '#4ADE80' },
-  creator: { emoji: '👨‍🍳', label: 'Chef Pick', color: '#D4AF37' },
+  creator: { emoji: '👨‍🍳', label: 'Chef Pick', color: '#F5B731' },
   offer: { emoji: '🎟️', label: 'Deal', color: '#818CF8' },
 };
 
@@ -455,7 +455,7 @@ function DetailModal({ card, visible, onClose, colors, isDark, userEmotion, onEm
 function LoadingSkeleton({ cardHeight }: { cardHeight: number }) {
   return (
     <View style={[sty.cardContainer, { height: cardHeight, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center' }]}>
-      <ActivityIndicator size="large" color="#D4AF37" />
+      <ActivityIndicator size="large" color="#F5B731" />
       <Text style={{ color: 'rgba(255,255,255,0.5)', marginTop: 16, fontSize: 14, fontWeight: '600' }}>Loading food cards...</Text>
     </View>
   );
@@ -647,8 +647,8 @@ export default function FoodiesScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => loadData(true)}
-            tintColor="#D4AF37"
-            colors={['#D4AF37']}
+            tintColor="#F5B731"
+            colors={['#F5B731']}
           />
         }
         ListEmptyComponent={
@@ -787,7 +787,7 @@ const sty = StyleSheet.create({
   detailEmotionCount: { fontSize: 13, fontWeight: '800' },
   detailTagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
   detailTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1 },
-  detailTagText: { fontSize: 12, fontWeight: '700', color: '#D4AF37', textTransform: 'capitalize' },
+  detailTagText: { fontSize: 12, fontWeight: '700', color: '#F5B731', textTransform: 'capitalize' },
   detailRecipeSection: { gap: 14, marginBottom: 16 },
   detailRecipeTitle: { fontSize: 18, fontWeight: '800', marginBottom: 4 },
   detailStepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
@@ -797,6 +797,6 @@ const sty = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: 'rgba(212,175,55,0.22)',
   },
-  detailStepNumText: { fontSize: 13, fontWeight: '800', color: '#D4AF37' },
+  detailStepNumText: { fontSize: 13, fontWeight: '800', color: '#F5B731' },
   detailStepText: { flex: 1, fontSize: 14, fontWeight: '500', lineHeight: 20, paddingTop: 3 },
 });

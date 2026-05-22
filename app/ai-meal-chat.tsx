@@ -490,7 +490,7 @@ export default function AIMealChatScreen() {
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         {/* Header */}
         <LinearGradient
-          colors={['#6C3CE0', '#8B5CF6', '#B794F4']}
+          colors={['#1E1456', '#7B2FA0', '#C41E7A']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={s.header}
@@ -608,7 +608,7 @@ export default function AIMealChatScreen() {
               onPress={handleSend}
               disabled={!inputText.trim() || isLoading}
             >
-              <LinearGradient colors={['#8B5CF6', '#6C3CE0']} style={s.sendBtnGrad}>
+              <LinearGradient colors={['#7B2FA0', '#1E1456']} style={s.sendBtnGrad}>
                 {isLoading ? (
                   <ActivityIndicator size="small" color="#FFF" />
                 ) : (

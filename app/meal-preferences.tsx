@@ -188,7 +188,7 @@ export default function MealPreferencesScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <SafeAreaView edges={['top']} style={styles.loadingCenter}>
-          <ActivityIndicator size="large" color="#D4AF37" />
+          <ActivityIndicator size="large" color="#F5B731" />
         </SafeAreaView>
       </View>
     );
@@ -238,7 +238,7 @@ export default function MealPreferencesScreen() {
                     onPress={handleUpdatePreferences}
                   >
                     <LinearGradient
-                      colors={['#D4AF37', '#FFD700']}
+                      colors={['#F5B731', '#D9A020']}
                       style={styles.askBtnPrimary}
                     >
                       <MaterialIcons name="tune" size={20} color="#FFF" />
@@ -308,13 +308,13 @@ export default function MealPreferencesScreen() {
                         styles.chip,
                         {
                           backgroundColor: isSelected ? 'rgba(212,175,55,0.12)' : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'),
-                          borderColor: isSelected ? '#D4AF37' : colors.border,
+                          borderColor: isSelected ? '#F5B731' : colors.border,
                         },
                       ]}
                       onPress={() => { Haptics.selectionAsync(); setMealGoal(mg.id); }}
                     >
                       <Text style={{ fontSize: 18 }}>{mg.emoji}</Text>
-                      <Text style={[styles.chipLabel, { color: isSelected ? '#D4AF37' : colors.textSecondary }]}>{mg.label}</Text>
+                      <Text style={[styles.chipLabel, { color: isSelected ? '#F5B731' : colors.textSecondary }]}>{mg.label}</Text>
                     </Pressable>
                   );
                 })}
@@ -415,13 +415,13 @@ export default function MealPreferencesScreen() {
                         styles.cookItem,
                         {
                           backgroundColor: isSelected ? 'rgba(212,175,55,0.12)' : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'),
-                          borderColor: isSelected ? '#D4AF37' : colors.border,
+                          borderColor: isSelected ? '#F5B731' : colors.border,
                         },
                       ]}
                       onPress={() => { Haptics.selectionAsync(); setCookingPref(cp.id); }}
                     >
                       <Text style={{ fontSize: 22 }}>{cp.emoji}</Text>
-                      <Text style={[styles.cookLabel, { color: isSelected ? '#D4AF37' : colors.textPrimary }]}>{cp.label}</Text>
+                      <Text style={[styles.cookLabel, { color: isSelected ? '#F5B731' : colors.textPrimary }]}>{cp.label}</Text>
                       <Text style={[styles.cookDesc, { color: colors.textMuted }]}>{cp.desc}</Text>
                     </Pressable>
                   );

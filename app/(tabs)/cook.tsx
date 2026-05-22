@@ -1406,12 +1406,12 @@ export default function BookCookScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#D4AF37" colors={['#D4AF37']} />
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#F5B731" colors={['#F5B731']} />
           }
         >
           {/* ═══ Header ═══ */}
           <LinearGradient
-            colors={isDark ? ['#14141C', '#1A1510', '#14141C'] : ['#FDF8F0', '#FFF8E1', '#FDF8F0']}
+            colors={isDark ? ['#0D0A1A', '#151030', '#0D0A1A'] : ['#FFFDF8', '#FFF9F0', '#FFFDF8']}
             style={ck.header}
           >
             <Animated.View entering={FadeIn.duration(400)} style={ck.headerContent}>

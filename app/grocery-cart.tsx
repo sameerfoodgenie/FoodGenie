@@ -298,7 +298,7 @@ export default function GroceryCartScreen() {
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         {/* Header */}
         <LinearGradient
-          colors={['#4ADE80', '#22C55E', '#16A34A']}
+          colors={['#1E1456', '#7B2FA0']}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={st.header}
         >
@@ -388,7 +388,7 @@ export default function GroceryCartScreen() {
                     <Text style={[st.itemName, { color: colors.textPrimary }, item.checked && { textDecorationLine: 'line-through', opacity: 0.5 }]}>{item.name}</Text>
                     <Text style={[st.itemQty, { color: colors.textMuted }]}>{item.qty}</Text>
                   </View>
-                  <Text style={[st.itemPrice, { color: item.checked ? colors.textMuted : '#D4AF37' }]}>₹{item.price}</Text>
+                  <Text style={[st.itemPrice, { color: item.checked ? colors.textMuted : '#F5B731' }]}>₹{item.price}</Text>
                 </Pressable>
               ))}
             </Animated.View>
@@ -444,8 +444,8 @@ export default function GroceryCartScreen() {
             </View>
 
             {/* Future-ready note */}
-            <View style={[st.futureNote, { backgroundColor: isDark ? 'rgba(212,175,55,0.06)' : 'rgba(212,175,55,0.04)', borderColor: 'rgba(212,175,55,0.15)' }]}>
-              <MaterialIcons name="rocket-launch" size={16} color="#D4AF37" />
+            <View style={[st.futureNote, { backgroundColor: isDark ? 'rgba(245,183,49,0.06)' : 'rgba(245,183,49,0.04)', borderColor: 'rgba(245,183,49,0.20)' }]}>
+              <MaterialIcons name="rocket-launch" size={16} color="#F5B731" />
               <Text style={[st.futureNoteText, { color: colors.textSecondary }]}>
                 Coming soon: One-tap ordering directly routes your cart to the selected partner app
               </Text>
@@ -472,7 +472,7 @@ export default function GroceryCartScreen() {
               }
             }}
           >
-            <LinearGradient colors={['#4ADE80', '#22C55E']} style={st.bottomCta}>
+            <LinearGradient colors={['#F5B731', '#D9A020']} style={st.bottomCta}>
               <MaterialIcons name="shopping-cart-checkout" size={20} color="#FFF" />
               <Text style={st.bottomCtaText}>
                 {selectedPartner ? `Order on ${DELIVERY_PARTNERS.find(p => p.id === selectedPartner)?.name}` : 'Select Partner & Order'}
@@ -553,8 +553,8 @@ const st = StyleSheet.create({
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
   bottomLeft: { gap: 1 },
   bottomLabel: { fontSize: 10, fontWeight: '600' },
-  bottomPrice: { fontSize: 22, fontWeight: '900', color: '#D4AF37' },
-  bottomSave: { fontSize: 11, fontWeight: '700' },
+  bottomPrice: { fontSize: 22, fontWeight: '900', color: '#F5B731' },
+  bottomSave: { fontSize: 11, fontWeight: '700', color: '#F5B731' },
   bottomCta: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16 },
   bottomCtaText: { fontSize: 15, fontWeight: '800', color: '#FFF' },
 });
