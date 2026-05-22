@@ -167,6 +167,44 @@ Respond ONLY with this JSON structure:
   ],
   "chefTip": "one final pro tip for this dish"
 }`;
+    } else if (action === 'swap_meal') {
+      const { mealName, mealType, calories, protein, carbs, fat, diet, spiceLevel, cuisineBias, persons: swapPersons } = preferences || {};
+      const personCount = swapPersons || 1;
+
+      systemPrompt = `You are FoodGenie AI, an expert Indian meal planner. Generate alternative meal options that match a similar nutritional profile.
+
+RULES:
+- Respond ONLY in valid JSON format
+- Generate exactly 3 alternative meals
+- Each alternative must be close to the target calories (within ±15%)
+- Maintain similar macronutrient ratios
+- Ensure variety - different dishes, not just variations
+- Diet: ${diet || 'veg'} (veg=vegetarian, egg=vegetarian+eggs, nonveg=all)
+- Spice level: ${spiceLevel || 2}/5
+- Preferred cuisines: ${(cuisineBias || []).join(', ') || 'Indian'}
+- Scale for ${personCount} person(s)`;
+
+      userMessage = `Generate 3 alternative meals to replace: ${mealName || 'Unknown'}
+Meal type: ${mealType || 'lunch'}
+Target nutrition per person: ~${calories || 400} kcal, ~${protein || 15}g protein, ~${carbs || 50}g carbs, ~${fat || 12}g fat
+
+Respond ONLY with this JSON structure:
+{
+  "alternatives": [
+    {
+      "name": "meal name",
+      "description": "brief description",
+      "calories": number,
+      "protein": number,
+      "carbs": number,
+      "fat": number,
+      "prepTime": number,
+      "emoji": "food emoji",
+      "ingredients": ["ingredient 1", "ingredient 2"],
+      "whySwap": "one-line reason why this is a good alternative"
+    }
+  ]
+}`;
     } else if (action === 'chat') {
       systemPrompt = `You are FoodGenie AI, an expert Indian meal planner, nutritionist, and grocery budget advisor. Help users plan their meals and grocery budgets.
 

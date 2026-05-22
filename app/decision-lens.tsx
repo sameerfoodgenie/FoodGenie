@@ -36,7 +36,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useAuth, useAlert } from '../template';
 import { useCoin } from '../hooks/useCoin';
 import { loadPreferences, loadAdvancedPreferences } from '../services/preferencesService';
-import { generateMealPlan, TodayPlan, WeeklyPlan, MonthlyPlan, MealItem } from '../services/mealPlannerService';
+import { generateMealPlan, generateCookingSteps, generateMealSwaps, TodayPlan, WeeklyPlan, MonthlyPlan, MealItem, CookingStepsData, SwapAlternative } from '../services/mealPlannerService';
 import { COIN_RULES } from '../services/coinService';
 import {
   loadSubscription,
@@ -103,12 +103,126 @@ function AnimatedMacroChip({ label, value, unit, color, bgColor, index }: {
   );
 }
 
+// ── Cooking Steps View ──
+function CookingStepsView({ steps, colors, isDark }: {
+  steps: CookingStepsData; colors: any; isDark: boolean;
+}) {
+  return (
+    <Animated.View entering={FadeIn.duration(300)} style={[cs.container, { backgroundColor: isDark ? 'rgba(30,20,86,0.04)' : 'rgba(30,20,86,0.02)', borderColor: 'rgba(123,47,160,0.15)' }]}>
+      <View style={cs.header}>
+        <View style={{ flex: 1 }}>
+          <Text style={[cs.title, { color: colors.textPrimary }]}>🧑‍🍳 Cooking Steps</Text>
+          <View style={cs.metaRow}>
+            <View style={[cs.metaBadge, { backgroundColor: 'rgba(245,183,49,0.10)' }]}>
+              <Text style={[cs.metaText, { color: '#D9A020' }]}>⏱️ {steps.totalTime}</Text>
+            </View>
+            <View style={[cs.metaBadge, { backgroundColor: 'rgba(123,47,160,0.08)' }]}>
+              <Text style={[cs.metaText, { color: '#7B2FA0' }]}>👤 {steps.servings} serving{steps.servings > 1 ? 's' : ''}</Text>
+            </View>
+            <View style={[cs.metaBadge, { backgroundColor: steps.difficulty === 'Hard' ? 'rgba(240,78,80,0.08)' : steps.difficulty === 'Medium' ? 'rgba(245,183,49,0.08)' : 'rgba(74,222,128,0.08)' }]}>
+              <Text style={[cs.metaText, { color: steps.difficulty === 'Hard' ? '#F04E50' : steps.difficulty === 'Medium' ? '#D9A020' : '#16A34A' }]}>{steps.difficulty}</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+      <View style={cs.stepsList}>
+        {steps.steps.map((step, i) => (
+          <Animated.View key={i} entering={FadeInDown.delay(i * 60).duration(250)} style={cs.stepItem}>
+            <View style={[cs.stepNumber, { backgroundColor: i === steps.steps.length - 1 ? '#F5B731' : '#7B2FA0' }]}>
+              <Text style={cs.stepNumText}>{step.step}</Text>
+            </View>
+            <View style={{ flex: 1, gap: 3 }}>
+              <Text style={[cs.stepTitle, { color: colors.textPrimary }]}>{step.title}</Text>
+              <Text style={[cs.stepInstruction, { color: colors.textSecondary }]}>{step.instruction}</Text>
+              <View style={cs.stepFooter}>
+                <Text style={[cs.stepDuration, { color: colors.textMuted }]}>⏱️ {step.duration}</Text>
+                {step.tip ? <Text style={[cs.stepTip, { color: '#7B2FA0' }]}>💡 {step.tip}</Text> : null}
+              </View>
+            </View>
+          </Animated.View>
+        ))}
+      </View>
+      {steps.chefTip ? (
+        <View style={[cs.chefTipBox, { backgroundColor: 'rgba(245,183,49,0.06)', borderColor: 'rgba(245,183,49,0.20)' }]}>
+          <Text style={{ fontSize: 14 }}>👨‍🍳</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[cs.chefTipLabel, { color: '#D9A020' }]}>Chef Tip</Text>
+            <Text style={[cs.chefTipText, { color: colors.textSecondary }]}>{steps.chefTip}</Text>
+          </View>
+        </View>
+      ) : null}
+    </Animated.View>
+  );
+}
+
 // ── Meal Card ──
-function MealCard({ meal, index, colors, isDark, router }: {
-  meal: MealItem; index: number; colors: any; isDark: boolean; router: any;
+function MealCard({ meal, index, colors, isDark, router, persons, prefs, onSwap }: {
+  meal: MealItem; index: number; colors: any; isDark: boolean; router: any; persons: number;
+  prefs?: any; onSwap?: (index: number, newMeal: MealItem) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [cookingSteps, setCookingSteps] = useState<CookingStepsData | null>(null);
+  const [stepsLoading, setStepsLoading] = useState(false);
+  const [showSteps, setShowSteps] = useState(false);
+  const [showSwap, setShowSwap] = useState(false);
+  const [swapLoading, setSwapLoading] = useState(false);
+  const [swapOptions, setSwapOptions] = useState<SwapAlternative[] | null>(null);
   const config = MEAL_ICONS[meal.type] || MEAL_ICONS.lunch;
+
+  const handleSwapMeal = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (swapOptions) {
+      setShowSwap(!showSwap);
+      return;
+    }
+    setSwapLoading(true);
+    setShowSwap(true);
+    const { data, error } = await generateMealSwaps(
+      meal,
+      { diet: prefs?.diet, spiceLevel: prefs?.spiceLevel, cuisineBias: prefs?.cuisineBias },
+      persons,
+    );
+    if (data) setSwapOptions(data);
+    setSwapLoading(false);
+  }, [swapOptions, showSwap, meal, prefs, persons]);
+
+  const handleSelectSwap = useCallback((alt: SwapAlternative) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const newMeal: MealItem = {
+      type: meal.type,
+      name: alt.name,
+      description: alt.description,
+      calories: alt.calories,
+      protein: alt.protein,
+      carbs: alt.carbs,
+      fat: alt.fat,
+      prepTime: alt.prepTime,
+      emoji: alt.emoji,
+      ingredients: alt.ingredients,
+      tip: alt.whySwap,
+    };
+    onSwap?.(index, newMeal);
+    setShowSwap(false);
+    setSwapOptions(null);
+  }, [meal.type, index, onSwap]);
+
+  const handleViewSteps = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (cookingSteps) {
+      setShowSteps(!showSteps);
+      return;
+    }
+    setStepsLoading(true);
+    setShowSteps(true);
+    const { data, error } = await generateCookingSteps(
+      meal.name,
+      meal.type,
+      meal.ingredients || [],
+      persons,
+    );
+    if (data) setCookingSteps(data);
+    setStepsLoading(false);
+  }, [cookingSteps, showSteps, meal, persons]);
 
   return (
     <Animated.View entering={FadeInDown.delay(100 + index * 80).duration(350)}>
@@ -173,17 +287,98 @@ function MealCard({ meal, index, colors, isDark, router }: {
                 <Text style={[mc.mealActionText, { color: '#D9A020' }]}>Add to Cart</Text>
               </Pressable>
               <Pressable
-                style={[mc.mealActionBtn, { backgroundColor: 'rgba(123,47,160,0.06)', borderColor: 'rgba(123,47,160,0.20)' }]}
-                onPress={() => { Haptics.selectionAsync(); router.push({ pathname: '/recipe-videos' as any, params: { planData: JSON.stringify({ meals: [meal] }) } }); }}
+                style={[mc.mealActionBtn, { backgroundColor: 'rgba(30,20,86,0.06)', borderColor: 'rgba(30,20,86,0.20)' }]}
+                onPress={handleViewSteps}
               >
-                <MaterialIcons name="play-circle" size={14} color="#7B2FA0" />
-                <Text style={[mc.mealActionText, { color: '#7B2FA0' }]}>Recipe Video</Text>
+                {stepsLoading ? (
+                  <ActivityIndicator size={14} color="#1E1456" />
+                ) : (
+                  <MaterialIcons name="menu-book" size={14} color="#1E1456" />
+                )}
+                <Text style={[mc.mealActionText, { color: '#1E1456' }]}>{showSteps ? 'Hide Steps' : 'View Steps'}</Text>
               </Pressable>
-              <Pressable style={[mc.mealActionBtn, { backgroundColor: 'rgba(240,78,80,0.06)', borderColor: 'rgba(240,78,80,0.20)' }]}>
-                <MaterialIcons name="delivery-dining" size={14} color="#F04E50" />
-                <Text style={[mc.mealActionText, { color: '#F04E50' }]}>Order</Text>
+              <Pressable
+                style={[mc.mealActionBtn, { backgroundColor: 'rgba(196,30,122,0.06)', borderColor: 'rgba(196,30,122,0.20)' }]}
+                onPress={handleSwapMeal}
+              >
+                {swapLoading ? (
+                  <ActivityIndicator size={14} color="#C41E7A" />
+                ) : (
+                  <MaterialIcons name="swap-horiz" size={14} color="#C41E7A" />
+                )}
+                <Text style={[mc.mealActionText, { color: '#C41E7A' }]}>{showSwap ? 'Hide Swaps' : 'Swap Meal'}</Text>
               </Pressable>
             </View>
+
+            {/* Swap Meal Section */}
+            {showSwap ? (
+              swapLoading ? (
+                <View style={{ alignItems: 'center', paddingVertical: 20, gap: 8 }}>
+                  <ActivityIndicator size="small" color="#C41E7A" />
+                  <Text style={[{ fontSize: 12, fontWeight: '600' }, { color: colors.textMuted }]}>Finding alternatives...</Text>
+                </View>
+              ) : swapOptions && swapOptions.length > 0 ? (
+                <Animated.View entering={FadeIn.duration(300)} style={sw.container}>
+                  <View style={sw.headerRow}>
+                    <Text style={[sw.title, { color: colors.textPrimary }]}>🔄 Swap Options</Text>
+                    <Text style={[sw.subtitle, { color: colors.textMuted }]}>Similar nutrition, different taste</Text>
+                  </View>
+                  {swapOptions.map((alt, ai) => (
+                    <Animated.View key={ai} entering={FadeInDown.delay(ai * 80).duration(250)}>
+                      <Pressable
+                        style={({ pressed }) => [sw.optionCard, {
+                          backgroundColor: isDark ? 'rgba(196,30,122,0.04)' : 'rgba(196,30,122,0.02)',
+                          borderColor: 'rgba(196,30,122,0.15)',
+                        }, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+                        onPress={() => handleSelectSwap(alt)}
+                      >
+                        <View style={sw.optionHeader}>
+                          <Text style={{ fontSize: 22 }}>{alt.emoji || '🍽️'}</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[sw.optionName, { color: colors.textPrimary }]}>{alt.name}</Text>
+                            {alt.description ? <Text style={[sw.optionDesc, { color: colors.textMuted }]} numberOfLines={2}>{alt.description}</Text> : null}
+                          </View>
+                          <View style={sw.selectBtn}>
+                            <MaterialIcons name="check-circle" size={20} color="#C41E7A" />
+                          </View>
+                        </View>
+                        <View style={sw.optionMacros}>
+                          <View style={[sw.macroPill, { backgroundColor: 'rgba(245,183,49,0.08)' }]}>
+                            <Text style={[sw.macroText, { color: '#D9A020' }]}>🔥 {alt.calories} kcal</Text>
+                          </View>
+                          <View style={[sw.macroPill, { backgroundColor: 'rgba(123,47,160,0.06)' }]}>
+                            <Text style={[sw.macroText, { color: '#7B2FA0' }]}>P:{alt.protein}g</Text>
+                          </View>
+                          <View style={[sw.macroPill, { backgroundColor: 'rgba(240,78,80,0.06)' }]}>
+                            <Text style={[sw.macroText, { color: '#F04E50' }]}>F:{alt.fat}g</Text>
+                          </View>
+                          {alt.prepTime ? (
+                            <View style={[sw.macroPill, { backgroundColor: 'rgba(30,20,86,0.04)' }]}>
+                              <Text style={[sw.macroText, { color: '#1E1456' }]}>⏱️ {alt.prepTime}m</Text>
+                            </View>
+                          ) : null}
+                        </View>
+                        {alt.whySwap ? (
+                          <Text style={[sw.whyText, { color: colors.textMuted }]}>💡 {alt.whySwap}</Text>
+                        ) : null}
+                      </Pressable>
+                    </Animated.View>
+                  ))}
+                </Animated.View>
+              ) : null
+            ) : null}
+
+            {/* Cooking Steps Section */}
+            {showSteps ? (
+              stepsLoading ? (
+                <View style={{ alignItems: 'center', paddingVertical: 20, gap: 8 }}>
+                  <ActivityIndicator size="small" color="#7B2FA0" />
+                  <Text style={[{ fontSize: 12, fontWeight: '600' }, { color: colors.textMuted }]}>Generating cooking steps for {persons} person{persons > 1 ? 's' : ''}...</Text>
+                </View>
+              ) : cookingSteps ? (
+                <CookingStepsView steps={cookingSteps} colors={colors} isDark={isDark} />
+              ) : null
+            ) : null}
 
             {/* Recipe Video Card */}
             <Pressable
@@ -857,6 +1052,17 @@ export default function AajKhaneScreen() {
     setRefreshing(false);
   }, [activeTab, fetchPlan, refreshSubscription]);
 
+  const handleSwapMeal_Today = useCallback((mealIndex: number, newMeal: MealItem) => {
+    if (!todayPlan) return;
+    const updatedMeals = [...todayPlan.meals];
+    updatedMeals[mealIndex] = newMeal;
+    const totalCalories = updatedMeals.reduce((s, m) => s + m.calories, 0);
+    const totalProtein = updatedMeals.reduce((s, m) => s + m.protein, 0);
+    const totalCarbs = updatedMeals.reduce((s, m) => s + m.carbs, 0);
+    const totalFat = updatedMeals.reduce((s, m) => s + m.fat, 0);
+    setTodayPlan({ ...todayPlan, meals: updatedMeals, totalCalories, totalProtein, totalCarbs, totalFat });
+  }, [todayPlan]);
+
   const hasPlan = (activeTab === 'today' && todayPlan) || (activeTab === 'weekly' && weeklyPlan) || (activeTab === 'monthly' && monthlyPlan);
 
   return (
@@ -962,7 +1168,7 @@ export default function AajKhaneScreen() {
               </Animated.View>
               <View style={s.mealList}>
                 {todayPlan.meals.map((meal, i) => (
-                  <MealCard key={i} meal={meal} index={i} colors={colors} isDark={isDark} router={router} />
+                  <MealCard key={`${i}-${meal.name}`} meal={meal} index={i} colors={colors} isDark={isDark} router={router} persons={persons} prefs={prefs} onSwap={handleSwapMeal_Today} />
                 ))}
               </View>
             </View>
@@ -1289,6 +1495,22 @@ const mc = StyleSheet.create({
   recipeVideoHint: { fontSize: 10, fontWeight: '500' },
 });
 
+const sw = StyleSheet.create({
+  container: { marginTop: 12, gap: 10 },
+  headerRow: { gap: 2 },
+  title: { fontSize: 14, fontWeight: '800' },
+  subtitle: { fontSize: 11, fontWeight: '500' },
+  optionCard: { padding: 14, borderRadius: 14, borderWidth: 1, gap: 10 },
+  optionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  optionName: { fontSize: 14, fontWeight: '800' },
+  optionDesc: { fontSize: 11, fontWeight: '500', lineHeight: 16, marginTop: 2 },
+  selectBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(196,30,122,0.08)', alignItems: 'center', justifyContent: 'center' },
+  optionMacros: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  macroPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  macroText: { fontSize: 10, fontWeight: '700' },
+  whyText: { fontSize: 11, fontWeight: '500', fontStyle: 'italic' },
+});
+
 const wd = StyleSheet.create({
   card: { padding: 14, borderRadius: 16, borderWidth: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -1327,4 +1549,32 @@ const mw = StyleSheet.create({
   highlightItem: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 12 },
   highlightName: { fontSize: 13, fontWeight: '700' },
   highlightMeta: { fontSize: 10, fontWeight: '500', marginTop: 1 },
+});
+
+const cs = StyleSheet.create({
+  container: { marginTop: 10, padding: 14, borderRadius: 16, borderWidth: 1, gap: 12 },
+  header: { gap: 8 },
+  title: { fontSize: 15, fontWeight: '800' },
+  metaRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  metaBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  metaText: { fontSize: 10, fontWeight: '700' },
+  stepsList: { gap: 12 },
+  stepItem: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  stepNumber: {
+    width: 28, height: 28, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
+    marginTop: 2,
+  },
+  stepNumText: { fontSize: 12, fontWeight: '900', color: '#FFF' },
+  stepTitle: { fontSize: 13, fontWeight: '800' },
+  stepInstruction: { fontSize: 12, fontWeight: '500', lineHeight: 18 },
+  stepFooter: { flexDirection: 'row', gap: 12, marginTop: 3, flexWrap: 'wrap' },
+  stepDuration: { fontSize: 10, fontWeight: '600' },
+  stepTip: { fontSize: 10, fontWeight: '600', fontStyle: 'italic' },
+  chefTipBox: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 10,
+    padding: 12, borderRadius: 12, borderWidth: 1,
+  },
+  chefTipLabel: { fontSize: 11, fontWeight: '800' },
+  chefTipText: { fontSize: 12, fontWeight: '500', lineHeight: 17, marginTop: 2 },
 });

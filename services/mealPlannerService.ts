@@ -162,6 +162,64 @@ export async function generateCookingSteps(
   }
 }
 
+export interface SwapAlternative {
+  name: string;
+  description: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  prepTime?: number;
+  emoji?: string;
+  ingredients?: string[];
+  whySwap?: string;
+}
+
+export async function generateMealSwaps(
+  meal: MealItem,
+  preferences: { diet?: string; spiceLevel?: number; cuisineBias?: string[] },
+  persons: number,
+): Promise<{ data: SwapAlternative[] | null; error: string | null }> {
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.functions.invoke('ai-meal-planner', {
+      body: {
+        action: 'swap_meal',
+        preferences: {
+          mealName: meal.name,
+          mealType: meal.type,
+          calories: meal.calories,
+          protein: meal.protein,
+          carbs: meal.carbs,
+          fat: meal.fat,
+          diet: preferences.diet,
+          spiceLevel: preferences.spiceLevel,
+          cuisineBias: preferences.cuisineBias,
+          persons,
+        },
+      },
+    });
+
+    if (error) {
+      let errorMessage = error.message;
+      if (error instanceof FunctionsHttpError) {
+        try {
+          const textContent = await error.context?.text();
+          errorMessage = textContent || error.message;
+        } catch { /* ignore */ }
+      }
+      return { data: null, error: errorMessage };
+    }
+
+    const content = data?.content || '';
+    const jsonStr = extractJSON(content);
+    const parsed = JSON.parse(jsonStr);
+    return { data: parsed.alternatives || [], error: null };
+  } catch (err: any) {
+    return { data: null, error: err.message || 'Failed to generate alternatives' };
+  }
+}
+
 export async function sendMealChat(
   message: string,
   preferences: UserMealPreferences,
