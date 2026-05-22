@@ -256,7 +256,7 @@ export default function SubscriptionScreen() {
                       {/* Plan Header */}
                       <View style={s.planHeader}>
                         <View style={s.planNameRow}>
-                          <LinearGradient colors={planColor.gradient as unknown as readonly [string, string]} style={s.planIcon}>
+                          <LinearGradient colors={planColor.gradient as unknown as string[]} style={s.planIcon}>
                             <Text style={{ fontSize: 20 }}>
                               {plan.id === 'starter' ? '🌱' : plan.id === 'smart_foodie' ? '🧠' : '👑'}
                             </Text>
