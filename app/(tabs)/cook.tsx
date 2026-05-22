@@ -299,11 +299,11 @@ function CookCard({ cook, index, onBook, onViewProfile, onPlayVideo, colors, isD
             </View>
             <View style={ck.metaRow}>
               <View style={ck.metaBadge}>
-                <MaterialIcons name="schedule" size={11} color="#D4AF37" />
+                <MaterialIcons name="schedule" size={11} color="#F5B731" />
                 <Text style={[ck.metaText, { color: colors.textSecondary }]}>{cook.experience}</Text>
               </View>
               <View style={ck.metaBadge}>
-                <MaterialIcons name="location-on" size={11} color="#D4AF37" />
+                <MaterialIcons name="location-on" size={11} color="#F5B731" />
                 <HighlightText text={cook.location} query={searchQuery} style={[ck.metaText, { color: colors.textSecondary }]} />
               </View>
             </View>
@@ -339,7 +339,7 @@ function CookCard({ cook, index, onBook, onViewProfile, onPlayVideo, colors, isD
         {cook.videoReviews.length > 0 ? (
           <View style={ck.videoPreviewSection}>
             <View style={ck.videoPreviewHeader}>
-              <MaterialIcons name="videocam" size={14} color="#D4AF37" />
+              <MaterialIcons name="videocam" size={14} color="#F5B731" />
               <Text style={[ck.videoPreviewTitle, { color: colors.textSecondary }]}>Video Reviews</Text>
               <View style={[ck.videoCountBadge, { backgroundColor: isDark ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.08)' }]}>
                 <Text style={ck.videoCountText}>{cook.videoReviews.length}</Text>
@@ -389,7 +389,7 @@ function CookCard({ cook, index, onBook, onViewProfile, onPlayVideo, colors, isD
             disabled={!cook.isAvailable}
           >
             <LinearGradient
-              colors={cook.isAvailable ? ['#D4AF37', '#FFD700'] : ['#9CA3AF', '#9CA3AF']}
+              colors={cook.isAvailable ? ['#F5B731', '#FDD85D'] : ['#9CA3AF', '#9CA3AF']}
               style={ck.bookBtnGrad}
             >
               <MaterialIcons name="event-available" size={16} color="#FFF" />
@@ -512,7 +512,7 @@ function VideoReviewUploadModal({ cook, visible, onClose, onSuccess, colors, isD
               {videoUri ? (
                 <View style={[rv.videoPreview, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: colors.border }]}>
                   <View style={rv.videoPreviewIcon}>
-                    <MaterialIcons name="videocam" size={28} color="#D4AF37" />
+                    <MaterialIcons name="videocam" size={28} color="#F5B731" />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[rv.videoFileName, { color: colors.textPrimary }]} numberOfLines={1}>{videoName}</Text>
@@ -525,7 +525,7 @@ function VideoReviewUploadModal({ cook, visible, onClose, onSuccess, colors, isD
               ) : (
                 <View style={rv.videoPickerRow}>
                   <Pressable style={({ pressed }) => [rv.pickerBtn, { backgroundColor: isDark ? 'rgba(212,175,55,0.12)' : 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.25)' }, pressed && { opacity: 0.8 }]} onPress={recordVideo}>
-                    <MaterialIcons name="videocam" size={28} color="#D4AF37" />
+                    <MaterialIcons name="videocam" size={28} color="#F5B731" />
                     <Text style={[rv.pickerBtnLabel, { color: colors.textPrimary }]}>Record</Text>
                     <Text style={[rv.pickerBtnHint, { color: colors.textMuted }]}>Max 60s</Text>
                   </Pressable>
@@ -575,7 +575,7 @@ function VideoReviewUploadModal({ cook, visible, onClose, onSuccess, colors, isD
                 onPress={handleSubmit}
                 disabled={!videoUri || !comment.trim() || uploading}
               >
-                <LinearGradient colors={['#D4AF37', '#FFD700']} style={rv.submitBtnGrad}>
+                <LinearGradient colors={['#F5B731', '#FDD85D']} style={rv.submitBtnGrad}>
                   {uploading ? (
                     <ActivityIndicator size="small" color="#FFF" />
                   ) : (
@@ -639,12 +639,12 @@ function CookProfileModal({ cook, visible, onClose, onBook, onPlayVideo, onWrite
           {/* Info Row */}
           <View style={ck.modalInfoRow}>
             <View style={[ck.modalInfoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <MaterialIcons name="location-on" size={18} color="#D4AF37" />
+              <MaterialIcons name="location-on" size={18} color="#F5B731" />
               <Text style={[ck.modalInfoValue, { color: colors.textPrimary }]}>{cook.location}</Text>
               <Text style={[ck.modalInfoLabel, { color: colors.textMuted }]}>Location</Text>
             </View>
             <View style={[ck.modalInfoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <MaterialIcons name="translate" size={18} color="#D4AF37" />
+              <MaterialIcons name="translate" size={18} color="#F5B731" />
               <Text style={[ck.modalInfoValue, { color: colors.textPrimary }]}>{cook.languages.join(', ')}</Text>
               <Text style={[ck.modalInfoLabel, { color: colors.textMuted }]}>Languages</Text>
             </View>
@@ -683,7 +683,7 @@ function CookProfileModal({ cook, visible, onClose, onBook, onPlayVideo, onWrite
                   Customer Video Reviews
                 </Text>
                 <View style={[st.videoReviewBadge, { backgroundColor: isDark ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.08)' }]}>
-                  <MaterialIcons name="videocam" size={12} color="#D4AF37" />
+                  <MaterialIcons name="videocam" size={12} color="#F5B731" />
                   <Text style={st.videoReviewBadgeText}>{cook.videoReviews.length}</Text>
                 </View>
               </View>
@@ -736,9 +736,9 @@ function CookProfileModal({ cook, visible, onClose, onBook, onPlayVideo, onWrite
             backgroundColor: isDark ? 'rgba(212,175,55,0.08)' : 'rgba(212,175,55,0.05)',
             borderColor: 'rgba(212,175,55,0.15)',
           }]}>
-            <MaterialIcons name="info-outline" size={16} color="#D4AF37" />
+            <MaterialIcons name="info-outline" size={16} color="#F5B731" />
             <Text style={[st.perMealText, { color: colors.textSecondary }]}>
-              Single meal also available at <Text style={{ fontWeight: '900', color: '#D4AF37' }}>₹{cook.pricing.perMeal}/meal</Text>
+              Single meal also available at <Text style={{ fontWeight: '900', color: '#F5B731' }}>₹{cook.pricing.perMeal}/meal</Text>
             </Text>
           </View>
         </ScrollView>
@@ -759,7 +759,7 @@ function CookProfileModal({ cook, visible, onClose, onBook, onPlayVideo, onWrite
             disabled={!cook.isAvailable}
           >
             <LinearGradient
-              colors={cook.isAvailable ? ['#D4AF37', '#FFD700'] : ['#9CA3AF', '#9CA3AF']}
+              colors={cook.isAvailable ? ['#F5B731', '#FDD85D'] : ['#9CA3AF', '#9CA3AF']}
               style={ck.modalBookBtn}
             >
               <MaterialIcons name="event-available" size={20} color="#FFF" />
@@ -820,7 +820,7 @@ function WeeklyCalendar({ selectedDate, onSelectDate, blockedDates, loading, col
 
       {loading ? (
         <View style={cal.loadingWrap}>
-          <ActivityIndicator size="small" color="#D4AF37" />
+          <ActivityIndicator size="small" color="#F5B731" />
           <Text style={[cal.loadingText, { color: colors.textMuted }]}>Checking availability...</Text>
         </View>
       ) : (
@@ -847,7 +847,7 @@ function WeeklyCalendar({ selectedDate, onSelectDate, blockedDates, loading, col
                     key={di}
                     style={[
                       cal.dayCell,
-                      selected && { backgroundColor: '#D4AF37', borderColor: '#B8960C', borderWidth: 2 },
+                      selected && { backgroundColor: '#F5B731', borderColor: '#D9A020', borderWidth: 2 },
                       !selected && blocked && { backgroundColor: isDark ? 'rgba(239,68,68,0.12)' : 'rgba(239,68,68,0.06)' },
                       !selected && !blocked && !isPast && { backgroundColor: isDark ? 'rgba(74,222,128,0.06)' : 'rgba(74,222,128,0.04)' },
                       isPast && !selected && { opacity: 0.3 },
@@ -858,7 +858,7 @@ function WeeklyCalendar({ selectedDate, onSelectDate, blockedDates, loading, col
                     <Text style={[
                       cal.dayText,
                       { color: selected ? '#FFF' : blocked ? '#EF4444' : colors.textPrimary },
-                      isToday && !selected && { color: '#D4AF37', fontWeight: '900' },
+                      isToday && !selected && { color: '#F5B731', fontWeight: '900' },
                     ]}>
                       {day.getDate()}
                     </Text>
@@ -872,10 +872,10 @@ function WeeklyCalendar({ selectedDate, onSelectDate, blockedDates, loading, col
       )}
 
       <View style={[cal.selectedInfo, { backgroundColor: isDark ? 'rgba(212,175,55,0.08)' : 'rgba(212,175,55,0.04)' }]}>
-        <MaterialIcons name="event" size={16} color="#D4AF37" />
+        <MaterialIcons name="event" size={16} color="#F5B731" />
         <Text style={[cal.selectedText, { color: colors.textSecondary }]}>
           Starting:{' '}
-          <Text style={{ fontWeight: '800', color: '#D4AF37' }}>
+          <Text style={{ fontWeight: '800', color: '#F5B731' }}>
             {selectedDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
           </Text>
         </Text>
@@ -997,14 +997,14 @@ function BookingModal({ cook, visible, onClose, onBooked, colors, isDark }: {
                           backgroundColor: isActive
                             ? isDark ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.08)'
                             : isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
-                          borderColor: isActive ? '#D4AF37' : colors.border,
+                          borderColor: isActive ? '#F5B731' : colors.border,
                           borderWidth: isActive ? 2 : 1,
                         },
                       ]}
                       onPress={() => { Haptics.selectionAsync(); setSelectedPlan(plan.id); }}
                     >
                       <Text style={{ fontSize: 22 }}>{plan.emoji}</Text>
-                      <Text style={[st.bookingPlanItemLabel, { color: isActive ? '#D4AF37' : colors.textPrimary }]}>{plan.label}</Text>
+                      <Text style={[st.bookingPlanItemLabel, { color: isActive ? '#F5B731' : colors.textPrimary }]}>{plan.label}</Text>
                       <Text style={st.bookingPlanItemPrice}>₹{price.toLocaleString()}</Text>
                       <Text style={[st.bookingPlanItemDesc, { color: colors.textMuted }]}>{plan.desc}</Text>
                       {plan.savings ? (
@@ -1014,7 +1014,7 @@ function BookingModal({ cook, visible, onClose, onBooked, colors, isDark }: {
                       ) : null}
                       {isActive ? (
                         <View style={st.bookingPlanCheck}>
-                          <MaterialIcons name="check-circle" size={20} color="#D4AF37" />
+                          <MaterialIcons name="check-circle" size={20} color="#F5B731" />
                         </View>
                       ) : null}
                     </Pressable>
@@ -1061,7 +1061,7 @@ function BookingModal({ cook, visible, onClose, onBooked, colors, isDark }: {
                 </View>
                 <View style={ck.bookingSummaryRow}>
                   <Text style={[ck.bookingSummaryLabel, { color: colors.textMuted }]}>Total</Text>
-                  <Text style={[ck.bookingSummaryValue, { color: '#D4AF37', fontWeight: '900' }]}>
+                  <Text style={[ck.bookingSummaryValue, { color: '#F5B731', fontWeight: '900' }]}>
                     ₹{getPrice(selectedPlan).toLocaleString()}
                   </Text>
                 </View>
@@ -1088,7 +1088,7 @@ function BookingModal({ cook, visible, onClose, onBooked, colors, isDark }: {
                 onPress={handleConfirm}
                 disabled={isBooking}
               >
-                <LinearGradient colors={['#D4AF37', '#FFD700']} style={ck.bookingDoneBtnGrad}>
+                <LinearGradient colors={['#F5B731', '#FDD85D']} style={ck.bookingDoneBtnGrad}>
                   {isBooking ? (
                     <ActivityIndicator size="small" color="#FFF" />
                   ) : (
@@ -1256,7 +1256,7 @@ function TopCookBanner({ cooks, onBook, onViewProfile, colors, isDark }: {
                 style={({ pressed }) => [banner.bookBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
                 onPress={(e) => { e.stopPropagation(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); onBook(cook); }}
               >
-                <LinearGradient colors={['#D4AF37', '#FFD700']} style={banner.bookBtnGrad}>
+                <LinearGradient colors={['#F5B731', '#FDD85D']} style={banner.bookBtnGrad}>
                   <MaterialIcons name="event-available" size={16} color="#FFF" />
                   <Text style={banner.bookBtnText}>Book Now</Text>
                   <View style={banner.coinBadge}>
@@ -1424,7 +1424,7 @@ export default function BookCookScreen() {
                   style={({ pressed }) => [ck.headerIcon, { backgroundColor: isDark ? 'rgba(212,175,55,0.12)' : 'rgba(212,175,55,0.08)' }, pressed && { opacity: 0.7 }]}
                   onPress={() => router.push('/booking-history' as any)}
                 >
-                  <MaterialIcons name="receipt-long" size={24} color="#D4AF37" />
+                  <MaterialIcons name="receipt-long" size={24} color="#F5B731" />
                 </Pressable>
               </View>
 
@@ -1465,11 +1465,11 @@ export default function BookCookScreen() {
               st.searchBar,
               {
                 backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F5F5F5',
-                borderColor: searchQuery ? '#D4AF37' : (isDark ? 'rgba(255,255,255,0.08)' : '#EBEBEB'),
+                borderColor: searchQuery ? '#F5B731' : (isDark ? 'rgba(255,255,255,0.08)' : '#EBEBEB'),
                 borderWidth: searchQuery ? 1.5 : 1,
               },
             ]}>
-              <MaterialIcons name="search" size={20} color={searchQuery ? '#D4AF37' : colors.textMuted} />
+              <MaterialIcons name="search" size={20} color={searchQuery ? '#F5B731' : colors.textMuted} />
               <TextInput
                 style={[st.searchInput, { color: colors.textPrimary }]}
                 placeholder="Search by name, cuisine, location..."
@@ -1503,14 +1503,14 @@ export default function BookCookScreen() {
                         backgroundColor: isActive
                           ? isDark ? 'rgba(212,175,55,0.20)' : 'rgba(212,175,55,0.10)'
                           : colors.surface,
-                        borderColor: isActive ? '#D4AF37' : colors.border,
+                        borderColor: isActive ? '#F5B731' : colors.border,
                         borderWidth: isActive ? 1.5 : 1,
                       },
                     ]}
                     onPress={() => { Haptics.selectionAsync(); setPriceRange(range.id); }}
                   >
                     <Text style={{ fontSize: 12 }}>{range.emoji}</Text>
-                    <Text style={[st.priceChipLabel, { color: isActive ? '#D4AF37' : colors.textSecondary }]}>{range.label}</Text>
+                    <Text style={[st.priceChipLabel, { color: isActive ? '#F5B731' : colors.textSecondary }]}>{range.label}</Text>
                   </Pressable>
                 );
               })}
@@ -1519,7 +1519,7 @@ export default function BookCookScreen() {
             {/* Result count when searching */}
             {debouncedQuery.length >= 2 ? (
               <View style={st.searchResultInfo}>
-                <MaterialIcons name="filter-list" size={14} color="#D4AF37" />
+                <MaterialIcons name="filter-list" size={14} color="#F5B731" />
                 <Text style={[st.searchResultText, { color: colors.textMuted }]}>
                   {filteredCooks.length} cook{filteredCooks.length !== 1 ? 's' : ''} found
                   {debouncedQuery ? ` for "${debouncedQuery}"` : ''}
@@ -1564,14 +1564,14 @@ export default function BookCookScreen() {
                         backgroundColor: isActive
                           ? isDark ? 'rgba(212,175,55,0.20)' : 'rgba(212,175,55,0.10)'
                           : colors.surface,
-                        borderColor: isActive ? '#D4AF37' : colors.border,
+                        borderColor: isActive ? '#F5B731' : colors.border,
                         borderWidth: isActive ? 1.5 : 1,
                       },
                     ]}
                     onPress={() => { Haptics.selectionAsync(); setActiveFilter(chip.id); }}
                   >
                     <Text style={{ fontSize: 14 }}>{chip.emoji}</Text>
-                    <Text style={[ck.filterLabel, { color: isActive ? '#D4AF37' : colors.textSecondary }]}>{chip.label}</Text>
+                    <Text style={[ck.filterLabel, { color: isActive ? '#F5B731' : colors.textSecondary }]}>{chip.label}</Text>
                   </Pressable>
                 );
               })}
@@ -1594,7 +1594,7 @@ export default function BookCookScreen() {
                   style={({ pressed }) => [ck.retryBtn, pressed && { opacity: 0.8 }]}
                   onPress={() => { setLoading(true); loadCooks(); }}
                 >
-                  <LinearGradient colors={['#D4AF37', '#FFD700']} style={ck.retryBtnGrad}>
+                  <LinearGradient colors={['#F5B731', '#FDD85D']} style={ck.retryBtnGrad}>
                     <MaterialIcons name="refresh" size={16} color="#FFF" />
                     <Text style={ck.retryBtnText}>Retry</Text>
                   </LinearGradient>
@@ -1678,7 +1678,7 @@ const st = StyleSheet.create({
     position: 'absolute', top: '50%', left: '50%',
     marginTop: -24, marginLeft: -24,
     width: 48, height: 48, borderRadius: 24,
-    backgroundColor: 'rgba(212,175,55,0.90)',
+    backgroundColor: 'rgba(245,183,49,0.90)',
     alignItems: 'center', justifyContent: 'center',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 8,
   },
@@ -1699,7 +1699,7 @@ const st = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
   },
-  videoReviewBadgeText: { fontSize: 12, fontWeight: '800', color: '#D4AF37' },
+  videoReviewBadgeText: { fontSize: 12, fontWeight: '800', color: '#F5B731' },
 
   // Video Player Modal
   videoModalRoot: { flex: 1 },
@@ -1717,7 +1717,7 @@ const st = StyleSheet.create({
   videoPlayer: { width: '100%', height: 300 },
   videoModalInfo: { paddingHorizontal: 20, paddingTop: 16, gap: 12 },
   videoModalReviewer: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  videoModalAvatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: '#D4AF37' },
+  videoModalAvatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: '#F5B731' },
   videoModalName: { fontSize: 16, fontWeight: '800', color: '#FFF' },
   videoModalDate: { fontSize: 12, fontWeight: '500', color: 'rgba(255,255,255,0.60)' },
   videoModalComment: { fontSize: 15, fontWeight: '500', color: 'rgba(255,255,255,0.85)', lineHeight: 23 },
@@ -1731,7 +1731,7 @@ const st = StyleSheet.create({
   },
   pricingPlanIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   pricingPlanLabel: { fontSize: 13, fontWeight: '800' },
-  pricingPlanPrice: { fontSize: 18, fontWeight: '900', color: '#D4AF37' },
+  pricingPlanPrice: { fontSize: 18, fontWeight: '900', color: '#F5B731' },
   pricingPlanDesc: { fontSize: 9, fontWeight: '600', textAlign: 'center' },
   savingsBadge: {
     paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, marginTop: 2,
@@ -1791,7 +1791,7 @@ const st = StyleSheet.create({
 
   // Booking Modal - Cook Info
   bookingCookInfo: { alignItems: 'center', gap: 6 },
-  bookingCookPhoto: { width: 72, height: 72, borderRadius: 36, borderWidth: 3, borderColor: '#D4AF37' },
+  bookingCookPhoto: { width: 72, height: 72, borderRadius: 36, borderWidth: 3, borderColor: '#F5B731' },
   bookingCookName: { fontSize: 20, fontWeight: '900' },
   bookingCookSpec: { fontSize: 13, fontWeight: '500' },
 
@@ -1803,7 +1803,7 @@ const st = StyleSheet.create({
     paddingVertical: 14, paddingHorizontal: 6, borderRadius: 16, position: 'relative',
   },
   bookingPlanItemLabel: { fontSize: 12, fontWeight: '800' },
-  bookingPlanItemPrice: { fontSize: 15, fontWeight: '900', color: '#D4AF37' },
+  bookingPlanItemPrice: { fontSize: 15, fontWeight: '900', color: '#F5B731' },
   bookingPlanItemDesc: { fontSize: 8, fontWeight: '600', textAlign: 'center' },
   bookingSavingsPill: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginTop: 2 },
   bookingSavingsText: { fontSize: 8, fontWeight: '800' },
@@ -1823,7 +1823,7 @@ const banner = StyleSheet.create({
     width: 6, height: 6, borderRadius: 3,
     backgroundColor: 'rgba(212,175,55,0.25)',
   },
-  dotActive: { width: 18, backgroundColor: '#D4AF37', borderRadius: 3 },
+  dotActive: { width: 18, backgroundColor: '#F5B731', borderRadius: 3 },
   card: {
     height: 200, borderRadius: 22, overflow: 'hidden',
     marginLeft: 20, position: 'relative',
@@ -1835,7 +1835,7 @@ const banner = StyleSheet.create({
     position: 'absolute', top: 12, left: 12,
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10,
-    backgroundColor: 'rgba(212,175,55,0.90)',
+    backgroundColor: 'rgba(245,183,49,0.90)',
   },
   featuredText: { fontSize: 10, fontWeight: '800', color: '#FFF', letterSpacing: 0.3 },
   ratingBadge: {
@@ -1860,7 +1860,7 @@ const banner = StyleSheet.create({
   tagText: { fontSize: 9, fontWeight: '700', color: '#FFF' },
   priceBlock: { alignItems: 'center' },
   priceLabel: { fontSize: 9, fontWeight: '600', color: 'rgba(255,255,255,0.60)' },
-  priceValue: { fontSize: 22, fontWeight: '900', color: '#FFD700' },
+  priceValue: { fontSize: 22, fontWeight: '900', color: '#FDD85D' },
   priceUnit: { fontSize: 9, fontWeight: '600', color: 'rgba(255,255,255,0.60)' },
   bookBtn: { borderRadius: 14, overflow: 'hidden' },
   bookBtnGrad: {
@@ -1898,7 +1898,7 @@ const cal = StyleSheet.create({
   dayText: { fontSize: 13, fontWeight: '600' },
   todayDot: {
     position: 'absolute', bottom: 3,
-    width: 4, height: 4, borderRadius: 2, backgroundColor: '#D4AF37',
+    width: 4, height: 4, borderRadius: 2, backgroundColor: '#F5B731',
   },
   selectedInfo: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
@@ -1940,7 +1940,7 @@ const rv = StyleSheet.create({
     flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12,
     marginBottom: 20, paddingBottom: 16, borderBottomWidth: 1,
   },
-  cookAvatar: { width: 48, height: 48, borderRadius: 16, borderWidth: 2, borderColor: '#D4AF37' },
+  cookAvatar: { width: 48, height: 48, borderRadius: 16, borderWidth: 2, borderColor: '#F5B731' },
   cookName: { fontSize: 16, fontWeight: '800' as const },
   cookSpec: { fontSize: 12, fontWeight: '500' as const },
   sectionLabel: { fontSize: 13, fontWeight: '700' as const, textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 10 },
@@ -2074,7 +2074,7 @@ const ck = StyleSheet.create({
   unavailText: { fontSize: 10, fontWeight: '700', color: '#EF4444' },
   speciality: { fontSize: 12, fontWeight: '500', marginTop: 2 },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  ratingText: { fontSize: 13, fontWeight: '800', color: '#D4AF37' },
+  ratingText: { fontSize: 13, fontWeight: '800', color: '#F5B731' },
   reviewCount: { fontSize: 11, fontWeight: '500' },
   metaRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
   metaBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
@@ -2083,7 +2083,7 @@ const ck = StyleSheet.create({
   expertiseTag: {
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1,
   },
-  expertiseText: { fontSize: 11, fontWeight: '700', color: '#D4AF37' },
+  expertiseText: { fontSize: 11, fontWeight: '700', color: '#F5B731' },
 
   // Dishes
   dishSection: { gap: 8 },
@@ -2100,7 +2100,7 @@ const ck = StyleSheet.create({
   videoCountBadge: {
     paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
   },
-  videoCountText: { fontSize: 10, fontWeight: '800', color: '#D4AF37' },
+  videoCountText: { fontSize: 10, fontWeight: '800', color: '#F5B731' },
   videoMiniThumb: {
     width: 100, height: 70, borderRadius: 10, overflow: 'hidden', position: 'relative',
   },
@@ -2109,7 +2109,7 @@ const ck = StyleSheet.create({
     position: 'absolute', top: '50%', left: '50%',
     marginTop: -12, marginLeft: -12,
     width: 24, height: 24, borderRadius: 12,
-    backgroundColor: 'rgba(212,175,55,0.85)',
+    backgroundColor: 'rgba(245,183,49,0.85)',
     alignItems: 'center', justifyContent: 'center',
   },
   videoMiniName: {
@@ -2123,7 +2123,7 @@ const ck = StyleSheet.create({
   priceSection: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   priceItem: { gap: 1 },
   priceLabel: { fontSize: 9, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.3 },
-  priceValue: { fontSize: 17, fontWeight: '900', color: '#D4AF37' },
+  priceValue: { fontSize: 17, fontWeight: '900', color: '#F5B731' },
   priceDivider: { width: 1, height: 28 },
   bookBtn: {},
   bookBtnDisabled: { opacity: 0.5 },
@@ -2190,7 +2190,7 @@ const ck = StyleSheet.create({
     paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1,
   },
   modalBottomLabel: { fontSize: 10, fontWeight: '600' },
-  modalBottomPrice: { fontSize: 18, fontWeight: '900', color: '#D4AF37' },
+  modalBottomPrice: { fontSize: 18, fontWeight: '900', color: '#F5B731' },
   modalBookBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16,
