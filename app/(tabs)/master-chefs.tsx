@@ -72,7 +72,7 @@ const MASTER_CHEFS: MasterChef[] = [
     videoCount: 280,
     rating: 5.0,
     isVerified: true,
-    badgeColor: '#D4AF37',
+    badgeColor: '#F5B731',
     signatureDishes: ['Modern Indian Thali', 'Millet Khichdi', 'Kashmiri Dum Aloo', 'Healthy Indian Bowls'],
     cuisines: ['Premium Indian', 'Global Fusion', 'Kashmiri'],
   },
@@ -108,7 +108,7 @@ const MASTER_CHEFS: MasterChef[] = [
     videoCount: 260,
     rating: 4.9,
     isVerified: true,
-    badgeColor: '#818CF8',
+    badgeColor: '#7B2FA0',
     signatureDishes: ['Galouti Kebab', 'Awadhi Biryani', 'Nihari', 'Kathal Curry'],
     cuisines: ['Lucknowi', 'Awadhi', 'Regional Indian'],
   },
@@ -212,7 +212,7 @@ function ChefCard({ chef, index, isFollowing, onToggleFollow, colors, isDark }: 
             <Text style={st.specialtyText}>{chef.specialty}</Text>
           </View>
           <View style={st.ratingBadge}>
-            <MaterialIcons name="star" size={12} color="#FFD700" />
+            <MaterialIcons name="star" size={12} color="#F5B731" />
             <Text style={st.ratingText}>{chef.rating}</Text>
           </View>
           {/* Token badge */}
@@ -229,7 +229,7 @@ function ChefCard({ chef, index, isFollowing, onToggleFollow, colors, isDark }: 
               <Image source={{ uri: chef.avatarUri }} style={st.avatar} contentFit="cover" transition={150} />
               {chef.isVerified ? (
                 <View style={st.verifiedIcon}>
-                  <MaterialIcons name="verified" size={16} color="#D4AF37" />
+                  <MaterialIcons name="verified" size={16} color="#F5B731" />
                 </View>
               ) : null}
             </View>
@@ -250,7 +250,7 @@ function ChefCard({ chef, index, isFollowing, onToggleFollow, colors, isDark }: 
             {isFollowing ? (
               <Text style={[st.followBtnText, { color: colors.textSecondary }]}>Following</Text>
             ) : (
-              <LinearGradient colors={['#D4AF37', '#FFD700']} style={st.followBtnGrad}>
+              <LinearGradient colors={['#F5B731', '#FDD85D']} style={st.followBtnGrad}>
                 <Text style={st.followBtnText}>Follow</Text>
               </LinearGradient>
             )}
@@ -310,11 +310,11 @@ function ChefCard({ chef, index, isFollowing, onToggleFollow, colors, isDark }: 
         {/* Action buttons */}
         <View style={st.actionsRow}>
           <Pressable style={({ pressed }) => [st.actionBtn, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.8 }]}>
-            <MaterialIcons name="play-circle-outline" size={16} color="#D4AF37" />
+            <MaterialIcons name="play-circle-outline" size={16} color="#F5B731" />
             <Text style={[st.actionBtnText, { color: colors.textPrimary }]}>Watch Shows</Text>
           </Pressable>
           <Pressable style={({ pressed }) => [st.actionBtn, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.8 }]}>
-            <MaterialIcons name="restaurant-menu" size={16} color="#D4AF37" />
+            <MaterialIcons name="restaurant-menu" size={16} color="#F5B731" />
             <Text style={[st.actionBtnText, { color: colors.textPrimary }]}>View Recipes</Text>
           </Pressable>
         </View>
@@ -411,7 +411,7 @@ export default function MasterChefsScreen() {
                         {i > 0 ? <View style={[st.heroDivider, { backgroundColor: 'rgba(212,175,55,0.20)' }]} /> : null}
                         <View style={st.heroStatItem}>
                           <Text style={[st.heroStatValue, { color: colors.textPrimary }]}>{s.value}</Text>
-                          <Text style={[st.heroStatLabel, { color: isDark ? '#D4AF37' : '#8B6914' }]}>{s.label}</Text>
+                          <Text style={[st.heroStatLabel, { color: isDark ? '#F5B731' : '#D9A020' }]}>{s.label}</Text>
                         </View>
                       </React.Fragment>
                     ))}
@@ -433,7 +433,7 @@ export default function MasterChefsScreen() {
                     <View style={st.tokenPriceRow}>
                       {[
                         { label: 'Free Preview', tokens: 'Free', color: '#4ADE80' },
-                        { label: 'Full Recipe', tokens: '15-30', color: '#D4AF37' },
+                        { label: 'Full Recipe', tokens: '15-30', color: '#F5B731' },
                       ].map(t => (
                         <View key={t.label} style={[st.tokenPriceItem, { backgroundColor: `${t.color}10` }]}>
                           <Text style={[st.tokenPriceLabel, { color: t.color }]}>{t.tokens === 'Free' ? '✓' : '🪙'} {t.tokens}</Text>
@@ -457,7 +457,7 @@ export default function MasterChefsScreen() {
                         onPress={() => { Haptics.selectionAsync(); setActiveFilter(f.id); }}
                       >
                         <Text style={{ fontSize: 14 }}>{f.emoji}</Text>
-                        <Text style={[st.filterLabel, { color: colors.textSecondary }, isActive && { color: '#D4AF37' }]}>{f.label}</Text>
+                        <Text style={[st.filterLabel, { color: colors.textSecondary }, isActive && { color: '#F5B731' }]}>{f.label}</Text>
                       </Pressable>
                     );
                   })}
@@ -498,7 +498,7 @@ const st = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14,
     backgroundColor: 'rgba(212,175,55,0.10)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.20)',
   },
-  headerCoinText: { fontSize: 13, fontWeight: '900', color: '#D4AF37' },
+  headerCoinText: { fontSize: 13, fontWeight: '900', color: '#F5B731' },
   heroSection: { alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, gap: 10 },
   heroSub: { fontSize: 14, fontWeight: '500', textAlign: 'center', lineHeight: 20, maxWidth: 320 },
   heroStats: {
@@ -583,7 +583,7 @@ const st = StyleSheet.create({
 
   cuisineRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 16, paddingTop: 10 },
   cuisineTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1 },
-  cuisineText: { fontSize: 10, fontWeight: '700', color: '#D4AF37' },
+  cuisineText: { fontSize: 10, fontWeight: '700', color: '#F5B731' },
 
   dishesSection: { paddingHorizontal: 16, paddingTop: 12, gap: 6 },
   dishesSectionTitle: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },

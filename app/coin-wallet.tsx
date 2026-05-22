@@ -172,7 +172,7 @@ export default function CoinWalletScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#D4AF37" colors={['#D4AF37']} />
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#F5B731" colors={['#F5B731']} />
           }
           ListHeaderComponent={
             <View>
@@ -189,7 +189,7 @@ export default function CoinWalletScreen() {
                   style={({ pressed }) => [styles.leaderboardBtn, pressed && { opacity: 0.7 }]}
                   onPress={() => { Haptics.selectionAsync(); router.push('/coin-leaderboard'); }}
                 >
-                  <MaterialIcons name="leaderboard" size={20} color="#D4AF37" />
+                  <MaterialIcons name="leaderboard" size={20} color="#F5B731" />
                 </Pressable>
               </View>
 
@@ -219,7 +219,7 @@ export default function CoinWalletScreen() {
                     </View>
                     <View style={[styles.heroStatDivider, { backgroundColor: 'rgba(212,175,55,0.20)' }]} />
                     <View style={styles.heroStat}>
-                      <View style={[styles.heroStatDot, { backgroundColor: '#D4AF37' }]} />
+                      <View style={[styles.heroStatDot, { backgroundColor: '#F5B731' }]} />
                       <View>
                         <Text style={[styles.heroStatValue, { color: colors.textPrimary }]}>{totalEarned.toLocaleString()}</Text>
                         <Text style={styles.heroStatLabel}>Total Earned</Text>
@@ -314,7 +314,7 @@ export default function CoinWalletScreen() {
                       style={({ pressed }) => [styles.shareRefBtn, pressed && { opacity: 0.8 }]}
                       onPress={handleShareReferral}
                     >
-                      <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.shareRefBtnGrad}>
+                      <LinearGradient colors={['#F5B731', '#FDD85D']} style={styles.shareRefBtnGrad}>
                         <MaterialIcons name="share" size={20} color="#FFF" />
                       </LinearGradient>
                     </Pressable>
@@ -350,7 +350,7 @@ export default function CoinWalletScreen() {
                 style={({ pressed }) => [styles.emptyCta, pressed && { opacity: 0.85 }]}
                 onPress={() => router.push('/(tabs)/camera')}
               >
-                <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.emptyCtaGrad}>
+                <LinearGradient colors={['#F5B731', '#FDD85D']} style={styles.emptyCtaGrad}>
                   <Text style={styles.emptyCtaText}>Post Your First Meal</Text>
                   <MaterialIcons name="arrow-forward" size={16} color="#FFF" />
                 </LinearGradient>
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     borderRadius: 28, paddingVertical: 32, paddingHorizontal: 24,
     alignItems: 'center', borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)',
     overflow: 'hidden',
-    shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 4 },
+    shadowColor: '#F5B731', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12, shadowRadius: 20, elevation: 6,
   },
   heroCenter: { position: 'relative', marginBottom: 16 },
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
   },
   earnCardText: { flex: 1, gap: 2 },
   earnCardLabel: { fontSize: 14, fontWeight: '600' },
-  earnCardCoins: { fontSize: 12, fontWeight: '800', color: '#D4AF37' },
+  earnCardCoins: { fontSize: 12, fontWeight: '800', color: '#F5B731' },
 
   rulesSection: { paddingHorizontal: 16, marginTop: 24 },
   rulesGrid: { gap: 6, marginTop: 10 },
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10,
     backgroundColor: 'rgba(212,175,55,0.12)',
   },
-  ruleAmount: { fontSize: 14, fontWeight: '800', color: '#D4AF37' },
+  ruleAmount: { fontSize: 14, fontWeight: '800', color: '#F5B731' },
 
   referralSection: { paddingHorizontal: 16, marginTop: 22 },
   referralCard: {
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
   },
   referralLeft: { gap: 4, flex: 1 },
   referralTitle: { fontSize: 12, fontWeight: '600' },
-  referralCode: { fontSize: 22, fontWeight: '900', color: '#D4AF37', letterSpacing: 2 },
+  referralCode: { fontSize: 22, fontWeight: '900', color: '#F5B731', letterSpacing: 2 },
   referralHint: { fontSize: 11, fontWeight: '500' },
   shareRefBtn: { borderRadius: 24, overflow: 'hidden' },
   shareRefBtnGrad: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
   },
   txTabActive: { backgroundColor: 'rgba(212,175,55,0.12)', borderColor: 'rgba(212,175,55,0.25)' },
   txTabText: { fontSize: 12, fontWeight: '700' },
-  txTabTextActive: { color: '#D4AF37' },
+  txTabTextActive: { color: '#F5B731' },
 
   txItem: {
     flexDirection: 'row', alignItems: 'center', gap: 12,

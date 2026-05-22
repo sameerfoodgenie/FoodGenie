@@ -147,7 +147,7 @@ export default function CoinRedeemScreen() {
                     disabled={isRedeeming || !canAfford}
                   >
                     {canAfford ? (
-                      <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.redeemBtnGrad}>
+                      <LinearGradient colors={['#F5B731', '#FDD85D']} style={styles.redeemBtnGrad}>
                         <Text style={styles.redeemBtnText}>Redeem Now</Text>
                         <MaterialIcons name="arrow-forward" size={16} color="#FFF" />
                       </LinearGradient>
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(212,175,55,0.10)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.20)',
   },
   pillCoin: { width: 20, height: 20 },
-  pillBalance: { fontSize: 14, fontWeight: '800', color: '#D4AF37' },
+  pillBalance: { fontSize: 14, fontWeight: '800', color: '#F5B731' },
 
   categoryTabs: { paddingHorizontal: 16, gap: 8, paddingVertical: 6 },
   categoryTab: {
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   redeemDesc: { fontSize: 12, fontWeight: '500' },
   redeemPriceRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
   redeemCoinImg: { width: 18, height: 18 },
-  redeemCoinText: { fontSize: 16, fontWeight: '800', color: '#D4AF37' },
+  redeemCoinText: { fontSize: 16, fontWeight: '800', color: '#F5B731' },
 
   redeemBtn: { borderRadius: 16, overflow: 'hidden' },
   redeemBtnLocked: {},

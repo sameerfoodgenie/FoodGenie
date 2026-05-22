@@ -31,7 +31,7 @@ const TABS: { id: TabId; label: string; emoji: string }[] = [
 const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: string; label: string }> = {
   pending: { color: '#F59E0B', bg: 'rgba(245,158,11,0.10)', icon: 'schedule', label: 'Pending' },
   confirmed: { color: '#4ADE80', bg: 'rgba(74,222,128,0.10)', icon: 'check-circle', label: 'Confirmed' },
-  completed: { color: '#818CF8', bg: 'rgba(129,140,248,0.10)', icon: 'verified', label: 'Completed' },
+  completed: { color: '#7B2FA0', bg: 'rgba(123,47,160,0.10)', icon: 'verified', label: 'Completed' },
   cancelled: { color: '#EF4444', bg: 'rgba(239,68,68,0.10)', icon: 'cancel', label: 'Cancelled' },
 };
 
@@ -112,13 +112,13 @@ function BookingCard({
         {/* Booking Info Row */}
         <View style={[s.infoRow, { borderColor: colors.border }]}>
           <View style={s.infoItem}>
-            <MaterialIcons name="event" size={14} color="#D4AF37" />
+            <MaterialIcons name="event" size={14} color="#F5B731" />
             <Text style={[s.infoLabel, { color: colors.textMuted }]}>
               {formatDateShort(booking.startDate)} – {formatDateShort(booking.endDate)}
             </Text>
           </View>
           <View style={s.infoItem}>
-            <MaterialIcons name="calendar-today" size={14} color="#D4AF37" />
+            <MaterialIcons name="calendar-today" size={14} color="#F5B731" />
             <Text style={[s.infoLabel, { color: colors.textMuted }]}>{getPlanLabel(booking.plan)}</Text>
           </View>
           <View style={s.infoItem}>
@@ -169,7 +169,7 @@ function BookingCard({
             </View>
             {booking.notes ? (
               <View style={[s.notesBox, { backgroundColor: isDark ? 'rgba(212,175,55,0.06)' : 'rgba(212,175,55,0.04)', borderColor: 'rgba(212,175,55,0.15)' }]}>
-                <MaterialIcons name="sticky-note-2" size={14} color="#D4AF37" />
+                <MaterialIcons name="sticky-note-2" size={14} color="#F5B731" />
                 <Text style={[s.notesText, { color: colors.textSecondary }]}>{booking.notes}</Text>
               </View>
             ) : null}
@@ -195,7 +195,7 @@ function BookingCard({
               style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onRebook(booking); }}
             >
-              <LinearGradient colors={['#D4AF37', '#FFD700']} style={s.rebookBtn}>
+              <LinearGradient colors={['#F5B731', '#FDD85D']} style={s.rebookBtn}>
                 <MaterialIcons name="replay" size={14} color="#FFF" />
                 <Text style={s.rebookBtnText}>Rebook</Text>
               </LinearGradient>
@@ -382,16 +382,16 @@ export default function BookingHistoryScreen() {
                       backgroundColor: isActive
                         ? isDark ? 'rgba(212,175,55,0.18)' : 'rgba(212,175,55,0.10)'
                         : isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
-                      borderColor: isActive ? '#D4AF37' : 'transparent',
+                      borderColor: isActive ? '#F5B731' : 'transparent',
                       borderWidth: isActive ? 1.5 : 1,
                     },
                   ]}
                   onPress={() => { Haptics.selectionAsync(); setActiveTab(tab.id); }}
                 >
                   <Text style={{ fontSize: 13 }}>{tab.emoji}</Text>
-                  <Text style={[s.tabLabel, { color: isActive ? '#D4AF37' : colors.textSecondary }]}>{tab.label}</Text>
+                  <Text style={[s.tabLabel, { color: isActive ? '#F5B731' : colors.textSecondary }]}>{tab.label}</Text>
                   {count > 0 ? (
-                    <View style={[s.tabCount, { backgroundColor: isActive ? '#D4AF37' : isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)' }]}>
+                    <View style={[s.tabCount, { backgroundColor: isActive ? '#F5B731' : isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)' }]}>
                       <Text style={[s.tabCountText, { color: isActive ? '#FFF' : colors.textMuted }]}>{count}</Text>
                     </View>
                   ) : null}
@@ -404,7 +404,7 @@ export default function BookingHistoryScreen() {
         {/* Bookings List */}
         {loading ? (
           <View style={s.loadingWrap}>
-            <ActivityIndicator size="large" color="#D4AF37" />
+            <ActivityIndicator size="large" color="#F5B731" />
             <Text style={[s.loadingText, { color: colors.textMuted }]}>Loading bookings...</Text>
           </View>
         ) : (
@@ -415,7 +415,7 @@ export default function BookingHistoryScreen() {
             contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 100, gap: 14 }}
             showsVerticalScrollIndicator={false}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#D4AF37" colors={['#D4AF37']} />
+              <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#F5B731" colors={['#F5B731']} />
             }
             ListEmptyComponent={<EmptyState tab={activeTab} colors={colors} isDark={isDark} />}
           />
@@ -458,7 +458,7 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 14, elevation: 3,
   },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  cardAvatar: { width: 52, height: 52, borderRadius: 16, borderWidth: 2, borderColor: '#D4AF37' },
+  cardAvatar: { width: 52, height: 52, borderRadius: 16, borderWidth: 2, borderColor: '#F5B731' },
   cardCookName: { fontSize: 16, fontWeight: '800' },
   cardSpec: { fontSize: 12, fontWeight: '500', marginTop: 1 },
   statusBadge: {
@@ -474,7 +474,7 @@ const s = StyleSheet.create({
   },
   infoItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   infoLabel: { fontSize: 12, fontWeight: '600' },
-  infoAmount: { fontSize: 16, fontWeight: '900', color: '#D4AF37' },
+  infoAmount: { fontSize: 16, fontWeight: '900', color: '#F5B731' },
 
   // Ref
   refRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -490,7 +490,7 @@ const s = StyleSheet.create({
   receiptLabel: { fontSize: 12, fontWeight: '500' },
   receiptValue: { fontSize: 12, fontWeight: '600' },
   receiptDivider: { borderTopWidth: 1, marginVertical: 4, borderStyle: 'dashed' as any },
-  receiptTotal: { fontSize: 16, fontWeight: '900', color: '#D4AF37' },
+  receiptTotal: { fontSize: 16, fontWeight: '900', color: '#F5B731' },
   notesBox: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,
     padding: 10, borderRadius: 10, borderWidth: 1, marginTop: 4,
