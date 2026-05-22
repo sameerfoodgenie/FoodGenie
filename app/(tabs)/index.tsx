@@ -18,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInRight, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePosts, FoodPost } from '../../contexts/PostContext';
+import TrialExpiryModal from '../../components/TrialExpiryModal';
 import { useAuth } from '@/template';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useCoin } from '../../hooks/useCoin';
@@ -448,6 +449,14 @@ export default function HomeScreen() {
           </View>
         ) : null}
       </ScrollView>
+
+      {/* ═══════ Trial Expiry Modal ═══════ */}
+      <TrialExpiryModal
+        subscription={subscription}
+        colors={colors}
+        isDark={isDark}
+        onUpgrade={() => router.push('/subscription' as any)}
+      />
 
       {/* ═══════ Meal Picker Modal ═══════ */}
       <Modal visible={mealPickerVisible} transparent animationType="fade" onRequestClose={() => setMealPickerVisible(false)}>
