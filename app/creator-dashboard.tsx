@@ -13,7 +13,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { theme } from '../constants/theme';
 import { useTheme } from '../hooks/useTheme';
 import { useCreator, MilestoneCategory } from '../contexts/CreatorContext';
 
@@ -27,7 +26,7 @@ const CATEGORY_TABS: { id: MilestoneCategory | 'all'; label: string; emoji: stri
 export default function CreatorDashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const {
     currentLevel, nextLevel, levelProgress,
     milestones, unlockedMilestones, nextMilestone,
@@ -42,19 +41,24 @@ export default function CreatorDashboardScreen() {
     : milestones.filter(m => m.category === activeTab);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         {/* Header */}
-        <View style={styles.header}>
+        <LinearGradient
+          colors={['#1E1456', '#7B2FA0', '#C41E7A']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
           <Pressable
             style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
             onPress={() => { Haptics.selectionAsync(); router.back(); }}
           >
-            <MaterialIcons name="arrow-back" size={22} color={theme.textPrimary} />
+            <MaterialIcons name="arrow-back" size={22} color="#FFF" />
           </Pressable>
           <Text style={styles.headerTitle}>Dashboard</Text>
           <View style={{ width: 44 }} />
-        </View>
+        </LinearGradient>
 
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -63,26 +67,26 @@ export default function CreatorDashboardScreen() {
           {/* ─── Level Hero (top) ─── */}
           <Animated.View entering={FadeIn.duration(400)} style={styles.levelHero}>
             <LinearGradient
-              colors={[`${currentLevel.color}18`, `${currentLevel.color}04`]}
-              style={styles.levelCard}
+              colors={isDark ? ['rgba(123,47,160,0.15)', 'rgba(30,20,86,0.10)'] : ['rgba(123,47,160,0.08)', 'rgba(245,183,49,0.04)']}
+              style={[styles.levelCard, { borderColor: colors.border }]}
             >
-              <View style={[styles.levelEmoji, { backgroundColor: `${currentLevel.color}20`, borderColor: `${currentLevel.color}40` }]}>
+              <View style={[styles.levelEmoji, { backgroundColor: 'rgba(123,47,160,0.12)', borderColor: 'rgba(123,47,160,0.30)' }]}>
                 <Text style={{ fontSize: 36 }}>{currentLevel.emoji}</Text>
               </View>
-              <Text style={[styles.levelName, { color: currentLevel.color }]}>{currentLevel.name}</Text>
+              <Text style={[styles.levelName, { color: '#7B2FA0' }]}>{currentLevel.name}</Text>
               {nextLevel ? (
                 <View style={styles.levelProgressWrap}>
-                  <View style={styles.levelProgressBg}>
+                  <View style={[styles.levelProgressBg, { backgroundColor: isDark ? 'rgba(123,47,160,0.15)' : 'rgba(123,47,160,0.10)' }]}>
                     <Animated.View
-                      style={[styles.levelProgressFill, { width: `${levelProgress * 100}%`, backgroundColor: currentLevel.color }]}
+                      style={[styles.levelProgressFill, { width: `${levelProgress * 100}%`, backgroundColor: '#7B2FA0' }]}
                     />
                   </View>
-                  <Text style={styles.levelProgressText}>
+                  <Text style={[styles.levelProgressText, { color: colors.textSecondary }]}>
                     {nextLevel.minPosts - postCount} posts to {nextLevel.name}
                   </Text>
                 </View>
               ) : (
-                <Text style={[styles.levelProgressText, { color: currentLevel.color, fontWeight: '700' }]}>
+                <Text style={[styles.levelProgressText, { color: '#F5B731', fontWeight: '700' }]}>
                   Max level reached! 👑
                 </Text>
               )}
@@ -92,56 +96,53 @@ export default function CreatorDashboardScreen() {
           {/* ─── Next Milestone Highlight ─── */}
           {nextMilestone ? (
             <Animated.View entering={FadeInDown.delay(100).duration(350)} style={styles.nextMilestoneWrap}>
-              <LinearGradient
-                colors={[`${nextMilestone.color}12`, `${nextMilestone.color}04`]}
-                style={styles.nextMilestoneCard}
-              >
+              <View style={[styles.nextMilestoneCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={styles.nextMilestoneHeader}>
-                  <Text style={styles.nextMilestoneLabel}>NEXT MILESTONE</Text>
-                  <MaterialIcons name="trending-up" size={16} color={nextMilestone.color} />
+                  <Text style={[styles.nextMilestoneLabel, { color: '#7B2FA0' }]}>NEXT MILESTONE</Text>
+                  <MaterialIcons name="trending-up" size={16} color="#C41E7A" />
                 </View>
                 <View style={styles.nextMilestoneRow}>
-                  <View style={[styles.nextMilestoneIcon, { backgroundColor: `${nextMilestone.color}20`, borderColor: `${nextMilestone.color}40` }]}>
+                  <View style={[styles.nextMilestoneIcon, { backgroundColor: 'rgba(245,183,49,0.10)', borderColor: 'rgba(245,183,49,0.30)' }]}>
                     <Text style={{ fontSize: 24 }}>{nextMilestone.icon}</Text>
                   </View>
                   <View style={styles.nextMilestoneInfo}>
-                    <Text style={styles.nextMilestoneTitle}>{nextMilestone.title}</Text>
-                    <Text style={styles.nextMilestoneDesc}>{nextMilestone.description}</Text>
+                    <Text style={[styles.nextMilestoneTitle, { color: colors.textPrimary }]}>{nextMilestone.title}</Text>
+                    <Text style={[styles.nextMilestoneDesc, { color: colors.textSecondary }]}>{nextMilestone.description}</Text>
                     <View style={styles.nextMilestoneProgress}>
-                      <View style={styles.nextMilestoneBarBg}>
+                      <View style={[styles.nextMilestoneBarBg, { backgroundColor: isDark ? 'rgba(123,47,160,0.15)' : 'rgba(123,47,160,0.10)' }]}>
                         <View style={[
                           styles.nextMilestoneBarFill,
-                          { width: `${Math.min(nextMilestone.current / nextMilestone.target, 1) * 100}%`, backgroundColor: nextMilestone.color },
+                          { width: `${Math.min(nextMilestone.current / nextMilestone.target, 1) * 100}%`, backgroundColor: '#F5B731' },
                         ]} />
                       </View>
-                      <Text style={[styles.nextMilestoneCount, { color: nextMilestone.color }]}>
+                      <Text style={[styles.nextMilestoneCount, { color: '#F5B731' }]}>
                         {nextMilestone.current}/{nextMilestone.target}
                       </Text>
                     </View>
                   </View>
                 </View>
-                <View style={[styles.nextMilestoneReward, { backgroundColor: `${nextMilestone.color}10`, borderColor: `${nextMilestone.color}25` }]}>
-                  <MaterialIcons name="emoji-events" size={14} color={nextMilestone.color} />
-                  <Text style={[styles.nextMilestoneRewardText, { color: nextMilestone.color }]}>
+                <View style={[styles.nextMilestoneReward, { backgroundColor: 'rgba(123,47,160,0.08)', borderColor: 'rgba(123,47,160,0.20)' }]}>
+                  <MaterialIcons name="emoji-events" size={14} color="#7B2FA0" />
+                  <Text style={[styles.nextMilestoneRewardText, { color: '#7B2FA0' }]}>
                     {nextMilestone.reward}
                   </Text>
                 </View>
-              </LinearGradient>
+              </View>
             </Animated.View>
           ) : null}
 
           {/* ─── Stats (secondary) ─── */}
           <Animated.View entering={FadeInDown.delay(200).duration(350)} style={styles.statsRow}>
             {[
-              { label: 'Posts', value: String(postCount), emoji: '📸', color: '#4ADE80' },
-              { label: 'Streak', value: `${streakCount}d`, emoji: '🔥', color: '#FB923C' },
-              { label: 'Likes', value: String(totalLikes), emoji: '❤️', color: '#F87171' },
-              { label: 'Badges', value: String(unlockedBadges.length), emoji: '🏅', color: '#FBBF24' },
+              { label: 'Posts', value: String(postCount), emoji: '📸', color: '#7B2FA0' },
+              { label: 'Streak', value: `${streakCount}d`, emoji: '🔥', color: '#F04E50' },
+              { label: 'Likes', value: String(totalLikes), emoji: '❤️', color: '#C41E7A' },
+              { label: 'Badges', value: String(unlockedBadges.length), emoji: '🏅', color: '#F5B731' },
             ].map(s => (
-              <View key={s.label} style={[styles.statCard, { borderColor: `${s.color}20` }]}>
+              <View key={s.label} style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={styles.statEmoji}>{s.emoji}</Text>
                 <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
-                <Text style={styles.statLabel}>{s.label}</Text>
+                <Text style={[styles.statLabel, { color: colors.textMuted }]}>{s.label}</Text>
               </View>
             ))}
           </Animated.View>
@@ -149,8 +150,8 @@ export default function CreatorDashboardScreen() {
           {/* ─── Badges (horizontal scroll) ─── */}
           <Animated.View entering={FadeInDown.delay(300).duration(350)}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Badges</Text>
-              <Text style={styles.sectionCount}>{unlockedBadges.length}/{badges.length}</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Badges</Text>
+              <Text style={[styles.sectionCount, { color: colors.textMuted }]}>{unlockedBadges.length}/{badges.length}</Text>
             </View>
             <ScrollView
               horizontal
@@ -162,19 +163,20 @@ export default function CreatorDashboardScreen() {
                   key={badge.id}
                   style={[
                     styles.badgeCard,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
                     badge.isUnlocked
-                      ? { borderColor: `${badge.color}40`, backgroundColor: `${badge.color}10` }
+                      ? { borderColor: 'rgba(245,183,49,0.30)', backgroundColor: isDark ? 'rgba(245,183,49,0.06)' : 'rgba(245,183,49,0.05)' }
                       : { opacity: 0.4 },
                   ]}
                 >
                   <Text style={styles.badgeEmoji}>{badge.emoji}</Text>
-                  <Text style={[styles.badgeName, badge.isUnlocked && { color: badge.color }]} numberOfLines={1}>
+                  <Text style={[styles.badgeName, { color: colors.textSecondary }, badge.isUnlocked && { color: '#F5B731' }]} numberOfLines={1}>
                     {badge.name}
                   </Text>
                   {badge.isUnlocked ? (
-                    <MaterialIcons name="verified" size={14} color={badge.color} />
+                    <MaterialIcons name="verified" size={14} color="#F5B731" />
                   ) : (
-                    <MaterialIcons name="lock-outline" size={14} color={theme.textMuted} />
+                    <MaterialIcons name="lock-outline" size={14} color={colors.textMuted} />
                   )}
                 </View>
               ))}
@@ -184,8 +186,8 @@ export default function CreatorDashboardScreen() {
           {/* ─── Milestones ─── */}
           <Animated.View entering={FadeInDown.delay(400).duration(350)}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Milestones</Text>
-              <Text style={styles.sectionCount}>{unlockedMilestones.length}/{milestones.length}</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Milestones</Text>
+              <Text style={[styles.sectionCount, { color: colors.textMuted }]}>{unlockedMilestones.length}/{milestones.length}</Text>
             </View>
 
             {/* Category tabs */}
@@ -199,11 +201,11 @@ export default function CreatorDashboardScreen() {
                 return (
                   <Pressable
                     key={tab.id}
-                    style={[styles.catTab, isActive && styles.catTabActive]}
+                    style={[styles.catTab, { backgroundColor: colors.surface, borderColor: colors.border }, isActive && styles.catTabActive]}
                     onPress={() => { Haptics.selectionAsync(); setActiveTab(tab.id); }}
                   >
                     <Text style={styles.catTabEmoji}>{tab.emoji}</Text>
-                    <Text style={[styles.catTabText, isActive && styles.catTabTextActive]}>{tab.label}</Text>
+                    <Text style={[styles.catTabText, { color: colors.textMuted }, isActive && styles.catTabTextActive]}>{tab.label}</Text>
                   </Pressable>
                 );
               })}
@@ -219,34 +221,36 @@ export default function CreatorDashboardScreen() {
                     entering={FadeInUp.delay(i * 50).duration(280)}
                     style={[
                       styles.milestoneCard,
-                      m.isUnlocked && { borderColor: `${m.color}30`, backgroundColor: `${m.color}08` },
+                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      m.isUnlocked && { borderColor: 'rgba(245,183,49,0.25)', backgroundColor: isDark ? 'rgba(245,183,49,0.04)' : 'rgba(245,183,49,0.03)' },
                     ]}
                   >
                     <View style={styles.milestoneRow}>
                       <View style={[
                         styles.milestoneIcon,
+                        { backgroundColor: isDark ? 'rgba(123,47,160,0.12)' : 'rgba(123,47,160,0.08)', borderColor: colors.border },
                         m.isUnlocked
-                          ? { backgroundColor: `${m.color}20`, borderColor: `${m.color}40` }
+                          ? { backgroundColor: 'rgba(245,183,49,0.10)', borderColor: 'rgba(245,183,49,0.30)' }
                           : {},
                       ]}>
                         <Text style={{ fontSize: 20 }}>{m.icon}</Text>
                       </View>
                       <View style={styles.milestoneInfo}>
                         <View style={styles.milestoneTitleRow}>
-                          <Text style={styles.milestoneTitle}>{m.title}</Text>
+                          <Text style={[styles.milestoneTitle, { color: colors.textPrimary }]}>{m.title}</Text>
                           {m.isUnlocked ? (
-                            <MaterialIcons name="check-circle" size={16} color={m.color} />
+                            <MaterialIcons name="check-circle" size={16} color="#F5B731" />
                           ) : null}
                         </View>
-                        <Text style={styles.milestoneDesc}>{m.description}</Text>
+                        <Text style={[styles.milestoneDesc, { color: colors.textSecondary }]}>{m.description}</Text>
                         <View style={styles.milestoneProgressWrap}>
-                          <View style={styles.milestoneProgressBg}>
+                          <View style={[styles.milestoneProgressBg, { backgroundColor: isDark ? 'rgba(123,47,160,0.15)' : 'rgba(123,47,160,0.08)' }]}>
                             <View style={[
                               styles.milestoneProgressFill,
-                              { width: `${progress * 100}%`, backgroundColor: m.isUnlocked ? m.color : theme.textMuted },
+                              { width: `${progress * 100}%`, backgroundColor: m.isUnlocked ? '#F5B731' : '#7B2FA0' },
                             ]} />
                           </View>
-                          <Text style={styles.milestoneProgressText}>
+                          <Text style={[styles.milestoneProgressText, { color: colors.textMuted }]}>
                             {m.current}/{m.target}
                           </Text>
                         </View>
@@ -254,18 +258,20 @@ export default function CreatorDashboardScreen() {
                     </View>
                     <View style={[
                       styles.rewardTag,
+                      { backgroundColor: isDark ? 'rgba(123,47,160,0.10)' : 'rgba(123,47,160,0.06)', borderColor: 'rgba(123,47,160,0.20)' },
                       m.isUnlocked
-                        ? { backgroundColor: `${m.color}15`, borderColor: `${m.color}30` }
+                        ? { backgroundColor: 'rgba(245,183,49,0.08)', borderColor: 'rgba(245,183,49,0.20)' }
                         : {},
                     ]}>
                       <MaterialIcons
                         name={m.isUnlocked ? 'emoji-events' : 'lock-outline'}
                         size={13}
-                        color={m.isUnlocked ? m.color : theme.textMuted}
+                        color={m.isUnlocked ? '#F5B731' : colors.textMuted}
                       />
                       <Text style={[
                         styles.rewardText,
-                        m.isUnlocked && { color: m.color },
+                        { color: colors.textMuted },
+                        m.isUnlocked && { color: '#D9A020' },
                       ]}>{m.reward}</Text>
                     </View>
                   </Animated.View>
@@ -280,7 +286,7 @@ export default function CreatorDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FDF8F0' },
+  container: { flex: 1 },
   safeArea: { flex: 1 },
 
   header: {
@@ -288,21 +294,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
+    paddingVertical: 14,
   },
   backBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.backgroundTertiary,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.20)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.border,
   },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: theme.textPrimary },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#FFF' },
 
   // Level Hero
   levelHero: { paddingHorizontal: 16, paddingTop: 20 },
@@ -311,7 +313,6 @@ const styles = StyleSheet.create({
     padding: 28,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: theme.border,
     gap: 12,
   },
   levelEmoji: {
@@ -322,16 +323,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
   },
-  levelName: { fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
+  levelName: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
   levelProgressWrap: { width: '100%', gap: 8, marginTop: 4 },
   levelProgressBg: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: theme.backgroundTertiary,
     overflow: 'hidden',
   },
   levelProgressFill: { height: '100%', borderRadius: 4 },
-  levelProgressText: { fontSize: 13, fontWeight: '500', color: theme.textSecondary, textAlign: 'center' },
+  levelProgressText: { fontSize: 13, fontWeight: '500', textAlign: 'center' },
 
   // Next Milestone
   nextMilestoneWrap: { paddingHorizontal: 16, paddingTop: 16 },
@@ -339,7 +339,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: theme.border,
     gap: 12,
   },
   nextMilestoneHeader: {
@@ -349,9 +348,8 @@ const styles = StyleSheet.create({
   },
   nextMilestoneLabel: {
     fontSize: 11,
-    fontWeight: '700',
-    color: theme.textMuted,
-    letterSpacing: 1,
+    fontWeight: '800',
+    letterSpacing: 1.2,
   },
   nextMilestoneRow: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
   nextMilestoneIcon: {
@@ -363,18 +361,17 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   nextMilestoneInfo: { flex: 1, gap: 4 },
-  nextMilestoneTitle: { fontSize: 17, fontWeight: '700', color: theme.textPrimary },
-  nextMilestoneDesc: { fontSize: 13, color: theme.textSecondary },
+  nextMilestoneTitle: { fontSize: 17, fontWeight: '800' },
+  nextMilestoneDesc: { fontSize: 13 },
   nextMilestoneProgress: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
   nextMilestoneBarBg: {
     flex: 1,
     height: 6,
     borderRadius: 3,
-    backgroundColor: theme.backgroundTertiary,
     overflow: 'hidden',
   },
   nextMilestoneBarFill: { height: '100%', borderRadius: 3 },
-  nextMilestoneCount: { fontSize: 13, fontWeight: '700', width: 50, textAlign: 'right' },
+  nextMilestoneCount: { fontSize: 13, fontWeight: '800', width: 50, textAlign: 'right' },
   nextMilestoneReward: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -385,7 +382,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignSelf: 'flex-start',
   },
-  nextMilestoneRewardText: { fontSize: 12, fontWeight: '600' },
+  nextMilestoneRewardText: { fontSize: 12, fontWeight: '700' },
 
   // Stats
   statsRow: {
@@ -400,13 +397,11 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: theme.surface,
     borderWidth: 1,
-    borderColor: theme.border,
   },
   statEmoji: { fontSize: 16 },
-  statValue: { fontSize: 18, fontWeight: '800' },
-  statLabel: { fontSize: 11, fontWeight: '500', color: theme.textMuted },
+  statValue: { fontSize: 18, fontWeight: '900' },
+  statLabel: { fontSize: 11, fontWeight: '600' },
 
   // Badges
   sectionHeader: {
@@ -417,8 +412,8 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 12,
   },
-  sectionTitle: { fontSize: 17, fontWeight: '700', color: theme.textPrimary },
-  sectionCount: { fontSize: 14, fontWeight: '600', color: theme.textMuted },
+  sectionTitle: { fontSize: 17, fontWeight: '800' },
+  sectionCount: { fontSize: 14, fontWeight: '600' },
 
   badgeScroll: { paddingHorizontal: 16, gap: 10 },
   badgeCard: {
@@ -427,13 +422,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 14,
-    backgroundColor: theme.surface,
     borderWidth: 1,
-    borderColor: theme.border,
     minWidth: 90,
   },
   badgeEmoji: { fontSize: 24 },
-  badgeName: { fontSize: 12, fontWeight: '600', color: theme.textSecondary },
+  badgeName: { fontSize: 12, fontWeight: '600' },
 
   // Milestones
   tabScroll: { paddingHorizontal: 16, gap: 8 },
@@ -444,25 +437,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: theme.surface,
     borderWidth: 1,
-    borderColor: theme.border,
   },
   catTabActive: {
-    backgroundColor: 'rgba(74,222,128,0.1)',
-    borderColor: 'rgba(74,222,128,0.3)',
+    backgroundColor: 'rgba(245,183,49,0.08)',
+    borderColor: 'rgba(245,183,49,0.30)',
   },
   catTabEmoji: { fontSize: 14 },
-  catTabText: { fontSize: 13, fontWeight: '600', color: theme.textMuted },
-  catTabTextActive: { color: theme.primary, fontWeight: '700' },
+  catTabText: { fontSize: 13, fontWeight: '600' },
+  catTabTextActive: { color: '#F5B731', fontWeight: '700' },
 
   milestoneList: { paddingHorizontal: 16, paddingTop: 16, gap: 12 },
   milestoneCard: {
     padding: 16,
     borderRadius: 16,
-    backgroundColor: theme.surface,
     borderWidth: 1,
-    borderColor: theme.border,
     gap: 12,
   },
   milestoneRow: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
@@ -470,26 +459,23 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: theme.backgroundTertiary,
     borderWidth: 1,
-    borderColor: theme.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   milestoneInfo: { flex: 1, gap: 6 },
   milestoneTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  milestoneTitle: { fontSize: 15, fontWeight: '700', color: theme.textPrimary },
-  milestoneDesc: { fontSize: 13, color: theme.textSecondary },
+  milestoneTitle: { fontSize: 15, fontWeight: '800' },
+  milestoneDesc: { fontSize: 13 },
   milestoneProgressWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   milestoneProgressBg: {
     flex: 1,
     height: 5,
     borderRadius: 3,
-    backgroundColor: theme.backgroundTertiary,
     overflow: 'hidden',
   },
   milestoneProgressFill: { height: '100%', borderRadius: 3 },
-  milestoneProgressText: { fontSize: 12, fontWeight: '700', color: theme.textMuted, width: 50, textAlign: 'right' },
+  milestoneProgressText: { fontSize: 12, fontWeight: '700', width: 50, textAlign: 'right' },
 
   rewardTag: {
     flexDirection: 'row',
@@ -499,10 +485,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 10,
-    backgroundColor: theme.backgroundTertiary,
     borderWidth: 1,
-    borderColor: theme.border,
     marginLeft: 58,
   },
-  rewardText: { fontSize: 12, fontWeight: '600', color: theme.textMuted },
+  rewardText: { fontSize: 12, fontWeight: '600' },
 });
