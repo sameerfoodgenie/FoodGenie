@@ -14,7 +14,21 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn, FadeInDown, FadeInRight, FadeInUp } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeInRight,
+  FadeInUp,
+  ZoomIn,
+  SlideInRight,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withSequence,
+  withDelay,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth, useAlert } from '../template';
 import { useCoin } from '../hooks/useCoin';
@@ -64,6 +78,26 @@ function NutritionRing({ label, value, unit, color, size = 64 }: {
   );
 }
 
+// ── Animated Macro Chip ──
+function AnimatedMacroChip({ label, value, unit, color, bgColor, index }: {
+  label: string; value: number; unit: string; color: string; bgColor: string; index: number;
+}) {
+  return (
+    <Animated.View
+      entering={SlideInRight.delay(200 + index * 100).duration(350).springify().damping(14)}
+      style={[mc.macroItem, { backgroundColor: bgColor }]}
+    >
+      <Animated.Text
+        entering={ZoomIn.delay(350 + index * 100).duration(300)}
+        style={[mc.macroValue, { color }]}
+      >
+        {value}{unit}
+      </Animated.Text>
+      <Text style={[mc.macroLabel, { color: '#9CA3AF' }]}>{label}</Text>
+    </Animated.View>
+  );
+}
+
 // ── Meal Card ──
 function MealCard({ meal, index, colors, isDark, router }: {
   meal: MealItem; index: number; colors: any; isDark: boolean; router: any;
@@ -73,8 +107,15 @@ function MealCard({ meal, index, colors, isDark, router }: {
 
   return (
     <Animated.View entering={FadeInDown.delay(100 + index * 80).duration(350)}>
+      {/* Sunset gradient border wrapper */}
+      <LinearGradient
+        colors={['#1E1456', '#7B2FA0', '#C41E7A', '#F04E50', '#F5B731']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={mc.gradientBorder}
+      >
       <Pressable
-        style={[mc.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+        style={[mc.card, { backgroundColor: colors.surface }]}
         onPress={() => { Haptics.selectionAsync(); setExpanded(!expanded); }}
       >
         <View style={mc.header}>
@@ -95,23 +136,11 @@ function MealCard({ meal, index, colors, isDark, router }: {
         </View>
 
         <View style={mc.macroRow}>
-          <View style={[mc.macroItem, { backgroundColor: 'rgba(123,47,160,0.06)' }]}>
-            <Text style={[mc.macroValue, { color: '#7B2FA0' }]}>{meal.protein}g</Text>
-            <Text style={[mc.macroLabel, { color: colors.textMuted }]}>Protein</Text>
-          </View>
-          <View style={[mc.macroItem, { backgroundColor: 'rgba(245,183,49,0.08)' }]}>
-            <Text style={[mc.macroValue, { color: '#D9A020' }]}>{meal.carbs}g</Text>
-            <Text style={[mc.macroLabel, { color: colors.textMuted }]}>Carbs</Text>
-          </View>
-          <View style={[mc.macroItem, { backgroundColor: 'rgba(240,78,80,0.06)' }]}>
-            <Text style={[mc.macroValue, { color: '#F04E50' }]}>{meal.fat}g</Text>
-            <Text style={[mc.macroLabel, { color: colors.textMuted }]}>Fat</Text>
-          </View>
+          <AnimatedMacroChip label="Protein" value={meal.protein} unit="g" color="#7B2FA0" bgColor="rgba(123,47,160,0.06)" index={0} />
+          <AnimatedMacroChip label="Carbs" value={meal.carbs} unit="g" color="#D9A020" bgColor="rgba(245,183,49,0.08)" index={1} />
+          <AnimatedMacroChip label="Fat" value={meal.fat} unit="g" color="#F04E50" bgColor="rgba(240,78,80,0.06)" index={2} />
           {meal.prepTime ? (
-            <View style={[mc.macroItem, { backgroundColor: 'rgba(30,20,86,0.05)' }]}>
-              <Text style={[mc.macroValue, { color: '#1E1456' }]}>{meal.prepTime}m</Text>
-              <Text style={[mc.macroLabel, { color: colors.textMuted }]}>Prep</Text>
-            </View>
+            <AnimatedMacroChip label="Prep" value={meal.prepTime} unit="m" color="#1E1456" bgColor="rgba(30,20,86,0.05)" index={3} />
           ) : null}
         </View>
 
@@ -178,6 +207,7 @@ function MealCard({ meal, index, colors, isDark, router }: {
           <MaterialIcons name={expanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'} size={18} color={colors.textMuted} />
         </View>
       </Pressable>
+      </LinearGradient>
     </Animated.View>
   );
 }
@@ -490,6 +520,66 @@ function PreferencesSummary({ prefs, colors, isDark, router }: {
   );
 }
 
+// ── Floating Token Balance Indicator ──
+function FloatingTokenIndicator({ subscription, colors, isDark, router }: {
+  subscription: UserSubscription | null; colors: any; isDark: boolean; router: any;
+}) {
+  const pulseScale = useSharedValue(1);
+
+  // Pulse animation when token balance changes
+  useEffect(() => {
+    if (subscription) {
+      pulseScale.value = withSequence(
+        withSpring(1.12, { damping: 8, stiffness: 300 }),
+        withSpring(1, { damping: 10, stiffness: 200 }),
+      );
+    }
+  }, [subscription?.token_balance]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+  }));
+
+  if (!subscription) return null;
+
+  const tokenBalance = subscription.token_balance || 0;
+  const isLow = tokenBalance < 20;
+  const planName = subscription.plan_name || 'free';
+
+  return (
+    <Animated.View entering={FadeInDown.delay(600).duration(400)} style={fti.wrapper}>
+      <Pressable
+        style={({ pressed }) => [pressed && { opacity: 0.9, transform: [{ scale: 0.96 }] }]}
+        onPress={() => { Haptics.selectionAsync(); router.push('/subscription' as any); }}
+      >
+        <Animated.View style={animatedStyle}>
+          <LinearGradient
+            colors={isLow ? ['#F04E50', '#C41E7A'] : ['#1E1456', '#7B2FA0']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={fti.container}
+          >
+            <View style={fti.tokenIcon}>
+              <Text style={{ fontSize: 14 }}>🪙</Text>
+            </View>
+            <View style={fti.info}>
+              <Text style={fti.balance}>{tokenBalance}</Text>
+              <Text style={fti.label}>tokens</Text>
+            </View>
+            {isLow ? (
+              <View style={fti.lowBadge}>
+                <MaterialIcons name="warning" size={10} color="#FFF" />
+              </View>
+            ) : (
+              <MaterialIcons name="chevron-right" size={14} color="rgba(255,255,255,0.60)" />
+            )}
+          </LinearGradient>
+        </Animated.View>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 // ── Main Screen ──
 export default function AajKhaneScreen() {
   const router = useRouter();
@@ -677,6 +767,9 @@ export default function AajKhaneScreen() {
             })}
           </View>
         </LinearGradient>
+
+        {/* Floating Token Balance */}
+        <FloatingTokenIndicator subscription={subscription} colors={colors} isDark={isDark} router={router} />
 
         {/* Content */}
         <ScrollView
@@ -923,8 +1016,34 @@ const nr = StyleSheet.create({
   label: { fontSize: 10, fontWeight: '600', color: '#9CA3AF' },
 });
 
+const fti = StyleSheet.create({
+  wrapper: {
+    position: 'absolute', top: 8, right: 20, zIndex: 50,
+  },
+  container: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20,
+    shadowColor: '#1E1456', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25, shadowRadius: 12, elevation: 8,
+  },
+  tokenIcon: {
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.20)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  info: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
+  balance: { fontSize: 16, fontWeight: '900', color: '#FDD85D' },
+  label: { fontSize: 9, fontWeight: '600', color: 'rgba(255,255,255,0.70)' },
+  lowBadge: {
+    width: 18, height: 18, borderRadius: 9,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+});
+
 const mc = StyleSheet.create({
-  card: { padding: 16, borderRadius: 18, borderWidth: 1, gap: 10 },
+  gradientBorder: { borderRadius: 19, padding: 1.5 },
+  card: { padding: 16, borderRadius: 18, gap: 10 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   iconWrap: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   mealType: { fontSize: 9, fontWeight: '800', letterSpacing: 0.8 },
