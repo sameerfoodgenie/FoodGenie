@@ -22,7 +22,8 @@ Deno.serve(async (req) => {
     let userMessage = '';
 
     if (action === 'generate_meal_plan') {
-      const { diet, budgetMin, budgetMax, spiceLevel, healthGoal, cuisineBias, avoidTags, planType } = preferences || {};
+      const { diet, budgetMin, budgetMax, spiceLevel, healthGoal, cuisineBias, avoidTags, planType, persons } = preferences || {};
+      const personCount = persons || 1;
       
       systemPrompt = `You are FoodGenie AI, an expert Indian meal planner and nutritionist. Generate meal plans based on user preferences.
 
@@ -35,10 +36,13 @@ RULES:
 - Spice level: 1=Mild, 2=Medium, 3=Spicy, 4=Very Spicy, 5=Extra Hot
 - Diet: veg=vegetarian only, egg=vegetarian+eggs, nonveg=all
 - Generate realistic calorie counts for Indian food portions
+- IMPORTANT: This meal plan is for ${personCount} person(s). Scale all ingredient quantities accordingly. Calorie/nutrition values should be PER PERSON.
+- If cooking for multiple persons, mention serving size in descriptions (e.g. "Serves ${personCount}")
 
 User Preferences:
 - Diet: ${diet || 'veg'}
-- Budget: ₹${budgetMin || 100}-₹${budgetMax || 500} per meal
+- Number of Persons: ${personCount}
+- Budget: ₹${budgetMin || 100}-₹${budgetMax || 500} per meal per person
 - Spice Level: ${spiceLevel || 2}/5
 - Health Goal: ${healthGoal || 'balanced'}
 - Preferred Cuisines: ${(cuisineBias || []).join(', ') || 'North Indian, South Indian'}
