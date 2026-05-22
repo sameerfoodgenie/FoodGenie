@@ -68,37 +68,38 @@ const MEAL_ICONS: Record<string, { emoji: string; gradient: readonly [string, st
 const DAY_COLORS = ['#1E1456', '#7B2FA0', '#F5B731', '#C41E7A', '#F04E50', '#2D1F6B', '#D9A020'];
 
 // ── Nutrition Ring ──
-function NutritionRing({ label, value, unit, color, size = 64 }: {
-  label: string; value: number; unit: string; color: string; size?: number;
+function NutritionRing({ label, value, unit, color, size = 64, colors, isDark }: {
+  label: string; value: number; unit: string; color: string; size?: number; colors: any; isDark: boolean;
 }) {
   return (
     <View style={[nr.container, { width: size + 20 }]}>
-      <View style={[nr.ring, { width: size, height: size, borderColor: 'rgba(30,20,86,0.12)' }]}>
+      <View style={[nr.ring, { width: size, height: size, borderColor: isDark ? 'rgba(123,47,160,0.25)' : 'rgba(30,20,86,0.12)' }]}>
         <View style={[nr.ringFill, { borderColor: color || '#F5B731' }]} />
-        <Text style={[nr.value, { color: '#1A1A2E' }]}>{value}</Text>
-        <Text style={[nr.unit, { color: 'rgba(123,47,160,0.60)' }]}>{unit}</Text>
+        <Text style={[nr.value, { color: colors.textPrimary }]}>{value}</Text>
+        <Text style={[nr.unit, { color: isDark ? 'rgba(191,183,212,0.80)' : 'rgba(123,47,160,0.60)' }]}>{unit}</Text>
       </View>
-      <Text style={nr.label}>{label}</Text>
+      <Text style={[nr.label, { color: colors.textMuted }]}>{label}</Text>
     </View>
   );
 }
 
 // ── Animated Macro Chip ──
-function AnimatedMacroChip({ label, value, unit, color, bgColor, index }: {
-  label: string; value: number; unit: string; color: string; bgColor: string; index: number;
+function AnimatedMacroChip({ label, value, unit, color, bgColor, index, isDark }: {
+  label: string; value: number; unit: string; color: string; bgColor: string; index: number; isDark?: boolean;
 }) {
+  const adaptedColor = isDark ? (color === '#7B2FA0' ? '#BF7AE0' : color === '#D9A020' ? '#FDD85D' : color === '#F04E50' ? '#FF8A7B' : color === '#1E1456' ? '#BFB7D4' : color) : color;
   return (
     <Animated.View
       entering={SlideInRight.delay(200 + index * 100).duration(350).springify().damping(14)}
-      style={[mc.macroItem, { backgroundColor: bgColor }]}
+      style={[mc.macroItem, { backgroundColor: isDark ? `${adaptedColor}15` : bgColor }]}
     >
       <Animated.Text
         entering={ZoomIn.delay(350 + index * 100).duration(300)}
-        style={[mc.macroValue, { color }]}
+        style={[mc.macroValue, { color: adaptedColor }]}
       >
         {value}{unit}
       </Animated.Text>
-      <Text style={[mc.macroLabel, { color: '#9CA3AF' }]}>{label}</Text>
+      <Text style={[mc.macroLabel, { color: isDark ? '#7A728E' : '#9CA3AF' }]}>{label}</Text>
     </Animated.View>
   );
 }
@@ -255,11 +256,11 @@ function MealCard({ meal, index, colors, isDark, router, persons, prefs, onSwap 
         </View>
 
         <View style={mc.macroRow}>
-          <AnimatedMacroChip label="Protein" value={meal.protein} unit="g" color="#7B2FA0" bgColor="rgba(123,47,160,0.06)" index={0} />
-          <AnimatedMacroChip label="Carbs" value={meal.carbs} unit="g" color="#D9A020" bgColor="rgba(245,183,49,0.08)" index={1} />
-          <AnimatedMacroChip label="Fat" value={meal.fat} unit="g" color="#F04E50" bgColor="rgba(240,78,80,0.06)" index={2} />
+          <AnimatedMacroChip label="Protein" value={meal.protein} unit="g" color="#7B2FA0" bgColor="rgba(123,47,160,0.06)" index={0} isDark={isDark} />
+          <AnimatedMacroChip label="Carbs" value={meal.carbs} unit="g" color="#D9A020" bgColor="rgba(245,183,49,0.08)" index={1} isDark={isDark} />
+          <AnimatedMacroChip label="Fat" value={meal.fat} unit="g" color="#F04E50" bgColor="rgba(240,78,80,0.06)" index={2} isDark={isDark} />
           {meal.prepTime ? (
-            <AnimatedMacroChip label="Prep" value={meal.prepTime} unit="m" color="#1E1456" bgColor="rgba(30,20,86,0.05)" index={3} />
+            <AnimatedMacroChip label="Prep" value={meal.prepTime} unit="m" color="#1E1456" bgColor="rgba(30,20,86,0.05)" index={3} isDark={isDark} />
           ) : null}
         </View>
 
@@ -785,8 +786,8 @@ function PreferencesSummary({ prefs, colors, isDark, router }: {
 }
 
 // ── Floating Token Balance Indicator ──
-function FloatingTokenIndicator({ subscription, colors, isDark, router }: {
-  subscription: UserSubscription | null; colors: any; isDark: boolean; router: any;
+function FloatingTokenIndicator({ subscription, colors, isDark, router, topOffset }: {
+  subscription: UserSubscription | null; colors: any; isDark: boolean; router: any; topOffset?: number;
 }) {
   const pulseScale = useSharedValue(1);
 
@@ -808,40 +809,8 @@ function FloatingTokenIndicator({ subscription, colors, isDark, router }: {
 
   const tokenBalance = subscription.token_balance || 0;
   const isLow = tokenBalance < 20;
-  const planName = subscription.plan_name || 'free';
 
-  return (
-    <Animated.View entering={FadeInDown.delay(600).duration(400)} style={fti.wrapper}>
-      <Pressable
-        style={({ pressed }) => [pressed && { opacity: 0.9, transform: [{ scale: 0.96 }] }]}
-        onPress={() => { Haptics.selectionAsync(); router.push('/subscription' as any); }}
-      >
-        <Animated.View style={animatedStyle}>
-          <LinearGradient
-            colors={isLow ? ['#F04E50', '#C41E7A'] : ['#1E1456', '#7B2FA0']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={fti.container}
-          >
-            <View style={fti.tokenIcon}>
-              <Text style={{ fontSize: 14 }}>🪙</Text>
-            </View>
-            <View style={fti.info}>
-              <Text style={fti.balance}>{tokenBalance}</Text>
-              <Text style={fti.label}>tokens</Text>
-            </View>
-            {isLow ? (
-              <View style={fti.lowBadge}>
-                <MaterialIcons name="warning" size={10} color="#FFF" />
-              </View>
-            ) : (
-              <MaterialIcons name="chevron-right" size={14} color="rgba(255,255,255,0.60)" />
-            )}
-          </LinearGradient>
-        </Animated.View>
-      </Pressable>
-    </Animated.View>
-  );
+  return null;
 }
 
 // ── Main Screen ──
@@ -1111,8 +1080,7 @@ export default function AajKhaneScreen() {
           </View>
         </LinearGradient>
 
-        {/* Floating Token Balance */}
-        <FloatingTokenIndicator subscription={subscription} colors={colors} isDark={isDark} router={router} />
+        {/* Token Balance - inline in scroll */}
 
         {/* Content */}
         <ScrollView
@@ -1120,8 +1088,41 @@ export default function AajKhaneScreen() {
           contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#F5B731" colors={['#F5B731']} />}
         >
+          {/* ═══ Token Balance Inline ═══ */}
+          {subscription ? (
+            <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
+              <Pressable
+                style={({ pressed }) => [pressed && { opacity: 0.9 }]}
+                onPress={() => { Haptics.selectionAsync(); router.push('/subscription' as any); }}
+              >
+                <LinearGradient
+                  colors={(subscription.token_balance || 0) < 20 ? ['#F04E50', '#C41E7A'] : ['#1E1456', '#7B2FA0']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14 }}
+                >
+                  <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.20)', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 16 }}>🪙</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 16, fontWeight: '900', color: '#FDD85D' }}>{subscription.token_balance || 0} tokens</Text>
+                    <Text style={{ fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.70)' }}>{subscription.plan_name || 'Free'} Plan</Text>
+                  </View>
+                  {(subscription.token_balance || 0) < 20 ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.20)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
+                      <MaterialIcons name="warning" size={12} color="#FFF" />
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#FFF' }}>Low</Text>
+                    </View>
+                  ) : (
+                    <MaterialIcons name="chevron-right" size={20} color="rgba(255,255,255,0.60)" />
+                  )}
+                </LinearGradient>
+              </Pressable>
+            </View>
+          ) : null}
+
           {/* ═══ Persons Selector ═══ */}
-          <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
+          <View style={{ paddingHorizontal: 20, paddingTop: 12 }}>
             <PersonsSelector persons={persons} onSelect={handlePersonsChange} colors={colors} isDark={isDark} />
           </View>
 
@@ -1160,10 +1161,10 @@ export default function AajKhaneScreen() {
                 <Text style={[s.nutritionTitle, { color: colors.textPrimary }]}>Today's Nutrition</Text>
                 <Text style={[s.nutritionDate, { color: colors.textMuted }]}>{todayPlan.date}</Text>
                 <View style={s.nutritionRow}>
-                  <NutritionRing label="Calories" value={todayPlan.totalCalories} unit="kcal" color="#F5B731" />
-                  <NutritionRing label="Protein" value={todayPlan.totalProtein} unit="g" color="#7B2FA0" />
-                  <NutritionRing label="Carbs" value={todayPlan.totalCarbs} unit="g" color="#F04E50" />
-                  <NutritionRing label="Fat" value={todayPlan.totalFat} unit="g" color="#1E1456" />
+                  <NutritionRing label="Calories" value={todayPlan.totalCalories} unit="kcal" color="#F5B731" colors={colors} isDark={isDark} />
+                  <NutritionRing label="Protein" value={todayPlan.totalProtein} unit="g" color={isDark ? '#BF7AE0' : '#7B2FA0'} colors={colors} isDark={isDark} />
+                  <NutritionRing label="Carbs" value={todayPlan.totalCarbs} unit="g" color={isDark ? '#FF8A7B' : '#F04E50'} colors={colors} isDark={isDark} />
+                  <NutritionRing label="Fat" value={todayPlan.totalFat} unit="g" color={isDark ? '#BFB7D4' : '#1E1456'} colors={colors} isDark={isDark} />
                 </View>
               </Animated.View>
               <View style={s.mealList}>
@@ -1424,7 +1425,7 @@ const nr = StyleSheet.create({
   ringFill: { position: 'absolute', top: -4, left: -4, right: -4, bottom: -4, borderRadius: 32, borderWidth: 4, borderLeftColor: 'transparent', borderBottomColor: 'transparent', transform: [{ rotate: '45deg' }] },
   value: { fontSize: 15, fontWeight: '900' },
   unit: { fontSize: 8, fontWeight: '600' },
-  label: { fontSize: 10, fontWeight: '600', color: '#9CA3AF' },
+  label: { fontSize: 10, fontWeight: '600' },
 });
 
 const fti = StyleSheet.create({
