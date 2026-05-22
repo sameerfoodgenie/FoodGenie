@@ -39,7 +39,7 @@ const FEATURE_BANNERS = [
     gradient: ['#FF6B6B', '#FF8E53', '#FFB347'] as const,
     icon: 'restaurant' as const,
     accentEmoji: '🍛',
-    route: '/decision-lens',
+    route: '/meal-preferences',
   },
   {
     id: 'ai-planner',
