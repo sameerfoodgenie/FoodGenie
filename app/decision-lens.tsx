@@ -415,6 +415,74 @@ function WhatNextCard({ planData, activeTab, colors, isDark, router }: {
   );
 }
 
+// ── Preferences Summary Card ──
+function PreferencesSummary({ prefs, colors, isDark, router }: {
+  prefs: any; colors: any; isDark: boolean; router: any;
+}) {
+  if (!prefs) return null;
+
+  const DIET_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
+    veg: { label: 'Vegetarian', emoji: '🥬', color: '#4ADE80' },
+    egg: { label: 'Eggetarian', emoji: '🥚', color: '#FFB347' },
+    nonveg: { label: 'Non-Veg', emoji: '🍗', color: '#FF6B6B' },
+  };
+
+  const SPICE_LABELS: Record<number, { label: string; emoji: string }> = {
+    1: { label: 'Mild', emoji: '🌶️' },
+    2: { label: 'Medium', emoji: '🌶️🌶️' },
+    3: { label: 'Spicy', emoji: '🌶️🌶️🌶️' },
+    4: { label: 'Extra Hot', emoji: '🔥' },
+  };
+
+  const diet = DIET_LABELS[prefs.diet] || DIET_LABELS.veg;
+  const spice = SPICE_LABELS[prefs.spiceLevel] || SPICE_LABELS[2];
+  const budgetLabel = `₹${prefs.budgetMin}-${prefs.budgetMax}`;
+  const cuisineList = (prefs.cuisineBias || []).slice(0, 3);
+
+  const pills: { label: string; color: string; emoji?: string }[] = [
+    { label: diet.label, color: diet.color, emoji: diet.emoji },
+    { label: spice.label, color: '#FF6B6B', emoji: spice.emoji },
+    { label: budgetLabel, color: '#4ADE80', emoji: '💰' },
+  ];
+
+  if (cuisineList.length > 0) {
+    const formatted = cuisineList.map((c: string) => c.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())).join(', ');
+    pills.push({ label: formatted, color: '#818CF8', emoji: '🍛' });
+  }
+
+  if (prefs.healthGoal && prefs.healthGoal !== 'none' && prefs.healthGoal !== 'balanced') {
+    const goalLabel = prefs.healthGoal.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+    pills.push({ label: goalLabel, color: '#22D3EE', emoji: '🎯' });
+  }
+
+  return (
+    <Animated.View entering={FadeInDown.delay(50).duration(300)}>
+      <View style={[ps.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={ps.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={[ps.title, { color: colors.textPrimary }]}>Your Preferences</Text>
+          </View>
+          <Pressable
+            style={({ pressed }) => [ps.editBtn, { backgroundColor: 'rgba(212,175,55,0.10)', borderColor: 'rgba(212,175,55,0.25)' }, pressed && { opacity: 0.7 }]}
+            onPress={() => { Haptics.selectionAsync(); router.push('/meal-preferences' as any); }}
+          >
+            <MaterialIcons name="edit" size={12} color="#D4AF37" />
+            <Text style={ps.editText}>Edit</Text>
+          </Pressable>
+        </View>
+        <View style={ps.pillRow}>
+          {pills.map((pill, i) => (
+            <View key={i} style={[ps.pill, { backgroundColor: `${pill.color}12`, borderColor: `${pill.color}30` }]}>
+              {pill.emoji ? <Text style={{ fontSize: 11 }}>{pill.emoji}</Text> : null}
+              <Text style={[ps.pillText, { color: pill.color }]}>{pill.label}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
+
 // ── Main Screen ──
 export default function AajKhaneScreen() {
   const router = useRouter();
@@ -540,6 +608,13 @@ export default function AajKhaneScreen() {
           contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#D4AF37" colors={['#D4AF37']} />}
         >
+          {/* ═══ Preferences Summary ═══ */}
+          {prefs ? (
+            <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
+              <PreferencesSummary prefs={prefs} colors={colors} isDark={isDark} router={router} />
+            </View>
+          ) : null}
+
           {loading ? (
             <View style={s.loadingWrap}>
               <ActivityIndicator size="large" color="#D4AF37" />
@@ -719,6 +794,23 @@ const s = StyleSheet.create({
   regenerateText: { fontSize: 16, fontWeight: '800', color: '#FFF' },
   chatLink: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   chatLinkText: { fontSize: 13, fontWeight: '600', color: '#D4AF37' },
+});
+
+const ps = StyleSheet.create({
+  card: { padding: 14, borderRadius: 16, borderWidth: 1, gap: 10 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  title: { fontSize: 13, fontWeight: '700' },
+  editBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1,
+  },
+  editText: { fontSize: 11, fontWeight: '700', color: '#D4AF37' },
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  pill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1,
+  },
+  pillText: { fontSize: 11, fontWeight: '700' },
 });
 
 const wn = StyleSheet.create({
