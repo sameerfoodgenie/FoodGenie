@@ -39,9 +39,9 @@ const FEATURES_LOST = [
 ];
 
 const PLAN_COMPARISON = [
-  { id: 'starter', name: 'Starter', price: '₹99', tokens: '100', color: '#D4AF37' },
-  { id: 'smart_foodie', name: 'Smart Foodie', price: '₹199', tokens: '300', color: '#B8860B' },
-  { id: 'genie_pro', name: 'Genie Pro', price: '₹499', tokens: '1000', color: '#8B6914', best: true },
+  { id: 'starter', name: 'Starter', price: '₹99', tokens: '100', color: '#F5B731' },
+  { id: 'smart_foodie', name: 'Smart Foodie', price: '₹199', tokens: '300', color: '#7B2FA0' },
+  { id: 'genie_pro', name: 'Genie Pro', price: '₹499', tokens: '1000', color: '#1E1456', best: true },
 ];
 
 export default function TrialExpiryModal({ subscription, colors, isDark, onUpgrade }: Props) {
@@ -102,7 +102,7 @@ export default function TrialExpiryModal({ subscription, colors, isDark, onUpgra
           {/* Header */}
           <Animated.View entering={FadeIn.duration(400)} style={s.headerWrap}>
             <LinearGradient
-              colors={isExpired ? ['#B8860B', '#D4AF37'] : ['#D4AF37', '#F6C945']}
+              colors={isExpired ? ['#1E1456', '#7B2FA0'] : ['#F5B731', '#FDD85D']}
               style={s.headerIcon}
             >
               <Text style={{ fontSize: 32 }}>{isExpired ? '⏰' : '⚠️'}</Text>
@@ -124,10 +124,10 @@ export default function TrialExpiryModal({ subscription, colors, isDark, onUpgra
             </Text>
             <View style={s.loseList}>
               {FEATURES_LOST.map((feat, i) => (
-                <View key={i} style={[s.loseItem, { backgroundColor: isDark ? 'rgba(212,175,55,0.06)' : 'rgba(212,175,55,0.04)' }]}>
+                <View key={i} style={[s.loseItem, { backgroundColor: isDark ? 'rgba(30,20,86,0.08)' : 'rgba(30,20,86,0.04)' }]}>
                   <Text style={{ fontSize: 16 }}>{feat.emoji}</Text>
                   <Text style={[s.loseItemText, { color: colors.textSecondary }]}>{feat.label}</Text>
-                  <MaterialIcons name="block" size={14} color="rgba(184,134,11,0.5)" />
+                  <MaterialIcons name="block" size={14} color="rgba(240,78,80,0.5)" />
                 </View>
               ))}
             </View>
@@ -168,7 +168,7 @@ export default function TrialExpiryModal({ subscription, colors, isDark, onUpgra
               style={({ pressed }) => [pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
               onPress={handleUpgrade}
             >
-              <LinearGradient colors={['#B8860B', '#D4AF37']} style={s.ctaBtn}>
+              <LinearGradient colors={['#F5B731', '#D9A020']} style={s.ctaBtn}>
                 <MaterialIcons name="rocket-launch" size={18} color="#FFF" />
                 <Text style={s.ctaText}>Upgrade Now</Text>
               </LinearGradient>

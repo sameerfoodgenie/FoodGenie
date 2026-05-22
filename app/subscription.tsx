@@ -31,9 +31,9 @@ import {
 const { width: SCREEN_W } = Dimensions.get('window');
 
 const PLAN_COLORS: Record<string, { primary: string; gradient: readonly [string, string] }> = {
-  starter: { primary: '#D4AF37', gradient: ['#D4AF37', '#F6C945'] },
-  smart_foodie: { primary: '#B8860B', gradient: ['#B8860B', '#D4AF37'] },
-  genie_pro: { primary: '#8B6914', gradient: ['#8B6914', '#B8860B'] },
+  starter: { primary: '#F5B731', gradient: ['#F5B731', '#FDD85D'] },
+  smart_foodie: { primary: '#7B2FA0', gradient: ['#7B2FA0', '#C41E7A'] },
+  genie_pro: { primary: '#1E1456', gradient: ['#1E1456', '#7B2FA0'] },
 };
 
 export default function SubscriptionScreen() {
@@ -96,7 +96,7 @@ export default function SubscriptionScreen() {
     return (
       <View style={[s.container, { backgroundColor: colors.background }]}>
         <SafeAreaView edges={['top']} style={s.loadingCenter}>
-          <ActivityIndicator size="large" color="#D4AF37" />
+          <ActivityIndicator size="large" color="#F5B731" />
         </SafeAreaView>
       </View>
     );
@@ -108,7 +108,7 @@ export default function SubscriptionScreen() {
         {/* Header */}
         <View style={[s.header, { borderBottomColor: colors.border }]}>
           <Pressable
-            style={({ pressed }) => [s.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [s.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(30,20,86,0.05)' }, pressed && { opacity: 0.7 }]}
             onPress={() => router.back()}
           >
             <MaterialIcons name="arrow-back" size={22} color={colors.textPrimary} />
@@ -132,7 +132,7 @@ export default function SubscriptionScreen() {
           {/* Hero Section */}
           <Animated.View entering={FadeIn.duration(400)}>
             <LinearGradient
-              colors={['#D4AF37', '#B8860B', '#8B6914']}
+              colors={['#1E1456', '#7B2FA0', '#C41E7A']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={s.hero}
@@ -150,7 +150,7 @@ export default function SubscriptionScreen() {
           {/* Trial Banner or Active Status */}
           {subscription && subscription.is_trial_active && trialDays > 0 ? (
             <Animated.View entering={FadeInDown.delay(100).duration(300)}>
-              <View style={[s.trialBanner, { backgroundColor: isDark ? 'rgba(212,175,55,0.08)' : 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.25)' }]}>
+              <View style={[s.trialBanner, { backgroundColor: isDark ? 'rgba(245,183,49,0.08)' : 'rgba(245,183,49,0.06)', borderColor: 'rgba(245,183,49,0.25)' }]}>
                 <View style={s.trialIconWrap}>
                   <Text style={{ fontSize: 24 }}>⏱️</Text>
                 </View>
@@ -167,7 +167,7 @@ export default function SubscriptionScreen() {
             </Animated.View>
           ) : subscription && subscription.subscription_status === 'active' ? (
             <Animated.View entering={FadeInDown.delay(100).duration(300)}>
-              <View style={[s.trialBanner, { backgroundColor: isDark ? 'rgba(212,175,55,0.08)' : 'rgba(212,175,55,0.05)', borderColor: 'rgba(212,175,55,0.25)' }]}>
+              <View style={[s.trialBanner, { backgroundColor: isDark ? 'rgba(30,20,86,0.12)' : 'rgba(30,20,86,0.04)', borderColor: 'rgba(30,20,86,0.20)' }]}>
                 <View style={s.trialIconWrap}>
                   <Text style={{ fontSize: 24 }}>👑</Text>
                 </View>
@@ -179,8 +179,8 @@ export default function SubscriptionScreen() {
                     {subscription.token_balance}/{subscription.monthly_token_limit} tokens • Renews {subscription.renewal_date ? new Date(subscription.renewal_date).toLocaleDateString() : 'soon'}
                   </Text>
                 </View>
-                <View style={[s.trialDaysBadge, { backgroundColor: 'rgba(212,175,55,0.15)' }]}>
-                  <Text style={[s.trialDaysText, { color: '#B8860B' }]}>Active</Text>
+                <View style={[s.trialDaysBadge, { backgroundColor: 'rgba(123,47,160,0.12)' }]}>
+                  <Text style={[s.trialDaysText, { color: '#7B2FA0' }]}>Active</Text>
                 </View>
               </View>
             </Animated.View>
@@ -192,7 +192,7 @@ export default function SubscriptionScreen() {
                 disabled={actionLoading}
               >
                 <LinearGradient
-                  colors={['#D4AF37', '#B8860B']}
+                  colors={['#F5B731', '#D9A020']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={s.trialCta}
@@ -256,7 +256,7 @@ export default function SubscriptionScreen() {
                       {/* Plan Header */}
                       <View style={s.planHeader}>
                         <View style={s.planNameRow}>
-                          <LinearGradient colors={planColor.gradient as unknown as string[]} style={s.planIcon}>
+                          <LinearGradient colors={planColor.gradient as unknown as readonly [string, string]} style={s.planIcon}>
                             <Text style={{ fontSize: 20 }}>
                               {plan.id === 'starter' ? '🌱' : plan.id === 'smart_foodie' ? '🧠' : '👑'}
                             </Text>
@@ -311,7 +311,7 @@ export default function SubscriptionScreen() {
 
               <View style={s.tokenCostsList}>
                 {[
-                  { label: 'Daily meal plan', cost: 'Free', emoji: '☀️', isFree: true },
+                  { label: 'Daily meal plan', cost: 'Free', emoji: '☀️', isFree: true } as const,
                   { label: 'Weekly meal plan', cost: '20 tokens', emoji: '📅', isFree: false },
                   { label: 'Monthly meal plan', cost: '50 tokens', emoji: '🗓️', isFree: false },
                   { label: 'Recipe video unlock', cost: '20–100 tokens', emoji: '🎬', isFree: false },
@@ -323,11 +323,11 @@ export default function SubscriptionScreen() {
                     <Text style={[s.tokenCostLabel, { color: colors.textSecondary }]}>{item.label}</Text>
                     <View style={[
                       s.tokenCostBadge,
-                      { backgroundColor: item.isFree ? 'rgba(74,222,128,0.10)' : 'rgba(212,175,55,0.10)' },
+                      { backgroundColor: item.isFree ? 'rgba(74,222,128,0.10)' : 'rgba(245,183,49,0.10)' },
                     ]}>
                       <Text style={[
                         s.tokenCostValue,
-                        { color: item.isFree ? '#4ADE80' : '#D4AF37' },
+                        { color: item.isFree ? '#4ADE80' : '#F5B731' },
                       ]}>{item.cost}</Text>
                     </View>
                   </View>
@@ -345,7 +345,7 @@ export default function SubscriptionScreen() {
                 disabled={actionLoading}
               >
                 <LinearGradient
-                  colors={['#B8860B', '#D4AF37']}
+                  colors={['#F5B731', '#D9A020']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={s.ctaBtn}
@@ -410,9 +410,9 @@ const s = StyleSheet.create({
   tokenBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14,
-    backgroundColor: 'rgba(212,175,55,0.10)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.20)',
+    backgroundColor: 'rgba(245,183,49,0.10)', borderWidth: 1, borderColor: 'rgba(245,183,49,0.25)',
   },
-  tokenBadgeText: { fontSize: 14, fontWeight: '900', color: '#D4AF37' },
+  tokenBadgeText: { fontSize: 14, fontWeight: '900', color: '#F5B731' },
 
   scrollContent: { paddingHorizontal: 20, gap: 20, paddingTop: 20 },
 
@@ -438,11 +438,11 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 12,
     padding: 16, borderRadius: 18, borderWidth: 1.5,
   },
-  trialIconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(212,175,55,0.10)' },
+  trialIconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(245,183,49,0.10)' },
   trialTitle: { fontSize: 14, fontWeight: '800' },
   trialDesc: { fontSize: 11, fontWeight: '500', marginTop: 2 },
   trialDaysBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
-  trialDaysText: { fontSize: 12, fontWeight: '900', color: '#D4AF37' },
+  trialDaysText: { fontSize: 12, fontWeight: '900', color: '#F5B731' },
 
   trialCta: {
     flexDirection: 'row', alignItems: 'center', gap: 14,

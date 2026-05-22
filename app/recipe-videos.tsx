@@ -41,25 +41,25 @@ const TOKEN_COSTS: Record<string, number> = {
 const MEAL_TYPE_META: Record<string, { emoji: string; gradient: readonly [string, string]; chef: string; chefHandle: string }> = {
   breakfast: {
     emoji: '☀️',
-    gradient: ['#F6C945', '#D4AF37'],
+    gradient: ['#F5B731', '#FDD85D'],
     chef: 'Chef Kunal Kapur',
     chefHandle: '@chefkunalkapur',
   },
   lunch: {
     emoji: '🍽️',
-    gradient: ['#D4AF37', '#B8860B'],
+    gradient: ['#1E1456', '#7B2FA0'],
     chef: 'Chef Ranveer Brar',
     chefHandle: '@ranveerbrar',
   },
   snack: {
     emoji: '🍿',
-    gradient: ['#B8860B', '#D4AF37'],
+    gradient: ['#C41E7A', '#7B2FA0'],
     chef: 'Chef Amrita Raichand',
     chefHandle: '@amritaraichand',
   },
   dinner: {
     emoji: '🌙',
-    gradient: ['#D4AF37', '#8B6914'],
+    gradient: ['#7B2FA0', '#1E1456'],
     chef: 'Chef Vikas Khanna',
     chefHandle: '@vikaboraink',
   },
@@ -209,7 +209,7 @@ function VideoCard({ video, isUnlocked, balance, onUnlock, onPreview, colors, is
 
           <View style={st.chefRow}>
             <View style={st.chefAvatar}>
-              <MaterialIcons name="person" size={14} color="#D4AF37" />
+              <MaterialIcons name="person" size={14} color="#7B2FA0" />
             </View>
             <View>
               <Text style={[st.chefName, { color: colors.textSecondary }]}>{video.chef}</Text>
@@ -223,7 +223,7 @@ function VideoCard({ video, isUnlocked, balance, onUnlock, onPreview, colors, is
               style={({ pressed }) => [st.watchBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onPreview(video); }}
             >
-              <LinearGradient colors={['#D4AF37', '#B8860B']} style={st.watchBtnGrad}>
+              <LinearGradient colors={['#7B2FA0', '#C41E7A']} style={st.watchBtnGrad}>
                 <MaterialIcons name="play-circle-filled" size={18} color="#FFF" />
                 <Text style={st.watchBtnText}>Watch Full Recipe</Text>
               </LinearGradient>
@@ -233,7 +233,7 @@ function VideoCard({ video, isUnlocked, balance, onUnlock, onPreview, colors, is
               style={({ pressed }) => [st.unlockBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); onUnlock(video); }}
             >
-              <LinearGradient colors={['#B8860B', '#D4AF37']} style={st.unlockBtnGrad}>
+              <LinearGradient colors={['#F5B731', '#D9A020']} style={st.unlockBtnGrad}>
                 <MaterialIcons name="lock-open" size={16} color="#FFF" />
                 <Text style={st.unlockBtnText}>Unlock with {video.tokenCost} Tokens</Text>
               </LinearGradient>
@@ -394,8 +394,8 @@ export default function RecipeVideosScreen() {
           {/* Summary banner */}
           <Animated.View entering={FadeIn.duration(400)} style={st.summaryWrap}>
             <View style={[st.summaryCard, {
-              backgroundColor: isDark ? 'rgba(212,175,55,0.08)' : 'rgba(212,175,55,0.04)',
-              borderColor: 'rgba(212,175,55,0.15)',
+              backgroundColor: isDark ? 'rgba(30,20,86,0.08)' : 'rgba(30,20,86,0.04)',
+              borderColor: 'rgba(30,20,86,0.12)',
             }]}>
               <View style={st.summaryRow}>
                 <View style={st.summaryItem}>
@@ -403,16 +403,16 @@ export default function RecipeVideosScreen() {
                   <Text style={[st.summaryValue, { color: colors.textPrimary }]}>{videos.length}</Text>
                   <Text style={[st.summaryLabel, { color: colors.textMuted }]}>Videos</Text>
                 </View>
-                <View style={[st.summaryDivider, { backgroundColor: 'rgba(212,175,55,0.20)' }]} />
+                <View style={[st.summaryDivider, { backgroundColor: 'rgba(30,20,86,0.12)' }]} />
                 <View style={st.summaryItem}>
                   <Text style={{ fontSize: 20 }}>🔓</Text>
                   <Text style={[st.summaryValue, { color: colors.textPrimary }]}>{unlockedIds.size}</Text>
                   <Text style={[st.summaryLabel, { color: colors.textMuted }]}>Unlocked</Text>
                 </View>
-                <View style={[st.summaryDivider, { backgroundColor: 'rgba(212,175,55,0.20)' }]} />
+                <View style={[st.summaryDivider, { backgroundColor: 'rgba(30,20,86,0.12)' }]} />
                 <View style={st.summaryItem}>
                   <Text style={{ fontSize: 20 }}>🪙</Text>
-                  <Text style={[st.summaryValue, { color: '#D4AF37' }]}>{totalTokensNeeded}</Text>
+                  <Text style={[st.summaryValue, { color: '#F5B731' }]}>{totalTokensNeeded}</Text>
                   <Text style={[st.summaryLabel, { color: colors.textMuted }]}>To Unlock All</Text>
                 </View>
               </View>
@@ -481,9 +481,9 @@ const st = StyleSheet.create({
   tokenPill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14,
-    backgroundColor: 'rgba(212,175,55,0.10)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.20)',
+    backgroundColor: 'rgba(245,183,49,0.10)', borderWidth: 1, borderColor: 'rgba(245,183,49,0.25)',
   },
-  tokenPillText: { fontSize: 14, fontWeight: '900', color: '#D4AF37' },
+  tokenPillText: { fontSize: 14, fontWeight: '900', color: '#F5B731' },
 
   // Summary
   summaryWrap: { paddingHorizontal: 16, paddingTop: 16 },
@@ -539,7 +539,7 @@ const st = StyleSheet.create({
     position: 'absolute', top: 10, right: 10,
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10,
-    backgroundColor: 'rgba(184,134,11,0.85)',
+    backgroundColor: 'rgba(123,47,160,0.85)',
   },
   unlockedText: { fontSize: 10, fontWeight: '700', color: '#FFF' },
   previewLabel: {
@@ -560,14 +560,14 @@ const st = StyleSheet.create({
   tokenCostBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10,
-    backgroundColor: 'rgba(212,175,55,0.10)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.20)',
+    backgroundColor: 'rgba(245,183,49,0.10)', borderWidth: 1, borderColor: 'rgba(245,183,49,0.25)',
   },
-  tokenCostText: { fontSize: 13, fontWeight: '900', color: '#D4AF37' },
+  tokenCostText: { fontSize: 13, fontWeight: '900', color: '#F5B731' },
   mealName: { fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
   chefRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   chefAvatar: {
     width: 28, height: 28, borderRadius: 14,
-    backgroundColor: 'rgba(212,175,55,0.10)',
+    backgroundColor: 'rgba(123,47,160,0.10)',
     alignItems: 'center', justifyContent: 'center',
   },
   chefName: { fontSize: 13, fontWeight: '700' },

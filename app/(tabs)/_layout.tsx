@@ -41,7 +41,7 @@ function GlowingPlusButton({ focused }: { focused: boolean }) {
     <View style={styles.postTabWrap}>
       <Animated.View style={[styles.glowRing, glowStyle]} />
       <LinearGradient
-        colors={focused ? ['#D4AF37', '#B8860B'] : ['#FFFDF5', '#FFF9E8']}
+        colors={focused ? ['#F5B731', '#D9A020'] : ['#FFFDF8', '#FFF9F0']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.postTabBtn}
@@ -49,7 +49,7 @@ function GlowingPlusButton({ focused }: { focused: boolean }) {
         <MaterialIcons
           name="add"
           size={30}
-          color={focused ? '#FFFFFF' : '#D4AF37'}
+          color={focused ? '#FFFFFF' : '#F5B731'}
         />
       </LinearGradient>
     </View>
@@ -89,7 +89,7 @@ export default function TabLayout() {
     backgroundColor: colors.tabBarBg,
     borderTopWidth: 1,
     borderTopColor: colors.tabBarBorder,
-    shadowColor: '#B8860B',
+    shadowColor: '#1E1456',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -102,8 +102,8 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle,
-        tabBarActiveTintColor: '#D4AF37',
-        tabBarInactiveTintColor: '#A3A3A3',
+        tabBarActiveTintColor: '#F5B731',
+        tabBarInactiveTintColor: '#9A9AB0',
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: '700',
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 20,
-    backgroundColor: 'rgba(212,175,55,0.15)',
+    backgroundColor: 'rgba(245,183,49,0.18)',
   },
   postTabBtn: {
     width: 52,
@@ -187,8 +187,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(212,175,55,0.30)',
-    shadowColor: '#D4AF37',
+    borderColor: 'rgba(245,183,49,0.35)',
+    shadowColor: '#F5B731',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.20,
     shadowRadius: 12,

@@ -40,26 +40,24 @@ const PLAN_TABS: { id: PlanTab; label: string; emoji: string }[] = [
 ];
 
 const MEAL_ICONS: Record<string, { emoji: string; gradient: readonly [string, string] }> = {
-  breakfast: { emoji: '☀️', gradient: ['#F6C945', '#D4AF37'] as const },
-  lunch: { emoji: '🍽️', gradient: ['#D4AF37', '#B8860B'] as const },
-  snack: { emoji: '🍿', gradient: ['#B8860B', '#D4AF37'] as const },
-  dinner: { emoji: '🌙', gradient: ['#D4AF37', '#8B6914'] as const },
+  breakfast: { emoji: '☀️', gradient: ['#F5B731', '#FDD85D'] as const },
+  lunch: { emoji: '🍽️', gradient: ['#1E1456', '#7B2FA0'] as const },
+  snack: { emoji: '🍿', gradient: ['#C41E7A', '#7B2FA0'] as const },
+  dinner: { emoji: '🌙', gradient: ['#7B2FA0', '#1E1456'] as const },
 };
 
-const DAY_COLORS = ['#D4AF37', '#B8860B', '#F6C945', '#E8D28A', '#8B6914', '#C49B2C', '#D4AF37'];
+const DAY_COLORS = ['#1E1456', '#7B2FA0', '#F5B731', '#C41E7A', '#F04E50', '#2D1F6B', '#D9A020'];
 
 // ── Nutrition Ring ──
 function NutritionRing({ label, value, unit, color, size = 64 }: {
   label: string; value: number; unit: string; color: string; size?: number;
 }) {
-  // Override all colors to gold family
-  const goldColor = '#D4AF37';
   return (
     <View style={[nr.container, { width: size + 20 }]}>
-      <View style={[nr.ring, { width: size, height: size, borderColor: 'rgba(212,175,55,0.20)' }]}>
-        <View style={[nr.ringFill, { borderColor: goldColor }]} />
-        <Text style={[nr.value, { color: '#171717' }]}>{value}</Text>
-        <Text style={[nr.unit, { color: 'rgba(212,175,55,0.70)' }]}>{unit}</Text>
+      <View style={[nr.ring, { width: size, height: size, borderColor: 'rgba(30,20,86,0.12)' }]}>
+        <View style={[nr.ringFill, { borderColor: color || '#F5B731' }]} />
+        <Text style={[nr.value, { color: '#1A1A2E' }]}>{value}</Text>
+        <Text style={[nr.unit, { color: 'rgba(123,47,160,0.60)' }]}>{unit}</Text>
       </View>
       <Text style={nr.label}>{label}</Text>
     </View>
@@ -97,21 +95,21 @@ function MealCard({ meal, index, colors, isDark, router }: {
         </View>
 
         <View style={mc.macroRow}>
-          <View style={[mc.macroItem, { backgroundColor: 'rgba(212,175,55,0.06)' }]}>
-            <Text style={[mc.macroValue, { color: '#B8860B' }]}>{meal.protein}g</Text>
+          <View style={[mc.macroItem, { backgroundColor: 'rgba(123,47,160,0.06)' }]}>
+            <Text style={[mc.macroValue, { color: '#7B2FA0' }]}>{meal.protein}g</Text>
             <Text style={[mc.macroLabel, { color: colors.textMuted }]}>Protein</Text>
           </View>
-          <View style={[mc.macroItem, { backgroundColor: 'rgba(212,175,55,0.06)' }]}>
-            <Text style={[mc.macroValue, { color: '#D4AF37' }]}>{meal.carbs}g</Text>
+          <View style={[mc.macroItem, { backgroundColor: 'rgba(245,183,49,0.08)' }]}>
+            <Text style={[mc.macroValue, { color: '#D9A020' }]}>{meal.carbs}g</Text>
             <Text style={[mc.macroLabel, { color: colors.textMuted }]}>Carbs</Text>
           </View>
-          <View style={[mc.macroItem, { backgroundColor: 'rgba(212,175,55,0.06)' }]}>
-            <Text style={[mc.macroValue, { color: '#8B6914' }]}>{meal.fat}g</Text>
+          <View style={[mc.macroItem, { backgroundColor: 'rgba(240,78,80,0.06)' }]}>
+            <Text style={[mc.macroValue, { color: '#F04E50' }]}>{meal.fat}g</Text>
             <Text style={[mc.macroLabel, { color: colors.textMuted }]}>Fat</Text>
           </View>
           {meal.prepTime ? (
-            <View style={[mc.macroItem, { backgroundColor: 'rgba(212,175,55,0.06)' }]}>
-              <Text style={[mc.macroValue, { color: '#D4AF37' }]}>{meal.prepTime}m</Text>
+            <View style={[mc.macroItem, { backgroundColor: 'rgba(30,20,86,0.05)' }]}>
+              <Text style={[mc.macroValue, { color: '#1E1456' }]}>{meal.prepTime}m</Text>
               <Text style={[mc.macroLabel, { color: colors.textMuted }]}>Prep</Text>
             </View>
           ) : null}
@@ -128,7 +126,7 @@ function MealCard({ meal, index, colors, isDark, router }: {
               ))}
             </View>
             {meal.tip ? (
-              <View style={[mc.tipBox, { backgroundColor: 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.15)' }]}>
+              <View style={[mc.tipBox, { backgroundColor: 'rgba(245,183,49,0.06)', borderColor: 'rgba(245,183,49,0.15)' }]}>
                 <Text style={{ fontSize: 12 }}>💡</Text>
                 <Text style={[mc.tipText, { color: colors.textSecondary }]}>{meal.tip}</Text>
               </View>
@@ -136,31 +134,31 @@ function MealCard({ meal, index, colors, isDark, router }: {
 
             {/* Meal Quick Actions */}
             <View style={mc.mealActions}>
-              <Pressable style={[mc.mealActionBtn, { backgroundColor: 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.20)' }]}>
-                <MaterialIcons name="add-shopping-cart" size={14} color="#D4AF37" />
-                <Text style={[mc.mealActionText, { color: '#D4AF37' }]}>Add to Cart</Text>
+              <Pressable style={[mc.mealActionBtn, { backgroundColor: 'rgba(245,183,49,0.08)', borderColor: 'rgba(245,183,49,0.25)' }]}>
+                <MaterialIcons name="add-shopping-cart" size={14} color="#F5B731" />
+                <Text style={[mc.mealActionText, { color: '#D9A020' }]}>Add to Cart</Text>
               </Pressable>
               <Pressable
-                style={[mc.mealActionBtn, { backgroundColor: 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.20)' }]}
+                style={[mc.mealActionBtn, { backgroundColor: 'rgba(123,47,160,0.06)', borderColor: 'rgba(123,47,160,0.20)' }]}
                 onPress={() => { Haptics.selectionAsync(); router.push({ pathname: '/recipe-videos' as any, params: { planData: JSON.stringify({ meals: [meal] }) } }); }}
               >
-                <MaterialIcons name="play-circle" size={14} color="#B8860B" />
-                <Text style={[mc.mealActionText, { color: '#B8860B' }]}>Recipe Video</Text>
+                <MaterialIcons name="play-circle" size={14} color="#7B2FA0" />
+                <Text style={[mc.mealActionText, { color: '#7B2FA0' }]}>Recipe Video</Text>
               </Pressable>
-              <Pressable style={[mc.mealActionBtn, { backgroundColor: 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.20)' }]}>
-                <MaterialIcons name="delivery-dining" size={14} color="#D4AF37" />
-                <Text style={[mc.mealActionText, { color: '#D4AF37' }]}>Order</Text>
+              <Pressable style={[mc.mealActionBtn, { backgroundColor: 'rgba(240,78,80,0.06)', borderColor: 'rgba(240,78,80,0.20)' }]}>
+                <MaterialIcons name="delivery-dining" size={14} color="#F04E50" />
+                <Text style={[mc.mealActionText, { color: '#F04E50' }]}>Order</Text>
               </Pressable>
             </View>
 
             {/* Recipe Video Card */}
             <Pressable
-              style={[mc.recipeVideoCard, { backgroundColor: isDark ? 'rgba(212,175,55,0.06)' : 'rgba(212,175,55,0.04)', borderColor: 'rgba(212,175,55,0.20)' }]}
+              style={[mc.recipeVideoCard, { backgroundColor: isDark ? 'rgba(123,47,160,0.06)' : 'rgba(123,47,160,0.04)', borderColor: 'rgba(123,47,160,0.20)' }]}
               onPress={() => { Haptics.selectionAsync(); router.push({ pathname: '/recipe-videos' as any, params: { planData: JSON.stringify({ meals: [meal] }) } }); }}
             >
               <View style={mc.recipeVideoRow}>
-                <View style={mc.recipeVideoIcon}>
-                  <MaterialIcons name="play-circle-filled" size={28} color="#D4AF37" />
+                <View style={[mc.recipeVideoIcon, { backgroundColor: 'rgba(123,47,160,0.10)' }]}>
+                  <MaterialIcons name="play-circle-filled" size={28} color="#7B2FA0" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[mc.recipeVideoTitle, { color: colors.textPrimary }]}>Watch Master Chef Recipe</Text>
@@ -310,8 +308,8 @@ function WhatNextCard({ planData, activeTab, colors, isDark, router }: {
       title: 'Cook Myself',
       desc: 'Auto grocery cart with ingredients, quantity and estimated cost',
       emoji: '🧑‍🍳',
-      gradient: ['#D4AF37', '#F6C945'] as const,
-      color: '#D4AF37',
+      gradient: ['#F5B731', '#FDD85D'] as const,
+      color: '#F5B731',
       features: [
         { icon: 'shopping-cart' as const, text: 'Auto Grocery Cart' },
         { icon: 'savings' as const, text: 'Save ~15%' },
@@ -324,8 +322,8 @@ function WhatNextCard({ planData, activeTab, colors, isDark, router }: {
       title: 'Book a Cook',
       desc: 'Hire trained home cooks based on cuisine and dish expertise',
       emoji: '👨‍🍳',
-      gradient: ['#B8860B', '#D4AF37'] as const,
-      color: '#B8860B',
+      gradient: ['#1E1456', '#7B2FA0'] as const,
+      color: '#7B2FA0',
       features: [
         { icon: 'verified' as const, text: '100+ Cooks' },
         { icon: 'event' as const, text: 'Day/Week/Month' },
@@ -338,8 +336,8 @@ function WhatNextCard({ planData, activeTab, colors, isDark, router }: {
       title: 'Order Food',
       desc: 'Order similar dishes from restaurant and delivery partners',
       emoji: '🍔',
-      gradient: ['#D4AF37', '#B8860B'] as const,
-      color: '#D4AF37',
+      gradient: ['#F04E50', '#F5B731'] as const,
+      color: '#F04E50',
       features: [
         { icon: 'delivery-dining' as const, text: 'Zomato/Swiggy/ONDC' },
         { icon: 'compare-arrows' as const, text: 'Compare prices' },
@@ -392,12 +390,12 @@ function WhatNextCard({ planData, activeTab, colors, isDark, router }: {
         <Animated.View entering={FadeInDown.delay(550).duration(350)}>
           <Pressable
             style={({ pressed }) => [wn.recipeVideoCard, {
-              backgroundColor: isDark ? 'rgba(212,175,55,0.06)' : 'rgba(212,175,55,0.04)',
-              borderColor: 'rgba(212,175,55,0.25)',
+              backgroundColor: isDark ? 'rgba(123,47,160,0.06)' : 'rgba(123,47,160,0.04)',
+              borderColor: 'rgba(123,47,160,0.25)',
             }, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push({ pathname: '/recipe-videos' as any, params: { planData } }); }}
           >
-            <LinearGradient colors={['#D4AF37', '#B8860B']} style={wn.optionIconSmall}>
+            <LinearGradient colors={['#7B2FA0', '#C41E7A']} style={wn.optionIconSmall}>
               <Text style={{ fontSize: 24 }}>🎬</Text>
             </LinearGradient>
             <View style={{ flex: 1, gap: 3 }}>
@@ -406,16 +404,16 @@ function WhatNextCard({ planData, activeTab, colors, isDark, router }: {
               <View style={wn.featuresInline}>
                 <View style={wn.featureTag}>
                   <Text style={{ fontSize: 9 }}>🪙</Text>
-                  <Text style={[wn.featureText, { color: '#D4AF37' }]}>15-30 tokens</Text>
+                  <Text style={[wn.featureText, { color: '#F5B731' }]}>15-30 tokens</Text>
                 </View>
                 <View style={wn.featureTag}>
-                  <MaterialIcons name="play-circle" size={10} color="#D4AF37" />
-                  <Text style={[wn.featureText, { color: '#D4AF37' }]}>Free preview</Text>
+                  <MaterialIcons name="play-circle" size={10} color="#7B2FA0" />
+                  <Text style={[wn.featureText, { color: '#7B2FA0' }]}>Free preview</Text>
                 </View>
               </View>
             </View>
-            <View style={[wn.optionArrow, { backgroundColor: 'rgba(212,175,55,0.15)' }]}>
-              <MaterialIcons name="arrow-forward" size={16} color="#D4AF37" />
+            <View style={[wn.optionArrow, { backgroundColor: 'rgba(123,47,160,0.12)' }]}>
+              <MaterialIcons name="arrow-forward" size={16} color="#7B2FA0" />
             </View>
           </Pressable>
         </Animated.View>
@@ -431,9 +429,9 @@ function PreferencesSummary({ prefs, colors, isDark, router }: {
   if (!prefs) return null;
 
   const DIET_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
-    veg: { label: 'Vegetarian', emoji: '🥬', color: '#D4AF37' },
-    egg: { label: 'Eggetarian', emoji: '🥚', color: '#B8860B' },
-    nonveg: { label: 'Non-Veg', emoji: '🍗', color: '#8B6914' },
+    veg: { label: 'Vegetarian', emoji: '🥬', color: '#4ADE80' },
+    egg: { label: 'Eggetarian', emoji: '🥚', color: '#F5B731' },
+    nonveg: { label: 'Non-Veg', emoji: '🍗', color: '#F04E50' },
   };
 
   const SPICE_LABELS: Record<number, { label: string; emoji: string }> = {
@@ -450,18 +448,18 @@ function PreferencesSummary({ prefs, colors, isDark, router }: {
 
   const pills: { label: string; color: string; emoji?: string }[] = [
     { label: diet.label, color: diet.color, emoji: diet.emoji },
-    { label: spice.label, color: '#D4AF37', emoji: spice.emoji },
-    { label: budgetLabel, color: '#B8860B', emoji: '💰' },
+    { label: spice.label, color: '#F04E50', emoji: spice.emoji },
+    { label: budgetLabel, color: '#1E1456', emoji: '💰' },
   ];
 
   if (cuisineList.length > 0) {
     const formatted = cuisineList.map((c: string) => c.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())).join(', ');
-    pills.push({ label: formatted, color: '#D4AF37', emoji: '🍛' });
+    pills.push({ label: formatted, color: '#7B2FA0', emoji: '🍛' });
   }
 
   if (prefs.healthGoal && prefs.healthGoal !== 'none' && prefs.healthGoal !== 'balanced') {
     const goalLabel = prefs.healthGoal.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
-    pills.push({ label: goalLabel, color: '#B8860B', emoji: '🎯' });
+    pills.push({ label: goalLabel, color: '#C41E7A', emoji: '🎯' });
   }
 
   return (
@@ -472,10 +470,10 @@ function PreferencesSummary({ prefs, colors, isDark, router }: {
             <Text style={[ps.title, { color: colors.textPrimary }]}>Your Preferences</Text>
           </View>
           <Pressable
-            style={({ pressed }) => [ps.editBtn, { backgroundColor: 'rgba(212,175,55,0.10)', borderColor: 'rgba(212,175,55,0.25)' }, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [ps.editBtn, { backgroundColor: 'rgba(123,47,160,0.08)', borderColor: 'rgba(123,47,160,0.20)' }, pressed && { opacity: 0.7 }]}
             onPress={() => { Haptics.selectionAsync(); router.push('/meal-preferences' as any); }}
           >
-            <MaterialIcons name="edit" size={12} color="#D4AF37" />
+            <MaterialIcons name="edit" size={12} color="#7B2FA0" />
             <Text style={ps.editText}>Edit</Text>
           </Pressable>
         </View>
@@ -647,7 +645,7 @@ export default function AajKhaneScreen() {
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         {/* Header */}
         <LinearGradient
-          colors={['#D4AF37', '#B8860B', '#8B6914']}
+          colors={['#1E1456', '#7B2FA0', '#C41E7A']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={s.header}
@@ -684,7 +682,7 @@ export default function AajKhaneScreen() {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#D4AF37" colors={['#D4AF37']} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#F5B731" colors={['#F5B731']} />}
         >
           {/* ═══ Preferences Summary ═══ */}
           {prefs ? (
@@ -695,7 +693,7 @@ export default function AajKhaneScreen() {
 
           {loading ? (
             <View style={s.loadingWrap}>
-              <ActivityIndicator size="large" color="#D4AF37" />
+              <ActivityIndicator size="large" color="#F5B731" />
               <Text style={[s.loadingText, { color: colors.textMuted }]}>
                 {activeTab === 'today' ? 'Planning your meals for today...' :
                  activeTab === 'weekly' ? 'Creating your weekly meal plan...' :
@@ -721,10 +719,10 @@ export default function AajKhaneScreen() {
                 <Text style={[s.nutritionTitle, { color: colors.textPrimary }]}>Today's Nutrition</Text>
                 <Text style={[s.nutritionDate, { color: colors.textMuted }]}>{todayPlan.date}</Text>
                 <View style={s.nutritionRow}>
-                  <NutritionRing label="Calories" value={todayPlan.totalCalories} unit="kcal" color="#D4AF37" />
-                  <NutritionRing label="Protein" value={todayPlan.totalProtein} unit="g" color="#B8860B" />
-                  <NutritionRing label="Carbs" value={todayPlan.totalCarbs} unit="g" color="#D4AF37" />
-                  <NutritionRing label="Fat" value={todayPlan.totalFat} unit="g" color="#D4AF37" />
+                  <NutritionRing label="Calories" value={todayPlan.totalCalories} unit="kcal" color="#F5B731" />
+                  <NutritionRing label="Protein" value={todayPlan.totalProtein} unit="g" color="#7B2FA0" />
+                  <NutritionRing label="Carbs" value={todayPlan.totalCarbs} unit="g" color="#F04E50" />
+                  <NutritionRing label="Fat" value={todayPlan.totalFat} unit="g" color="#1E1456" />
                 </View>
               </Animated.View>
               <View style={s.mealList}>
@@ -803,7 +801,7 @@ export default function AajKhaneScreen() {
                 style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
                 onPress={() => { setCoinAwarded(prev => { const n = new Set(prev); n.delete(activeTab); return n; }); fetchPlan(activeTab); }}
               >
-                <LinearGradient colors={['#D4AF37', '#FFD700']} style={s.regenerateBtn}>
+                <LinearGradient colors={['#F5B731', '#FDD85D']} style={s.regenerateBtn}>
                   <MaterialIcons name="auto-awesome" size={18} color="#FFF" />
                   <Text style={s.regenerateText}>Regenerate Plan</Text>
                 </LinearGradient>
@@ -812,7 +810,7 @@ export default function AajKhaneScreen() {
                 style={({ pressed }) => [s.chatLink, pressed && { opacity: 0.7 }]}
                 onPress={() => { Haptics.selectionAsync(); router.push('/ai-meal-chat' as any); }}
               >
-                <MaterialIcons name="chat" size={16} color="#D4AF37" />
+                <MaterialIcons name="chat" size={16} color="#7B2FA0" />
                 <Text style={s.chatLinkText}>Or chat with AI to customize your plan</Text>
               </Pressable>
             </Animated.View>
@@ -832,17 +830,17 @@ const s = StyleSheet.create({
   headerTitle: { fontSize: 22, fontWeight: '900', color: '#FFF', letterSpacing: -0.3 },
   headerSub: { fontSize: 12, fontWeight: '500', color: 'rgba(255,255,255,0.85)', marginTop: 2 },
   tabRow: { flexDirection: 'row', gap: 8 },
-  tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 10, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.15)' },
-  tabActive: { backgroundColor: 'rgba(255,255,255,0.95)' },
+  tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 10, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.12)' },
+  tabActive: { backgroundColor: '#F5B731' },
   tabLabel: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.85)' },
-  tabLabelActive: { color: '#D4AF37' },
+  tabLabelActive: { color: '#1E1456' },
   loadingWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 12 },
   loadingText: { fontSize: 15, fontWeight: '600' },
   loadingHint: { fontSize: 12, fontWeight: '500' },
   errorWrap: { margin: 20, padding: 30, borderRadius: 20, borderWidth: 1, alignItems: 'center', gap: 10 },
   errorTitle: { fontSize: 16, fontWeight: '700' },
   errorSub: { fontSize: 13, fontWeight: '500', textAlign: 'center' },
-  retryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, marginTop: 8 },
+  retryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, marginTop: 8, overflow: 'hidden' },
   retryText: { fontSize: 14, fontWeight: '700', color: '#FFF' },
   content: { padding: 20, gap: 16 },
   nutritionCard: { padding: 20, borderRadius: 20, borderWidth: 1, gap: 12 },
@@ -854,14 +852,14 @@ const s = StyleSheet.create({
   weeklyHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   weeklyTitle: { fontSize: 18, fontWeight: '800' },
   weeklyRange: { fontSize: 12, fontWeight: '500', marginTop: 2 },
-  avgCalBadge: { alignItems: 'center', backgroundColor: 'rgba(212,175,55,0.08)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12 },
-  avgCalValue: { fontSize: 20, fontWeight: '900', color: '#D4AF37' },
-  avgCalLabel: { fontSize: 9, fontWeight: '600', color: '#D4AF37' },
+  avgCalBadge: { alignItems: 'center', backgroundColor: 'rgba(245,183,49,0.10)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12 },
+  avgCalValue: { fontSize: 20, fontWeight: '900', color: '#F5B731' },
+  avgCalLabel: { fontSize: 9, fontWeight: '600', color: '#D9A020' },
   dayList: { gap: 10 },
   monthlyHeader: { padding: 20, borderRadius: 20, borderWidth: 1, gap: 14 },
   monthlyTitle: { fontSize: 18, fontWeight: '800' },
   monthlyStatsRow: { flexDirection: 'row', gap: 10 },
-  monthlyStatItem: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 10, borderRadius: 14, backgroundColor: 'rgba(212,175,55,0.06)' },
+  monthlyStatItem: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 10, borderRadius: 14, backgroundColor: 'rgba(30,20,86,0.04)' },
   monthlyStatEmoji: { fontSize: 18 },
   monthlyStatValue: { fontSize: 16, fontWeight: '900' },
   monthlyStatLabel: { fontSize: 9, fontWeight: '600' },
@@ -871,7 +869,7 @@ const s = StyleSheet.create({
   regenerateBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 16 },
   regenerateText: { fontSize: 16, fontWeight: '800', color: '#FFF' },
   chatLink: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  chatLinkText: { fontSize: 13, fontWeight: '600', color: '#D4AF37' },
+  chatLinkText: { fontSize: 13, fontWeight: '600', color: '#7B2FA0' },
 });
 
 const ps = StyleSheet.create({
@@ -882,7 +880,7 @@ const ps = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1,
   },
-  editText: { fontSize: 11, fontWeight: '700', color: '#D4AF37' },
+  editText: { fontSize: 11, fontWeight: '700', color: '#7B2FA0' },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   pill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -933,8 +931,8 @@ const mc = StyleSheet.create({
   mealName: { fontSize: 16, fontWeight: '800', marginTop: 1 },
   mealDesc: { fontSize: 12, fontWeight: '500', marginTop: 2, lineHeight: 17 },
   calBadge: { alignItems: 'center' },
-  calValue: { fontSize: 18, fontWeight: '900', color: '#D4AF37' },
-  calUnit: { fontSize: 9, fontWeight: '600', color: '#D4AF37' },
+  calValue: { fontSize: 18, fontWeight: '900', color: '#F5B731' },
+  calUnit: { fontSize: 9, fontWeight: '600', color: '#D9A020' },
   macroRow: { flexDirection: 'row', gap: 8 },
   macroItem: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 8, borderRadius: 10 },
   macroValue: { fontSize: 13, fontWeight: '800' },
@@ -955,15 +953,15 @@ const mc = StyleSheet.create({
   mealActionText: { fontSize: 10, fontWeight: '700' },
   recipeVideoCard: { padding: 12, borderRadius: 14, borderWidth: 1, marginTop: 6, gap: 6 },
   recipeVideoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  recipeVideoIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(212,175,55,0.10)', alignItems: 'center', justifyContent: 'center' },
+  recipeVideoIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   recipeVideoTitle: { fontSize: 13, fontWeight: '800' },
   recipeVideoSub: { fontSize: 11, fontWeight: '500' },
   recipeTokenBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
-    backgroundColor: 'rgba(212,175,55,0.10)',
+    backgroundColor: 'rgba(245,183,49,0.10)',
   },
-  recipeTokenText: { fontSize: 12, fontWeight: '900', color: '#D4AF37' },
+  recipeTokenText: { fontSize: 12, fontWeight: '900', color: '#F5B731' },
   recipeVideoHint: { fontSize: 10, fontWeight: '500' },
 });
 
@@ -976,7 +974,7 @@ const wd = StyleSheet.create({
   mealPreview: { gap: 1, marginTop: 2 },
   mealPreviewText: { fontSize: 10, fontWeight: '500' },
   calColumn: { alignItems: 'center' },
-  calValue: { fontSize: 16, fontWeight: '900', color: '#D4AF37' },
+  calValue: { fontSize: 16, fontWeight: '900', color: '#F5B731' },
   calLabel: { fontSize: 8, fontWeight: '600' },
   expanded: { paddingTop: 12, marginTop: 10, borderTopWidth: 1, gap: 8 },
   mealRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -993,10 +991,10 @@ const mw = StyleSheet.create({
   theme: { fontSize: 15, fontWeight: '800' },
   focus: { fontSize: 11, fontWeight: '500', marginTop: 1 },
   costBadge: { alignItems: 'center' },
-  costValue: { fontSize: 16, fontWeight: '900', color: '#D4AF37' },
+  costValue: { fontSize: 16, fontWeight: '900', color: '#F5B731' },
   costLabel: { fontSize: 8, fontWeight: '600' },
   statsRow: { flexDirection: 'row', gap: 10 },
-  statItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12 },
+  statItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: 'rgba(30,20,86,0.04)' },
   statEmoji: { fontSize: 16 },
   statValue: { fontSize: 14, fontWeight: '800' },
   statLabel: { fontSize: 9, fontWeight: '600' },

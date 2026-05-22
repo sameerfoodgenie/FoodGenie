@@ -1,142 +1,169 @@
-// FoodGenie Design System
-// Premium Luxury Gold + White/Warm Cream — Clean, Minimal, Food-Focused
+// FoodGenie Design System — "Sunset" Palette
+// Deep Royal Purple + Purple + Magenta + Coral + Golden Yellow
+// Premium, Energetic, Modern, Food-Tech + AI + Creator Economy
 
 export const theme = {
-  // Primary - Luxury Gold Family
-  primary: '#D4AF37',
-  primaryLight: '#F6C945',
-  primaryDark: '#B8860B',
+  // Sunset Palette Core
+  sunset: {
+    navy: '#1E1456',        // Deep Royal Purple / Navy Purple
+    purple: '#7B2FA0',      // Purple — AI, secondary highlights
+    magenta: '#C41E7A',     // Magenta / Pink Purple — creator, rewards, energy
+    coral: '#F04E50',       // Coral Red — urgency, streaks, hot/trending
+    gold: '#F5B731',        // Golden Yellow — main CTA, coins, food highlight
+  },
 
-  // Accent - Warm Gold tones
-  accent: '#E8D28A',
-  accentLight: '#FFF3C4',
-  accentDark: '#B8860B',
+  // Primary — Golden Yellow (main CTA, food colour, coin/token)
+  primary: '#F5B731',
+  primaryLight: '#FDD85D',
+  primaryDark: '#D9A020',
 
-  // Semantic (muted, gold-tinted)
-  success: '#B8860B',
-  warning: '#D4AF37',
-  error: '#C45C3A',
+  // Premium — Deep Royal Purple (headers, premium sections, dark luxury)
+  premium: '#1E1456',
+  premiumLight: '#2D1F6B',
+  premiumMid: '#7B2FA0',
 
-  // Backgrounds - Warm Cream + White
-  background: '#FFF9E8',
+  // Accent — Coral + Magenta (sparingly)
+  coral: '#F04E50',
+  magenta: '#C41E7A',
+  purple: '#7B2FA0',
+
+  // Semantic
+  success: '#4ADE80',
+  warning: '#F5B731',
+  error: '#F04E50',
+
+  // Backgrounds — Clean white / warm cream
+  background: '#FFFDF8',
   backgroundWhite: '#FFFFFF',
-  backgroundSecondary: '#FFFDF5',
-  backgroundTertiary: '#FFF5D6',
+  backgroundSecondary: '#FFF9F0',
+  backgroundTertiary: '#FFF3E0',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
 
   // Text
-  textPrimary: '#171717',
-  textSecondary: '#7A7A7A',
-  textMuted: '#A3A3A3',
+  textPrimary: '#1A1A2E',
+  textSecondary: '#5A5A72',
+  textMuted: '#9A9AB0',
   textOnPrimary: '#FFFFFF',
+  textOnDark: '#FFFFFF',
 
   // Borders
-  border: '#E8D28A',
-  borderLight: 'rgba(212,175,55,0.15)',
-  borderGold: 'rgba(212,175,55,0.30)',
+  border: '#F0E8DC',
+  borderLight: 'rgba(30,20,86,0.08)',
+  borderGold: 'rgba(245,183,49,0.30)',
+  borderPurple: 'rgba(123,47,160,0.20)',
 
   // Glass
   glass: {
     bg: 'rgba(255,255,255,0.92)',
-    bgLight: 'rgba(255,249,232,0.85)',
-    border: 'rgba(232,210,138,0.40)',
-    borderGold: 'rgba(212,175,55,0.25)',
+    bgLight: 'rgba(255,253,248,0.85)',
+    border: 'rgba(240,232,220,0.60)',
+    borderGold: 'rgba(245,183,49,0.25)',
   },
 
-  // Gradients - Gold family only
+  // Gradients — Sunset palette combinations
   gradients: {
-    gold: ['#D4AF37', '#F6C945'],
-    goldReverse: ['#F6C945', '#D4AF37'],
-    goldShine: ['#FFF3C4', '#F6C945', '#D4AF37', '#B8860B'],
-    goldSubtle: ['rgba(212,175,55,0.08)', 'rgba(246,201,69,0.03)'],
-    goldVibrant: ['#F6C945', '#D4AF37', '#B8860B'],
-    goldDeep: ['#B8860B', '#D4AF37'],
-    goldPremium: ['#D4AF37', '#B8860B'],
-    goldLight: ['#FFF9E8', '#FFF3C4'],
-    accent: ['#D4AF37', '#B8860B'],
-    trust: ['#D4AF37', '#B8860B'],
-    background: ['#FFF9E8', '#FFFFFF'],
-    vibrant: ['#F6C945', '#D4AF37', '#B8860B'],
-    card: ['#FFFFFF', '#FFFDF5'],
-    cardGlass: ['rgba(255,255,255,0.95)', 'rgba(255,249,232,0.90)'],
-    premium: ['#D4AF37', '#F6C945'],
-    glass: ['rgba(255,249,232,0.95)', 'rgba(255,255,255,0.98)'],
-    cameraBtn: ['#D4AF37', '#F6C945'],
-    darkOverlay: ['transparent', 'rgba(23,23,23,0.70)'],
-    heroOverlay: ['rgba(0,0,0,0.0)', 'rgba(0,0,0,0.20)', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.80)'],
-    // Feature banner - gold only
-    featurePrimary: ['#D4AF37', '#F6C945', '#B8860B'],
-    featureSecondary: ['#B8860B', '#D4AF37', '#F6C945'],
+    // Main Sunset hero gradient
+    sunset: ['#1E1456', '#7B2FA0', '#C41E7A', '#F04E50', '#F5B731'],
+    sunsetShort: ['#1E1456', '#C41E7A', '#F5B731'],
+    sunsetWarm: ['#7B2FA0', '#F04E50', '#F5B731'],
+
+    // Gold-focused
+    gold: ['#F5B731', '#FDD85D'],
+    goldReverse: ['#FDD85D', '#F5B731'],
+    goldDeep: ['#D9A020', '#F5B731'],
+    goldPremium: ['#F5B731', '#D9A020'],
+
+    // Purple/Premium
+    premiumDark: ['#1E1456', '#2D1F6B'],
+    premiumPurple: ['#1E1456', '#7B2FA0'],
+    premiumGlow: ['#2D1F6B', '#7B2FA0', '#C41E7A'],
+
+    // Feature cards
+    featurePrimary: ['#1E1456', '#7B2FA0', '#F04E50'],
+    featureSecondary: ['#2D1F6B', '#7B2FA0'],
+    featureAI: ['#1E1456', '#7B2FA0'],
+
+    // Coral/Energy
+    coral: ['#F04E50', '#FF6B6B'],
+    coralGold: ['#F04E50', '#F5B731'],
+
+    // Magenta/Creator
+    magenta: ['#C41E7A', '#E84BA5'],
+    magentaPurple: ['#7B2FA0', '#C41E7A'],
+
+    // Utility
+    background: ['#FFFDF8', '#FFFFFF'],
+    card: ['#FFFFFF', '#FFFDF8'],
+    cardGlass: ['rgba(255,255,255,0.95)', 'rgba(255,253,248,0.90)'],
+    darkOverlay: ['transparent', 'rgba(30,20,86,0.75)'],
+    heroOverlay: ['rgba(0,0,0,0.0)', 'rgba(30,20,86,0.20)', 'rgba(30,20,86,0.55)', 'rgba(30,20,86,0.80)'],
+
     // Legacy compat
-    genie: ['#D4AF37', '#F6C945', '#B8860B'],
-    genieReverse: ['#B8860B', '#F6C945', '#D4AF37'],
-    sunset: ['#D4AF37', '#B8860B', '#8B6914'],
+    accent: ['#F5B731', '#D9A020'],
+    trust: ['#1E1456', '#7B2FA0'],
+    vibrant: ['#7B2FA0', '#F04E50', '#F5B731'],
+    premium: ['#1E1456', '#7B2FA0'],
+    cameraBtn: ['#F5B731', '#FDD85D'],
+    glass: ['rgba(255,253,248,0.95)', 'rgba(255,255,255,0.98)'],
   },
 
   // Shadows
   shadows: {
     card: {
-      shadowColor: '#B8860B',
+      shadowColor: '#1E1456',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.06,
       shadowRadius: 12,
       elevation: 3,
     },
     cardElevated: {
-      shadowColor: '#B8860B',
+      shadowColor: '#1E1456',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.10,
       shadowRadius: 20,
       elevation: 6,
     },
     goldGlow: {
-      shadowColor: '#D4AF37',
+      shadowColor: '#F5B731',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.22,
       shadowRadius: 16,
       elevation: 6,
     },
+    purpleGlow: {
+      shadowColor: '#7B2FA0',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.18,
+      shadowRadius: 14,
+      elevation: 5,
+    },
     heavy: {
-      shadowColor: '#B8860B',
+      shadowColor: '#1E1456',
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.12,
       shadowRadius: 24,
       elevation: 10,
     },
     colored: {
-      shadowColor: '#D4AF37',
+      shadowColor: '#F5B731',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.14,
       shadowRadius: 10,
       elevation: 4,
     },
-    neonGold: {
-      shadowColor: '#F6C945',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.20,
-      shadowRadius: 16,
-      elevation: 6,
-    },
     subtle: {
-      shadowColor: '#B8860B',
+      shadowColor: '#1E1456',
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.04,
       shadowRadius: 6,
       elevation: 2,
     },
     genie: {
-      shadowColor: '#D4AF37',
+      shadowColor: '#7B2FA0',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.15,
       shadowRadius: 12,
-      elevation: 5,
-    },
-    neonGreen: {
-      shadowColor: '#D4AF37',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.18,
-      shadowRadius: 14,
       elevation: 5,
     },
   },
