@@ -41,7 +41,7 @@ function GlowingPlusButton({ focused }: { focused: boolean }) {
     <View style={styles.postTabWrap}>
       <Animated.View style={[styles.glowRing, glowStyle]} />
       <LinearGradient
-        colors={focused ? ['#FFD700', '#D4AF37'] : ['#F4F4F8', '#ECECF0']}
+        colors={focused ? ['#D4AF37', '#B8860B'] : ['#FFFDF5', '#FFF9E8']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.postTabBtn}
@@ -89,9 +89,9 @@ export default function TabLayout() {
     backgroundColor: colors.tabBarBg,
     borderTopWidth: 1,
     borderTopColor: colors.tabBarBorder,
-    shadowColor: '#000',
+    shadowColor: '#B8860B',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 8,
   };
@@ -102,8 +102,8 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: '#D4AF37',
+        tabBarInactiveTintColor: '#A3A3A3',
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: '700',
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 20,
-    backgroundColor: 'rgba(212,175,55,0.18)',
+    backgroundColor: 'rgba(212,175,55,0.15)',
   },
   postTabBtn: {
     width: 52,
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(212,175,55,0.25)',
+    borderColor: 'rgba(212,175,55,0.30)',
     shadowColor: '#D4AF37',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.20,

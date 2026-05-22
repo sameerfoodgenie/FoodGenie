@@ -33,7 +33,6 @@ import {
 } from '../../services/subscriptionService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const SERVICE_CARD_W = (SCREEN_W - 52) / 2;
 
 const MEAL_EMOJI: Record<string, string> = { breakfast: '☀️', lunch: '🍽', dinner: '🌙', snack: '🍿' };
 
@@ -44,7 +43,7 @@ const FEATURE_BANNERS = [
     title: 'Aaj Khane Me Kya Hai? 🤔',
     subtitle: 'AI-powered meal plan from breakfast to dinner — with calories, nutrition & weekly/monthly planner',
     cta: 'See Today\'s Plan',
-    gradient: ['#FF6B6B', '#FF8E53', '#FFB347'] as const,
+    gradient: ['#D4AF37', '#B8860B'] as const,
     icon: 'restaurant' as const,
     accentEmoji: '🍛',
     route: '/meal-preferences',
@@ -54,14 +53,12 @@ const FEATURE_BANNERS = [
     title: 'Let AI Plan Your Meals 🧠',
     subtitle: 'Chat with AI to plan daily, weekly & monthly meals — plus get grocery budget estimates',
     cta: 'Chat Now',
-    gradient: ['#6C3CE0', '#8B5CF6', '#B794F4'] as const,
+    gradient: ['#B8860B', '#D4AF37'] as const,
     icon: 'auto-awesome' as const,
     accentEmoji: '💬',
     route: '/ai-meal-chat',
   },
 ];
-
-
 
 // ── Service cards ──
 const SERVICE_CARDS = [
@@ -70,7 +67,6 @@ const SERVICE_CARDS = [
     title: 'Book a Cook',
     subtitle: 'Hire trained home cooks',
     emoji: '👨‍🍳',
-    iconBg: '#FF6B6B',
     route: '/(tabs)/cook',
   },
   {
@@ -78,7 +74,6 @@ const SERVICE_CARDS = [
     title: 'Smart Grocery',
     subtitle: 'Plan meals and buy without overspending',
     emoji: '🛒',
-    iconBg: '#4ADE80',
     route: '/(tabs)/grocery',
   },
   {
@@ -86,18 +81,17 @@ const SERVICE_CARDS = [
     title: 'Order Food',
     subtitle: 'Compare and order from food partners',
     emoji: '🍔',
-    iconBg: '#FB923C',
     route: '/partner-apps',
   },
 ];
 
 // ── Quick action items ──
 const QUICK_ACTIONS = [
-  { id: 'redeem', emoji: '🎁', label: 'Redeem Coins', color: '#D4AF37', route: '/coin-redeem' },
-  { id: 'tokens', emoji: '✨', label: 'AI Tokens', color: '#FFD700', route: '/subscription' },
-  { id: 'trending', emoji: '🔥', label: 'Trending', color: '#FF6B6B', route: '/explore' },
-  { id: 'shows', emoji: '🎬', label: 'Shows', color: '#22D3EE', route: '/shows' },
-  { id: 'chefs', emoji: '👨‍🍳', label: 'Master Chefs', color: '#F59E0B', route: '/(tabs)/master-chefs' },
+  { id: 'redeem', emoji: '🎁', label: 'Redeem Coins', route: '/coin-redeem' },
+  { id: 'tokens', emoji: '✨', label: 'AI Tokens', route: '/subscription' },
+  { id: 'trending', emoji: '🔥', label: 'Trending', route: '/explore' },
+  { id: 'shows', emoji: '🎬', label: 'Shows', route: '/shows' },
+  { id: 'chefs', emoji: '👨‍🍳', label: 'Master Chefs', route: '/(tabs)/master-chefs' },
 ];
 
 // ── Subscription Status Widget ──
@@ -109,8 +103,6 @@ function SubscriptionWidget({ subscription, colors, isDark, router }: {
   const isTrial = subscription?.is_trial_active && trialDays > 0;
   const isFreePlan = !subscription || subscription.subscription_status === 'inactive' || subscription.subscription_status === 'expired';
   const planInfo = SUBSCRIPTION_PLANS.find(p => p.id === subscription?.plan_name);
-
-  // Don't show if user has active paid subscription
   const showUpgradeCta = isFreePlan || isTrial;
 
   return (
@@ -119,8 +111,8 @@ function SubscriptionWidget({ subscription, colors, isDark, router }: {
         style={({ pressed }) => [
           s.subWidget,
           {
-            backgroundColor: isDark ? 'rgba(212,175,55,0.06)' : 'rgba(212,175,55,0.04)',
-            borderColor: isDark ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.12)',
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
           },
           pressed && { opacity: 0.92 },
         ]}
@@ -215,8 +207,6 @@ export default function HomeScreen() {
   const { colors, isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-
-
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
 
   useEffect(() => {
@@ -225,8 +215,6 @@ export default function HomeScreen() {
       loadSubscription(user.id).then(sub => { if (sub) setSubscription(sub); });
     }
   }, [user?.id]);
-
-
 
   const name = profile?.full_name || user?.username || 'Food Lover';
   const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -262,7 +250,7 @@ export default function HomeScreen() {
               onPress={() => { Haptics.selectionAsync(); router.push('/(tabs)/profile'); }}
               style={({ pressed }) => [s.topBarLeft, pressed && { opacity: 0.8 }]}
             >
-              <LinearGradient colors={['#D4AF37', '#FFD700']} style={s.avatar}>
+              <LinearGradient colors={['#D4AF37', '#B8860B']} style={s.avatar}>
                 <Text style={s.avatarText}>{initials}</Text>
               </LinearGradient>
               <View style={{ flex: 1 }}>
@@ -280,7 +268,7 @@ export default function HomeScreen() {
                 <Text style={s.coinPillText}>{balance}</Text>
               </Pressable>
               <Pressable
-                style={[s.iconBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }]}
+                style={[s.iconBtn, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }]}
                 onPress={() => { Haptics.selectionAsync(); router.push('/notifications'); }}
               >
                 <MaterialIcons name="notifications-none" size={22} color={colors.textPrimary} />
@@ -295,15 +283,15 @@ export default function HomeScreen() {
           <Animated.View entering={FadeInDown.delay(60).duration(300)}>
             <Pressable
               style={[s.searchBar, {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F5F5F5',
-                borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#EBEBEB',
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
               }]}
               onPress={() => { Haptics.selectionAsync(); router.push('/explore'); }}
             >
-              <MaterialIcons name="search" size={22} color={colors.textMuted} />
+              <MaterialIcons name="search" size={22} color="#D4AF37" />
               <Text style={[s.searchPlaceholder, { color: colors.textMuted }]}>Search food, chefs, recipes...</Text>
               <View style={[s.searchDivider, { backgroundColor: colors.border }]} />
-              <MaterialIcons name="mic" size={20} color={colors.textMuted} />
+              <MaterialIcons name="mic" size={20} color="#D4AF37" />
             </Pressable>
           </Animated.View>
         </View>
@@ -313,7 +301,7 @@ export default function HomeScreen() {
           <SubscriptionWidget subscription={subscription} colors={colors} isDark={isDark} router={router} />
         ) : null}
 
-        {/* ═══════ Feature Banners (Top) ═══════ */}
+        {/* ═══════ Feature Banners ═══════ */}
         <View style={s.featureSection}>
           <Animated.View entering={FadeIn.delay(80).duration(300)} style={s.featureSectionHeader}>
             <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>For You</Text>
@@ -338,9 +326,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-
-
-        {/* ═══════ Main Service Cards (Book a Cook / Smart Grocery) ═══════ */}
+        {/* ═══════ Main Service Cards ═══════ */}
         <View style={s.serviceSection}>
           <Animated.View entering={FadeInDown.delay(160).duration(350)} style={s.serviceSectionHeader}>
             <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>What would you like?</Text>
@@ -354,21 +340,21 @@ export default function HomeScreen() {
                     {
                       backgroundColor: colors.surface,
                       borderColor: colors.border,
-                      shadowColor: isDark ? '#000' : 'rgba(0,0,0,0.08)',
+                      shadowColor: '#B8860B',
                     },
                     pressed && { opacity: 0.92, transform: [{ scale: 0.97 }] },
                   ]}
                   onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push(card.route as any); }}
                 >
-                  <View style={[s.serviceIconWrap, { backgroundColor: `${card.iconBg}15` }]}>
+                  <View style={s.serviceIconWrap}>
                     <Text style={{ fontSize: 30 }}>{card.emoji}</Text>
                   </View>
                   <View style={s.serviceTextWrap}>
                     <View style={s.serviceTitleRow}>
                       <Text style={[s.serviceTitle, { color: colors.textPrimary }]}>{card.title}</Text>
-                      <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
+                      <MaterialIcons name="chevron-right" size={20} color="#D4AF37" />
                     </View>
-                    <Text style={[s.serviceSubtitle, { color: colors.textMuted }]}>{card.subtitle}</Text>
+                    <Text style={[s.serviceSubtitle, { color: colors.textSecondary }]}>{card.subtitle}</Text>
                   </View>
                 </Pressable>
               </Animated.View>
@@ -395,7 +381,7 @@ export default function HomeScreen() {
                     router.push(action.route as any);
                   }}
                 >
-                  <View style={[s.quickItemIcon, { backgroundColor: `${action.color}12` }]}>
+                  <View style={s.quickItemIcon}>
                     <Text style={{ fontSize: 22 }}>{action.emoji}</Text>
                   </View>
                   <Text style={[s.quickItemLabel, { color: colors.textSecondary }]} numberOfLines={1}>{action.label}</Text>
@@ -404,8 +390,6 @@ export default function HomeScreen() {
             ))}
           </View>
         </View>
-
-
 
         {/* ═══════ Community Feed Preview ═══════ */}
         {feedPosts.length > 0 ? (
@@ -422,7 +406,7 @@ export default function HomeScreen() {
                   <Pressable
                     style={({ pressed }) => [
                       s.feedCard,
-                      { backgroundColor: colors.surface },
+                      { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
                       pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
                     ]}
                     onPress={() => { Haptics.selectionAsync(); router.push({ pathname: '/food-detail', params: { postId: post.id } }); }}
@@ -434,12 +418,12 @@ export default function HomeScreen() {
                         <Text style={{ fontSize: 28 }}>{MEAL_EMOJI[post.mealType] || '🍽'}</Text>
                       </View>
                     )}
-                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.75)']} style={s.feedCardOverlay}>
+                    <LinearGradient colors={['transparent', 'rgba(23,23,23,0.75)']} style={s.feedCardOverlay}>
                       <Text style={s.feedCardDish} numberOfLines={1}>{post.dishName}</Text>
                       <Text style={s.feedCardUser} numberOfLines={1}>@{post.username}</Text>
                     </LinearGradient>
                     <View style={s.feedCardLikes}>
-                      <MaterialIcons name="favorite" size={11} color="#FFD700" />
+                      <MaterialIcons name="favorite" size={11} color="#D4AF37" />
                       <Text style={s.feedCardLikesText}>{post.likes}</Text>
                     </View>
                   </Pressable>
@@ -460,17 +444,17 @@ export default function HomeScreen() {
 
       {/* ═══════ Meal Picker Modal ═══════ */}
       <Modal visible={mealPickerVisible} transparent animationType="fade" onRequestClose={() => setMealPickerVisible(false)}>
-        <Pressable style={[s.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.50)' }]} onPress={() => setMealPickerVisible(false)}>
+        <Pressable style={[s.modalOverlay, { backgroundColor: 'rgba(23,23,23,0.50)' }]} onPress={() => setMealPickerVisible(false)}>
           <Pressable style={[s.mealSheet, { backgroundColor: colors.surface }]} onPress={(e) => e.stopPropagation()}>
             <View style={[s.mealHandle, { backgroundColor: colors.border }]} />
             <Text style={[s.mealTitle, { color: colors.textPrimary }]}>Add a Meal</Text>
             <Text style={[s.mealSub, { color: colors.textMuted }]}>What are you logging?</Text>
             <View style={s.mealGrid}>
               {[
-                { id: 'breakfast', label: 'Breakfast', emoji: '☀️', color: '#FFB347' },
-                { id: 'lunch', label: 'Lunch', emoji: '🍽', color: '#4ADE80' },
-                { id: 'dinner', label: 'Dinner', emoji: '🌙', color: '#818CF8' },
-                { id: 'snack', label: 'Snack', emoji: '🍿', color: '#FB923C' },
+                { id: 'breakfast', label: 'Breakfast', emoji: '☀️' },
+                { id: 'lunch', label: 'Lunch', emoji: '🍽' },
+                { id: 'dinner', label: 'Dinner', emoji: '🌙' },
+                { id: 'snack', label: 'Snack', emoji: '🍿' },
               ].map(mt => (
                 <Pressable
                   key={mt.id}
@@ -481,7 +465,7 @@ export default function HomeScreen() {
                   ]}
                   onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleMealTypeSelect(mt.id); }}
                 >
-                  <View style={[s.mealEmojiBg, { backgroundColor: `${mt.color}18` }]}>
+                  <View style={s.mealEmojiBg}>
                     <Text style={{ fontSize: 30 }}>{mt.emoji}</Text>
                   </View>
                   <Text style={[s.mealItemLabel, { color: colors.textPrimary }]}>{mt.label}</Text>
@@ -516,14 +500,14 @@ const s = StyleSheet.create({
   coinPill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
-    backgroundColor: 'rgba(212,175,55,0.10)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.20)',
+    backgroundColor: 'rgba(212,175,55,0.10)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)',
   },
   coinPillText: { fontSize: 13, fontWeight: '900', color: '#D4AF37' },
   iconBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   notifDot: {
     position: 'absolute', top: -1, right: -1,
     minWidth: 16, height: 16, borderRadius: 8,
-    backgroundColor: '#FF3B30', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3,
+    backgroundColor: '#D4AF37', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3,
   },
   notifDotText: { fontSize: 9, fontWeight: '800', color: '#FFF' },
 
@@ -549,9 +533,9 @@ const s = StyleSheet.create({
   subWidgetTrialBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
-    backgroundColor: 'rgba(74,222,128,0.10)',
+    backgroundColor: 'rgba(212,175,55,0.10)',
   },
-  subWidgetTrialText: { fontSize: 10, fontWeight: '700', color: '#4ADE80' },
+  subWidgetTrialText: { fontSize: 10, fontWeight: '700', color: '#B8860B' },
   subWidgetPlanBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
@@ -561,17 +545,15 @@ const s = StyleSheet.create({
   subWidgetFreeBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
-    backgroundColor: 'rgba(156,163,175,0.10)',
+    backgroundColor: 'rgba(163,163,163,0.10)',
   },
-  subWidgetFreeText: { fontSize: 10, fontWeight: '700', color: '#9CA3AF' },
+  subWidgetFreeText: { fontSize: 10, fontWeight: '700', color: '#A3A3A3' },
   subWidgetCta: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10,
     backgroundColor: '#D4AF37',
   },
   subWidgetCtaText: { fontSize: 11, fontWeight: '800', color: '#FFF' },
-
-
 
   /* ── Service Cards ── */
   serviceSection: { paddingHorizontal: 20, paddingTop: 22 },
@@ -580,10 +562,11 @@ const s = StyleSheet.create({
   serviceCard: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     padding: 16, borderRadius: 18, borderWidth: 1,
-    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
+    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 3,
   },
   serviceIconWrap: {
     width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(212,175,55,0.08)',
   },
   serviceTextWrap: { flex: 1, gap: 2 },
   serviceTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -597,7 +580,7 @@ const s = StyleSheet.create({
     width: (SCREEN_W - 60) / 3, alignItems: 'center', gap: 8,
     paddingVertical: 16, borderRadius: 18, borderWidth: 1,
   },
-  quickItemIcon: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  quickItemIcon: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(212,175,55,0.08)' },
   quickItemLabel: { fontSize: 11, fontWeight: '700', textAlign: 'center' },
 
   /* ── Section Title ── */
@@ -620,7 +603,7 @@ const s = StyleSheet.create({
   },
   featureTextArea: { flex: 1, gap: 6 },
   featureTitle: { fontSize: 18, fontWeight: '900', color: '#FFF', letterSpacing: -0.3 },
-  featureSubtitle: { fontSize: 12, fontWeight: '500', color: 'rgba(255,255,255,0.85)', lineHeight: 17 },
+  featureSubtitle: { fontSize: 12, fontWeight: '500', color: 'rgba(255,255,255,0.88)', lineHeight: 17 },
   featureCta: {
     flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
     marginTop: 6, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
@@ -636,9 +619,9 @@ const s = StyleSheet.create({
   streakBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10,
-    backgroundColor: 'rgba(255,107,107,0.08)', borderWidth: 1, borderColor: 'rgba(255,107,107,0.15)',
+    backgroundColor: 'rgba(212,175,55,0.10)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.20)',
   },
-  streakText: { fontSize: 11, fontWeight: '700', color: '#FF6B6B' },
+  streakText: { fontSize: 11, fontWeight: '700', color: '#D4AF37' },
 
   /* ── Feed ── */
   feedSection: { paddingTop: 24 },
@@ -661,7 +644,7 @@ const s = StyleSheet.create({
     position: 'absolute', top: 8, right: 8,
     flexDirection: 'row', alignItems: 'center', gap: 3,
     paddingHorizontal: 6, paddingVertical: 3, borderRadius: 8,
-    backgroundColor: 'rgba(0,0,0,0.40)',
+    backgroundColor: 'rgba(23,23,23,0.40)',
   },
   feedCardLikesText: { fontSize: 9, fontWeight: '700', color: '#FFF' },
 
@@ -678,7 +661,7 @@ const s = StyleSheet.create({
   mealItem: {
     flex: 1, alignItems: 'center', gap: 8, paddingVertical: 18, borderRadius: 16, borderWidth: 1,
   },
-  mealEmojiBg: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+  mealEmojiBg: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(212,175,55,0.08)' },
   mealItemLabel: { fontSize: 12, fontWeight: '700' },
   mealCancel: { marginTop: 16, paddingVertical: 12, paddingHorizontal: 40, borderRadius: 14 },
   mealCancelText: { fontSize: 14, fontWeight: '600' },

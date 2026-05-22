@@ -41,25 +41,25 @@ const TOKEN_COSTS: Record<string, number> = {
 const MEAL_TYPE_META: Record<string, { emoji: string; gradient: readonly [string, string]; chef: string; chefHandle: string }> = {
   breakfast: {
     emoji: '☀️',
-    gradient: ['#FFB347', '#FF8E53'],
+    gradient: ['#F6C945', '#D4AF37'],
     chef: 'Chef Kunal Kapur',
     chefHandle: '@chefkunalkapur',
   },
   lunch: {
     emoji: '🍽️',
-    gradient: ['#4ADE80', '#22C55E'],
+    gradient: ['#D4AF37', '#B8860B'],
     chef: 'Chef Ranveer Brar',
     chefHandle: '@ranveerbrar',
   },
   snack: {
     emoji: '🍿',
-    gradient: ['#818CF8', '#6366F1'],
+    gradient: ['#B8860B', '#D4AF37'],
     chef: 'Chef Amrita Raichand',
     chefHandle: '@amritaraichand',
   },
   dinner: {
     emoji: '🌙',
-    gradient: ['#8B5CF6', '#7C3AED'],
+    gradient: ['#D4AF37', '#8B6914'],
     chef: 'Chef Vikas Khanna',
     chefHandle: '@vikaboraink',
   },
@@ -223,7 +223,7 @@ function VideoCard({ video, isUnlocked, balance, onUnlock, onPreview, colors, is
               style={({ pressed }) => [st.watchBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onPreview(video); }}
             >
-              <LinearGradient colors={['#4ADE80', '#22C55E']} style={st.watchBtnGrad}>
+              <LinearGradient colors={['#D4AF37', '#B8860B']} style={st.watchBtnGrad}>
                 <MaterialIcons name="play-circle-filled" size={18} color="#FFF" />
                 <Text style={st.watchBtnText}>Watch Full Recipe</Text>
               </LinearGradient>
@@ -233,7 +233,7 @@ function VideoCard({ video, isUnlocked, balance, onUnlock, onPreview, colors, is
               style={({ pressed }) => [st.unlockBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); onUnlock(video); }}
             >
-              <LinearGradient colors={['#D4AF37', '#FFD700']} style={st.unlockBtnGrad}>
+              <LinearGradient colors={['#B8860B', '#D4AF37']} style={st.unlockBtnGrad}>
                 <MaterialIcons name="lock-open" size={16} color="#FFF" />
                 <Text style={st.unlockBtnText}>Unlock with {video.tokenCost} Tokens</Text>
               </LinearGradient>
@@ -539,7 +539,7 @@ const st = StyleSheet.create({
     position: 'absolute', top: 10, right: 10,
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10,
-    backgroundColor: 'rgba(34,197,94,0.85)',
+    backgroundColor: 'rgba(184,134,11,0.85)',
   },
   unlockedText: { fontSize: 10, fontWeight: '700', color: '#FFF' },
   previewLabel: {

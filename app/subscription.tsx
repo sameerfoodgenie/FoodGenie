@@ -31,9 +31,9 @@ import {
 const { width: SCREEN_W } = Dimensions.get('window');
 
 const PLAN_COLORS: Record<string, { primary: string; gradient: readonly [string, string] }> = {
-  starter: { primary: '#4ADE80', gradient: ['#4ADE80', '#22C55E'] },
-  smart_foodie: { primary: '#818CF8', gradient: ['#818CF8', '#6366F1'] },
-  genie_pro: { primary: '#D4AF37', gradient: ['#D4AF37', '#FFD700'] },
+  starter: { primary: '#D4AF37', gradient: ['#D4AF37', '#F6C945'] },
+  smart_foodie: { primary: '#B8860B', gradient: ['#B8860B', '#D4AF37'] },
+  genie_pro: { primary: '#8B6914', gradient: ['#8B6914', '#B8860B'] },
 };
 
 export default function SubscriptionScreen() {
@@ -132,7 +132,7 @@ export default function SubscriptionScreen() {
           {/* Hero Section */}
           <Animated.View entering={FadeIn.duration(400)}>
             <LinearGradient
-              colors={['#D4AF37', '#FFD700', '#FF8E53']}
+              colors={['#D4AF37', '#B8860B', '#8B6914']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={s.hero}
@@ -150,7 +150,7 @@ export default function SubscriptionScreen() {
           {/* Trial Banner or Active Status */}
           {subscription && subscription.is_trial_active && trialDays > 0 ? (
             <Animated.View entering={FadeInDown.delay(100).duration(300)}>
-              <View style={[s.trialBanner, { backgroundColor: isDark ? 'rgba(74,222,128,0.08)' : 'rgba(74,222,128,0.06)', borderColor: 'rgba(74,222,128,0.25)' }]}>
+              <View style={[s.trialBanner, { backgroundColor: isDark ? 'rgba(212,175,55,0.08)' : 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.25)' }]}>
                 <View style={s.trialIconWrap}>
                   <Text style={{ fontSize: 24 }}>⏱️</Text>
                 </View>
@@ -167,7 +167,7 @@ export default function SubscriptionScreen() {
             </Animated.View>
           ) : subscription && subscription.subscription_status === 'active' ? (
             <Animated.View entering={FadeInDown.delay(100).duration(300)}>
-              <View style={[s.trialBanner, { backgroundColor: isDark ? 'rgba(212,175,55,0.08)' : 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.25)' }]}>
+              <View style={[s.trialBanner, { backgroundColor: isDark ? 'rgba(212,175,55,0.08)' : 'rgba(212,175,55,0.05)', borderColor: 'rgba(212,175,55,0.25)' }]}>
                 <View style={s.trialIconWrap}>
                   <Text style={{ fontSize: 24 }}>👑</Text>
                 </View>
@@ -180,7 +180,7 @@ export default function SubscriptionScreen() {
                   </Text>
                 </View>
                 <View style={[s.trialDaysBadge, { backgroundColor: 'rgba(212,175,55,0.15)' }]}>
-                  <Text style={[s.trialDaysText, { color: '#D4AF37' }]}>Active</Text>
+                  <Text style={[s.trialDaysText, { color: '#B8860B' }]}>Active</Text>
                 </View>
               </View>
             </Animated.View>
@@ -192,7 +192,7 @@ export default function SubscriptionScreen() {
                 disabled={actionLoading}
               >
                 <LinearGradient
-                  colors={['#4ADE80', '#22C55E']}
+                  colors={['#D4AF37', '#B8860B']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={s.trialCta}
@@ -247,8 +247,8 @@ export default function SubscriptionScreen() {
 
                       {/* Current Plan Badge */}
                       {isCurrentPlan ? (
-                        <View style={[s.currentPlanBadge, { backgroundColor: 'rgba(74,222,128,0.12)', borderColor: 'rgba(74,222,128,0.30)' }]}>
-                          <MaterialIcons name="check-circle" size={12} color="#4ADE80" />
+                        <View style={[s.currentPlanBadge, { backgroundColor: 'rgba(212,175,55,0.12)', borderColor: 'rgba(212,175,55,0.30)' }]}>
+                          <MaterialIcons name="check-circle" size={12} color="#D4AF37" />
                           <Text style={s.currentPlanText}>Current Plan</Text>
                         </View>
                       ) : null}
@@ -345,7 +345,7 @@ export default function SubscriptionScreen() {
                 disabled={actionLoading}
               >
                 <LinearGradient
-                  colors={['#D4AF37', '#FFD700']}
+                  colors={['#B8860B', '#D4AF37']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={s.ctaBtn}
@@ -438,11 +438,11 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 12,
     padding: 16, borderRadius: 18, borderWidth: 1.5,
   },
-  trialIconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(74,222,128,0.10)' },
+  trialIconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(212,175,55,0.10)' },
   trialTitle: { fontSize: 14, fontWeight: '800' },
   trialDesc: { fontSize: 11, fontWeight: '500', marginTop: 2 },
   trialDaysBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
-  trialDaysText: { fontSize: 12, fontWeight: '900', color: '#4ADE80' },
+  trialDaysText: { fontSize: 12, fontWeight: '900', color: '#D4AF37' },
 
   trialCta: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
@@ -471,7 +471,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1,
   },
-  currentPlanText: { fontSize: 10, fontWeight: '800', color: '#4ADE80' },
+  currentPlanText: { fontSize: 10, fontWeight: '800', color: '#D4AF37' },
 
   planHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   planNameRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

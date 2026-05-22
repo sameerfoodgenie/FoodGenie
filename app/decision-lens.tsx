@@ -40,24 +40,26 @@ const PLAN_TABS: { id: PlanTab; label: string; emoji: string }[] = [
 ];
 
 const MEAL_ICONS: Record<string, { emoji: string; gradient: readonly [string, string] }> = {
-  breakfast: { emoji: '☀️', gradient: ['#FFB347', '#FF8E53'] as const },
-  lunch: { emoji: '🍽️', gradient: ['#4ADE80', '#22C55E'] as const },
-  snack: { emoji: '🍿', gradient: ['#818CF8', '#6366F1'] as const },
-  dinner: { emoji: '🌙', gradient: ['#8B5CF6', '#7C3AED'] as const },
+  breakfast: { emoji: '☀️', gradient: ['#F6C945', '#D4AF37'] as const },
+  lunch: { emoji: '🍽️', gradient: ['#D4AF37', '#B8860B'] as const },
+  snack: { emoji: '🍿', gradient: ['#B8860B', '#D4AF37'] as const },
+  dinner: { emoji: '🌙', gradient: ['#D4AF37', '#8B6914'] as const },
 };
 
-const DAY_COLORS = ['#FF6B6B', '#FFB347', '#4ADE80', '#22D3EE', '#818CF8', '#F472B6', '#D4AF37'];
+const DAY_COLORS = ['#D4AF37', '#B8860B', '#F6C945', '#E8D28A', '#8B6914', '#C49B2C', '#D4AF37'];
 
 // ── Nutrition Ring ──
 function NutritionRing({ label, value, unit, color, size = 64 }: {
   label: string; value: number; unit: string; color: string; size?: number;
 }) {
+  // Override all colors to gold family
+  const goldColor = '#D4AF37';
   return (
     <View style={[nr.container, { width: size + 20 }]}>
-      <View style={[nr.ring, { width: size, height: size, borderColor: `${color}30` }]}>
-        <View style={[nr.ringFill, { borderColor: color }]} />
-        <Text style={[nr.value, { color }]}>{value}</Text>
-        <Text style={[nr.unit, { color: `${color}AA` }]}>{unit}</Text>
+      <View style={[nr.ring, { width: size, height: size, borderColor: 'rgba(212,175,55,0.20)' }]}>
+        <View style={[nr.ringFill, { borderColor: goldColor }]} />
+        <Text style={[nr.value, { color: '#171717' }]}>{value}</Text>
+        <Text style={[nr.unit, { color: 'rgba(212,175,55,0.70)' }]}>{unit}</Text>
       </View>
       <Text style={nr.label}>{label}</Text>
     </View>
@@ -95,21 +97,21 @@ function MealCard({ meal, index, colors, isDark, router }: {
         </View>
 
         <View style={mc.macroRow}>
-          <View style={[mc.macroItem, { backgroundColor: 'rgba(239,68,68,0.08)' }]}>
-            <Text style={[mc.macroValue, { color: '#EF4444' }]}>{meal.protein}g</Text>
+          <View style={[mc.macroItem, { backgroundColor: 'rgba(212,175,55,0.06)' }]}>
+            <Text style={[mc.macroValue, { color: '#B8860B' }]}>{meal.protein}g</Text>
             <Text style={[mc.macroLabel, { color: colors.textMuted }]}>Protein</Text>
           </View>
-          <View style={[mc.macroItem, { backgroundColor: 'rgba(245,158,11,0.08)' }]}>
-            <Text style={[mc.macroValue, { color: '#F59E0B' }]}>{meal.carbs}g</Text>
+          <View style={[mc.macroItem, { backgroundColor: 'rgba(212,175,55,0.06)' }]}>
+            <Text style={[mc.macroValue, { color: '#D4AF37' }]}>{meal.carbs}g</Text>
             <Text style={[mc.macroLabel, { color: colors.textMuted }]}>Carbs</Text>
           </View>
-          <View style={[mc.macroItem, { backgroundColor: 'rgba(129,140,248,0.08)' }]}>
-            <Text style={[mc.macroValue, { color: '#818CF8' }]}>{meal.fat}g</Text>
+          <View style={[mc.macroItem, { backgroundColor: 'rgba(212,175,55,0.06)' }]}>
+            <Text style={[mc.macroValue, { color: '#8B6914' }]}>{meal.fat}g</Text>
             <Text style={[mc.macroLabel, { color: colors.textMuted }]}>Fat</Text>
           </View>
           {meal.prepTime ? (
-            <View style={[mc.macroItem, { backgroundColor: 'rgba(74,222,128,0.08)' }]}>
-              <Text style={[mc.macroValue, { color: '#4ADE80' }]}>{meal.prepTime}m</Text>
+            <View style={[mc.macroItem, { backgroundColor: 'rgba(212,175,55,0.06)' }]}>
+              <Text style={[mc.macroValue, { color: '#D4AF37' }]}>{meal.prepTime}m</Text>
               <Text style={[mc.macroLabel, { color: colors.textMuted }]}>Prep</Text>
             </View>
           ) : null}
@@ -134,31 +136,31 @@ function MealCard({ meal, index, colors, isDark, router }: {
 
             {/* Meal Quick Actions */}
             <View style={mc.mealActions}>
-              <Pressable style={[mc.mealActionBtn, { backgroundColor: 'rgba(74,222,128,0.08)', borderColor: 'rgba(74,222,128,0.20)' }]}>
-                <MaterialIcons name="add-shopping-cart" size={14} color="#4ADE80" />
-                <Text style={[mc.mealActionText, { color: '#4ADE80' }]}>Add to Cart</Text>
+              <Pressable style={[mc.mealActionBtn, { backgroundColor: 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.20)' }]}>
+                <MaterialIcons name="add-shopping-cart" size={14} color="#D4AF37" />
+                <Text style={[mc.mealActionText, { color: '#D4AF37' }]}>Add to Cart</Text>
               </Pressable>
               <Pressable
-                style={[mc.mealActionBtn, { backgroundColor: 'rgba(129,140,248,0.08)', borderColor: 'rgba(129,140,248,0.20)' }]}
+                style={[mc.mealActionBtn, { backgroundColor: 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.20)' }]}
                 onPress={() => { Haptics.selectionAsync(); router.push({ pathname: '/recipe-videos' as any, params: { planData: JSON.stringify({ meals: [meal] }) } }); }}
               >
-                <MaterialIcons name="play-circle" size={14} color="#818CF8" />
-                <Text style={[mc.mealActionText, { color: '#818CF8' }]}>Recipe Video</Text>
+                <MaterialIcons name="play-circle" size={14} color="#B8860B" />
+                <Text style={[mc.mealActionText, { color: '#B8860B' }]}>Recipe Video</Text>
               </Pressable>
-              <Pressable style={[mc.mealActionBtn, { backgroundColor: 'rgba(251,146,60,0.08)', borderColor: 'rgba(251,146,60,0.20)' }]}>
-                <MaterialIcons name="delivery-dining" size={14} color="#FB923C" />
-                <Text style={[mc.mealActionText, { color: '#FB923C' }]}>Order</Text>
+              <Pressable style={[mc.mealActionBtn, { backgroundColor: 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.20)' }]}>
+                <MaterialIcons name="delivery-dining" size={14} color="#D4AF37" />
+                <Text style={[mc.mealActionText, { color: '#D4AF37' }]}>Order</Text>
               </Pressable>
             </View>
 
             {/* Recipe Video Card */}
             <Pressable
-              style={[mc.recipeVideoCard, { backgroundColor: isDark ? 'rgba(129,140,248,0.06)' : 'rgba(129,140,248,0.03)', borderColor: 'rgba(129,140,248,0.15)' }]}
+              style={[mc.recipeVideoCard, { backgroundColor: isDark ? 'rgba(212,175,55,0.06)' : 'rgba(212,175,55,0.04)', borderColor: 'rgba(212,175,55,0.20)' }]}
               onPress={() => { Haptics.selectionAsync(); router.push({ pathname: '/recipe-videos' as any, params: { planData: JSON.stringify({ meals: [meal] }) } }); }}
             >
               <View style={mc.recipeVideoRow}>
                 <View style={mc.recipeVideoIcon}>
-                  <MaterialIcons name="play-circle-filled" size={28} color="#818CF8" />
+                  <MaterialIcons name="play-circle-filled" size={28} color="#D4AF37" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[mc.recipeVideoTitle, { color: colors.textPrimary }]}>Watch Master Chef Recipe</Text>
@@ -308,8 +310,8 @@ function WhatNextCard({ planData, activeTab, colors, isDark, router }: {
       title: 'Cook Myself',
       desc: 'Auto grocery cart with ingredients, quantity and estimated cost',
       emoji: '🧑‍🍳',
-      gradient: ['#4ADE80', '#22C55E'] as const,
-      color: '#4ADE80',
+      gradient: ['#D4AF37', '#F6C945'] as const,
+      color: '#D4AF37',
       features: [
         { icon: 'shopping-cart' as const, text: 'Auto Grocery Cart' },
         { icon: 'savings' as const, text: 'Save ~15%' },
@@ -322,8 +324,8 @@ function WhatNextCard({ planData, activeTab, colors, isDark, router }: {
       title: 'Book a Cook',
       desc: 'Hire trained home cooks based on cuisine and dish expertise',
       emoji: '👨‍🍳',
-      gradient: ['#FF6B6B', '#FF8E53'] as const,
-      color: '#FF6B6B',
+      gradient: ['#B8860B', '#D4AF37'] as const,
+      color: '#B8860B',
       features: [
         { icon: 'verified' as const, text: '100+ Cooks' },
         { icon: 'event' as const, text: 'Day/Week/Month' },
@@ -336,8 +338,8 @@ function WhatNextCard({ planData, activeTab, colors, isDark, router }: {
       title: 'Order Food',
       desc: 'Order similar dishes from restaurant and delivery partners',
       emoji: '🍔',
-      gradient: ['#FB923C', '#F97316'] as const,
-      color: '#FB923C',
+      gradient: ['#D4AF37', '#B8860B'] as const,
+      color: '#D4AF37',
       features: [
         { icon: 'delivery-dining' as const, text: 'Zomato/Swiggy/ONDC' },
         { icon: 'compare-arrows' as const, text: 'Compare prices' },
@@ -390,12 +392,12 @@ function WhatNextCard({ planData, activeTab, colors, isDark, router }: {
         <Animated.View entering={FadeInDown.delay(550).duration(350)}>
           <Pressable
             style={({ pressed }) => [wn.recipeVideoCard, {
-              backgroundColor: isDark ? 'rgba(129,140,248,0.08)' : 'rgba(129,140,248,0.04)',
-              borderColor: 'rgba(129,140,248,0.25)',
+              backgroundColor: isDark ? 'rgba(212,175,55,0.06)' : 'rgba(212,175,55,0.04)',
+              borderColor: 'rgba(212,175,55,0.25)',
             }, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push({ pathname: '/recipe-videos' as any, params: { planData } }); }}
           >
-            <LinearGradient colors={['#818CF8', '#6366F1']} style={wn.optionIconSmall}>
+            <LinearGradient colors={['#D4AF37', '#B8860B']} style={wn.optionIconSmall}>
               <Text style={{ fontSize: 24 }}>🎬</Text>
             </LinearGradient>
             <View style={{ flex: 1, gap: 3 }}>
@@ -404,16 +406,16 @@ function WhatNextCard({ planData, activeTab, colors, isDark, router }: {
               <View style={wn.featuresInline}>
                 <View style={wn.featureTag}>
                   <Text style={{ fontSize: 9 }}>🪙</Text>
-                  <Text style={[wn.featureText, { color: '#818CF8' }]}>15-30 tokens</Text>
+                  <Text style={[wn.featureText, { color: '#D4AF37' }]}>15-30 tokens</Text>
                 </View>
                 <View style={wn.featureTag}>
-                  <MaterialIcons name="play-circle" size={10} color="#818CF8" />
-                  <Text style={[wn.featureText, { color: '#818CF8' }]}>Free preview</Text>
+                  <MaterialIcons name="play-circle" size={10} color="#D4AF37" />
+                  <Text style={[wn.featureText, { color: '#D4AF37' }]}>Free preview</Text>
                 </View>
               </View>
             </View>
-            <View style={[wn.optionArrow, { backgroundColor: 'rgba(129,140,248,0.20)' }]}>
-              <MaterialIcons name="arrow-forward" size={16} color="#818CF8" />
+            <View style={[wn.optionArrow, { backgroundColor: 'rgba(212,175,55,0.15)' }]}>
+              <MaterialIcons name="arrow-forward" size={16} color="#D4AF37" />
             </View>
           </Pressable>
         </Animated.View>
@@ -429,9 +431,9 @@ function PreferencesSummary({ prefs, colors, isDark, router }: {
   if (!prefs) return null;
 
   const DIET_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
-    veg: { label: 'Vegetarian', emoji: '🥬', color: '#4ADE80' },
-    egg: { label: 'Eggetarian', emoji: '🥚', color: '#FFB347' },
-    nonveg: { label: 'Non-Veg', emoji: '🍗', color: '#FF6B6B' },
+    veg: { label: 'Vegetarian', emoji: '🥬', color: '#D4AF37' },
+    egg: { label: 'Eggetarian', emoji: '🥚', color: '#B8860B' },
+    nonveg: { label: 'Non-Veg', emoji: '🍗', color: '#8B6914' },
   };
 
   const SPICE_LABELS: Record<number, { label: string; emoji: string }> = {
@@ -448,18 +450,18 @@ function PreferencesSummary({ prefs, colors, isDark, router }: {
 
   const pills: { label: string; color: string; emoji?: string }[] = [
     { label: diet.label, color: diet.color, emoji: diet.emoji },
-    { label: spice.label, color: '#FF6B6B', emoji: spice.emoji },
-    { label: budgetLabel, color: '#4ADE80', emoji: '💰' },
+    { label: spice.label, color: '#D4AF37', emoji: spice.emoji },
+    { label: budgetLabel, color: '#B8860B', emoji: '💰' },
   ];
 
   if (cuisineList.length > 0) {
     const formatted = cuisineList.map((c: string) => c.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())).join(', ');
-    pills.push({ label: formatted, color: '#818CF8', emoji: '🍛' });
+    pills.push({ label: formatted, color: '#D4AF37', emoji: '🍛' });
   }
 
   if (prefs.healthGoal && prefs.healthGoal !== 'none' && prefs.healthGoal !== 'balanced') {
     const goalLabel = prefs.healthGoal.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
-    pills.push({ label: goalLabel, color: '#22D3EE', emoji: '🎯' });
+    pills.push({ label: goalLabel, color: '#B8860B', emoji: '🎯' });
   }
 
   return (
@@ -645,7 +647,7 @@ export default function AajKhaneScreen() {
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         {/* Header */}
         <LinearGradient
-          colors={['#FF6B6B', '#FF8E53', '#FFB347']}
+          colors={['#D4AF37', '#B8860B', '#8B6914']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={s.header}
@@ -719,10 +721,10 @@ export default function AajKhaneScreen() {
                 <Text style={[s.nutritionTitle, { color: colors.textPrimary }]}>Today's Nutrition</Text>
                 <Text style={[s.nutritionDate, { color: colors.textMuted }]}>{todayPlan.date}</Text>
                 <View style={s.nutritionRow}>
-                  <NutritionRing label="Calories" value={todayPlan.totalCalories} unit="kcal" color="#FF6B6B" />
-                  <NutritionRing label="Protein" value={todayPlan.totalProtein} unit="g" color="#EF4444" />
-                  <NutritionRing label="Carbs" value={todayPlan.totalCarbs} unit="g" color="#F59E0B" />
-                  <NutritionRing label="Fat" value={todayPlan.totalFat} unit="g" color="#818CF8" />
+                  <NutritionRing label="Calories" value={todayPlan.totalCalories} unit="kcal" color="#D4AF37" />
+                  <NutritionRing label="Protein" value={todayPlan.totalProtein} unit="g" color="#B8860B" />
+                  <NutritionRing label="Carbs" value={todayPlan.totalCarbs} unit="g" color="#D4AF37" />
+                  <NutritionRing label="Fat" value={todayPlan.totalFat} unit="g" color="#D4AF37" />
                 </View>
               </Animated.View>
               <View style={s.mealList}>
@@ -833,7 +835,7 @@ const s = StyleSheet.create({
   tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 10, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.15)' },
   tabActive: { backgroundColor: 'rgba(255,255,255,0.95)' },
   tabLabel: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.85)' },
-  tabLabelActive: { color: '#FF6B6B' },
+  tabLabelActive: { color: '#D4AF37' },
   loadingWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 12 },
   loadingText: { fontSize: 15, fontWeight: '600' },
   loadingHint: { fontSize: 12, fontWeight: '500' },
@@ -859,7 +861,7 @@ const s = StyleSheet.create({
   monthlyHeader: { padding: 20, borderRadius: 20, borderWidth: 1, gap: 14 },
   monthlyTitle: { fontSize: 18, fontWeight: '800' },
   monthlyStatsRow: { flexDirection: 'row', gap: 10 },
-  monthlyStatItem: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 10, borderRadius: 14, backgroundColor: 'rgba(212,175,55,0.05)' },
+  monthlyStatItem: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 10, borderRadius: 14, backgroundColor: 'rgba(212,175,55,0.06)' },
   monthlyStatEmoji: { fontSize: 18 },
   monthlyStatValue: { fontSize: 16, fontWeight: '900' },
   monthlyStatLabel: { fontSize: 9, fontWeight: '600' },
@@ -953,7 +955,7 @@ const mc = StyleSheet.create({
   mealActionText: { fontSize: 10, fontWeight: '700' },
   recipeVideoCard: { padding: 12, borderRadius: 14, borderWidth: 1, marginTop: 6, gap: 6 },
   recipeVideoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  recipeVideoIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(129,140,248,0.10)', alignItems: 'center', justifyContent: 'center' },
+  recipeVideoIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(212,175,55,0.10)', alignItems: 'center', justifyContent: 'center' },
   recipeVideoTitle: { fontSize: 13, fontWeight: '800' },
   recipeVideoSub: { fontSize: 11, fontWeight: '500' },
   recipeTokenBadge: {
