@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,12 @@ import { useCoin } from '../hooks/useCoin';
 import { useAuth } from '@/template';
 import { useAlert } from '@/template';
 import { getSupabaseClient } from '@/template';
+import {
+  loadSubscription,
+  deductTokens,
+  isSubscriptionActive,
+  UserSubscription,
+} from '../services/subscriptionService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const supabase = getSupabaseClient();
@@ -258,30 +264,64 @@ export default function RecipeVideosScreen() {
   const videos = useMemo(() => parseMealVideos(params.planData || '{}'), [params.planData]);
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
   const [unlocking, setUnlocking] = useState<string | null>(null);
+  const [subscription, setSubscription] = useState<UserSubscription | null>(null);
+  const [tokenBalance, setTokenBalance] = useState(0);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadSubscription(user.id).then(sub => {
+        setSubscription(sub);
+        setTokenBalance(sub?.token_balance ?? 0);
+      });
+    }
+  }, [user?.id]);
 
   const handleUnlock = useCallback(async (video: MealVideo) => {
     if (!user?.id) {
       showAlert('Login Required', 'Please log in to unlock recipe videos.');
       return;
     }
-    if (balance < video.tokenCost) {
-      showAlert('Insufficient Tokens', `You need ${video.tokenCost - balance} more tokens.`);
+
+    // Check subscription status first
+    const sub = await loadSubscription(user.id);
+    setSubscription(sub);
+    setTokenBalance(sub?.token_balance ?? 0);
+
+    if (!sub || !isSubscriptionActive(sub)) {
+      showAlert(
+        'Subscription Required',
+        'You need an active subscription with AI Tokens to unlock recipe videos. Start with a 7-day free trial!',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Get Tokens', onPress: () => router.push('/subscription' as any) },
+        ]
+      );
       return;
     }
 
-    showAlert('Unlock Recipe', `Spend ${video.tokenCost} tokens to unlock "${video.mealName}" full recipe?`, [
+    if ((sub.token_balance ?? 0) < video.tokenCost) {
+      showAlert(
+        'Insufficient Tokens',
+        `You need ${video.tokenCost} tokens but only have ${sub.token_balance}. Upgrade your plan for more tokens.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Get More Tokens', onPress: () => router.push('/subscription' as any) },
+        ]
+      );
+      return;
+    }
+
+    showAlert('Unlock Recipe', `Spend ${video.tokenCost} AI Tokens to unlock "${video.mealName}" full recipe?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Unlock',
         onPress: async () => {
           setUnlocking(video.id);
-          const success = await spendCoins(
-            video.tokenCost,
-            'recipe_video_unlock',
-            { video_id: video.id, chef_name: video.chef, meal_name: video.mealName }
-          );
 
-          if (success) {
+          // Deduct tokens from subscription
+          const result = await deductTokens(user.id, video.tokenCost, 'recipe_video_unlock');
+
+          if (result.success) {
             // Record unlock in database
             try {
               await supabase.from('recipe_video_unlocks').insert({
@@ -297,16 +337,17 @@ export default function RecipeVideosScreen() {
             } catch { /* non-blocking */ }
 
             setUnlockedIds(prev => new Set(prev).add(video.id));
-            await refreshWallet();
-            showAlert('Unlocked!', `"${video.mealName}" recipe is now available. Enjoy!`);
+            setTokenBalance(result.remaining);
+            setSubscription(prev => prev ? { ...prev, token_balance: result.remaining } : prev);
+            showAlert('Unlocked!', `"${video.mealName}" recipe is now available. You have ${result.remaining} tokens remaining.`);
           } else {
-            showAlert('Error', 'Could not unlock video. Please try again.');
+            showAlert('Error', result.error || 'Could not unlock video. Please try again.');
           }
           setUnlocking(null);
         },
       },
     ]);
-  }, [user, balance, spendCoins, refreshWallet, showAlert]);
+  }, [user, showAlert, router]);
 
   const handlePreview = useCallback((video: MealVideo) => {
     Haptics.selectionAsync();
@@ -320,6 +361,7 @@ export default function RecipeVideosScreen() {
   }, [unlockedIds, showAlert]);
 
   const totalTokensNeeded = videos.reduce((s, v) => s + (unlockedIds.has(v.id) ? 0 : v.tokenCost), 0);
+  const effectiveBalance = tokenBalance;
 
   return (
     <View style={[st.container, { backgroundColor: colors.background }]}>
@@ -336,10 +378,13 @@ export default function RecipeVideosScreen() {
             <Text style={[st.headerTitle, { color: colors.textPrimary }]}>Recipe Videos</Text>
             <Text style={[st.headerSub, { color: colors.textMuted }]}>Learn today's meals from master chefs</Text>
           </View>
-          <View style={st.tokenPill}>
+          <Pressable
+            style={st.tokenPill}
+            onPress={() => { Haptics.selectionAsync(); router.push('/subscription' as any); }}
+          >
             <Text style={{ fontSize: 12 }}>🪙</Text>
-            <Text style={st.tokenPillText}>{balance}</Text>
-          </View>
+            <Text style={st.tokenPillText}>{effectiveBalance}</Text>
+          </Pressable>
         </View>
 
         <ScrollView
@@ -392,7 +437,7 @@ export default function RecipeVideosScreen() {
                 video={video}
                 index={i}
                 isUnlocked={unlockedIds.has(video.id)}
-                balance={balance}
+                balance={effectiveBalance}
                 onUnlock={handleUnlock}
                 onPreview={handlePreview}
                 colors={colors}

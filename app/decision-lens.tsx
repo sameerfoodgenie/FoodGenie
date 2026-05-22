@@ -16,11 +16,18 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInRight, FadeInUp } from 'react-native-reanimated';
 import { useTheme } from '../hooks/useTheme';
-import { useAuth } from '../template';
+import { useAuth, useAlert } from '../template';
 import { useCoin } from '../hooks/useCoin';
 import { loadPreferences, loadAdvancedPreferences } from '../services/preferencesService';
 import { generateMealPlan, TodayPlan, WeeklyPlan, MonthlyPlan, MealItem } from '../services/mealPlannerService';
 import { COIN_RULES } from '../services/coinService';
+import {
+  loadSubscription,
+  deductTokens,
+  isSubscriptionActive,
+  TOKEN_COSTS as SUB_TOKEN_COSTS,
+  UserSubscription,
+} from '../services/subscriptionService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -489,6 +496,7 @@ export default function AajKhaneScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
+  const { showAlert } = useAlert();
   const { earnCoins } = useCoin();
   const [activeTab, setActiveTab] = useState<PlanTab>('today');
   const [coinAwarded, setCoinAwarded] = useState<Set<string>>(new Set());
@@ -499,6 +507,7 @@ export default function AajKhaneScreen() {
   const [monthlyPlan, setMonthlyPlan] = useState<MonthlyPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [prefs, setPrefs] = useState<any>(null);
+  const [subscription, setSubscription] = useState<UserSubscription | null>(null);
 
   // Serialize current plan for passing to grocery cart
   const currentPlanData = useMemo(() => {
@@ -526,7 +535,68 @@ export default function AajKhaneScreen() {
     return p;
   }, [user]);
 
-  const fetchPlan = useCallback(async (tab: PlanTab, userPrefs?: any) => {
+  const refreshSubscription = useCallback(async () => {
+    if (!user?.id) return null;
+    const sub = await loadSubscription(user.id);
+    setSubscription(sub);
+    return sub;
+  }, [user?.id]);
+
+  // Check if user can generate a plan (token gating for weekly/monthly)
+  const checkTokensForPlan = useCallback(async (tab: PlanTab): Promise<boolean> => {
+    if (tab === 'today') return true; // Daily plans are free
+    if (!user?.id) {
+      showAlert('Login Required', 'Please log in to generate premium meal plans.');
+      return false;
+    }
+
+    const tokenCost = tab === 'weekly' ? SUB_TOKEN_COSTS.weekly_meal_plan : SUB_TOKEN_COSTS.monthly_meal_plan;
+    const sub = await refreshSubscription();
+
+    if (!sub || !isSubscriptionActive(sub)) {
+      showAlert(
+        'Subscription Required',
+        `Weekly and monthly meal plans require AI Tokens. Get started with a 7-day free trial!`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Get Tokens', onPress: () => router.push('/subscription' as any) },
+        ]
+      );
+      return false;
+    }
+
+    if (sub.token_balance < tokenCost) {
+      showAlert(
+        'Insufficient Tokens',
+        `You need ${tokenCost} tokens to generate a ${tab} plan but only have ${sub.token_balance}. Upgrade your plan for more tokens.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Get More Tokens', onPress: () => router.push('/subscription' as any) },
+        ]
+      );
+      return false;
+    }
+
+    return true;
+  }, [user?.id, refreshSubscription, showAlert, router]);
+
+  // Deduct tokens after successful plan generation
+  const deductPlanTokens = useCallback(async (tab: PlanTab) => {
+    if (tab === 'today' || !user?.id) return;
+    const tokenCost = tab === 'weekly' ? SUB_TOKEN_COSTS.weekly_meal_plan : SUB_TOKEN_COSTS.monthly_meal_plan;
+    const result = await deductTokens(user.id, tokenCost, `${tab}_meal_plan`);
+    if (result.success) {
+      await refreshSubscription();
+    }
+  }, [user?.id, refreshSubscription]);
+
+  const fetchPlan = useCallback(async (tab: PlanTab, userPrefs?: any, skipTokenCheck?: boolean) => {
+    // Token gating for weekly/monthly plans
+    if (!skipTokenCheck) {
+      const canProceed = await checkTokensForPlan(tab);
+      if (!canProceed) return;
+    }
+
     setLoading(true);
     setError(null);
     const p = userPrefs || prefs || await loadUserPrefs();
@@ -537,16 +607,21 @@ export default function AajKhaneScreen() {
       if (tab === 'today') setTodayPlan(data);
       else if (tab === 'weekly') setWeeklyPlan(data);
       else setMonthlyPlan(data);
+
+      // Deduct tokens for premium plans
+      await deductPlanTokens(tab);
+
       if (!coinAwarded.has(tab)) {
         setCoinAwarded(prev => new Set(prev).add(tab));
         earnCoins(COIN_RULES.meal_plan_generated.amount, 'meal_plan_generated', { planType: tab });
       }
     }
     setLoading(false);
-  }, [prefs, loadUserPrefs, coinAwarded, earnCoins]);
+  }, [prefs, loadUserPrefs, coinAwarded, earnCoins, checkTokensForPlan, deductPlanTokens]);
 
   useEffect(() => {
-    loadUserPrefs().then(p => fetchPlan('today', p));
+    refreshSubscription();
+    loadUserPrefs().then(p => fetchPlan('today', p, true));
   }, []);
 
   const handleTabChange = useCallback((tab: PlanTab) => {
@@ -558,9 +633,10 @@ export default function AajKhaneScreen() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
+    await refreshSubscription();
     await fetchPlan(activeTab);
     setRefreshing(false);
-  }, [activeTab, fetchPlan]);
+  }, [activeTab, fetchPlan, refreshSubscription]);
 
   const hasPlan = (activeTab === 'today' && todayPlan) || (activeTab === 'weekly' && weeklyPlan) || (activeTab === 'monthly' && monthlyPlan);
 
