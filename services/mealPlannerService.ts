@@ -63,6 +63,7 @@ export interface UserMealPreferences {
   healthGoal?: string | null;
   cuisineBias?: string[];
   avoidTags?: string[];
+  persons?: number;
 }
 
 function extractJSON(text: string): string {
@@ -78,13 +79,14 @@ function extractJSON(text: string): string {
 export async function generateMealPlan(
   preferences: UserMealPreferences,
   planType: 'today' | 'weekly' | 'monthly',
+  persons?: number,
 ): Promise<{ data: any; error: string | null }> {
   try {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase.functions.invoke('ai-meal-planner', {
       body: {
         action: 'generate_meal_plan',
-        preferences: { ...preferences, planType },
+        preferences: { ...preferences, planType, persons: persons || preferences.persons || 1 },
       },
     });
 

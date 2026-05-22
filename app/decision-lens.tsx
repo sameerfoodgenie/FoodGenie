@@ -16,6 +16,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { exportMealPlanPDF } from '../services/pdfExportService';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -790,6 +791,20 @@ export default function AajKhaneScreen() {
     if (!cached) fetchPlan(tab);
   }, [todayPlan, weeklyPlan, monthlyPlan, fetchPlan]);
 
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  const handleExportPDF = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    const plan = activeTab === 'today' ? todayPlan : activeTab === 'weekly' ? weeklyPlan : monthlyPlan;
+    if (!plan) return;
+    setPdfLoading(true);
+    const { success, error: pdfError } = await exportMealPlanPDF(plan, activeTab, persons);
+    setPdfLoading(false);
+    if (!success && pdfError) {
+      showAlert('PDF Export Failed', pdfError);
+    }
+  }, [activeTab, todayPlan, weeklyPlan, monthlyPlan, persons, showAlert]);
+
   const handleSharePlan = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (activeTab === 'today' && todayPlan) {
@@ -1017,23 +1032,45 @@ export default function AajKhaneScreen() {
           {/* ═══ AI Chat & Regenerate ═══ */}
           {!loading && !error ? (
             <Animated.View entering={FadeInDown.delay(300).duration(300)} style={s.regenerateWrap}>
-              {/* Share Meal Plan Button */}
+              {/* Share & PDF Export Buttons */}
               {hasPlan ? (
-                <Pressable
-                  style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
-                  onPress={handleSharePlan}
-                >
-                  <View style={[s.sharePlanBtn, { backgroundColor: colors.surface, borderColor: 'rgba(123,47,160,0.25)' }]}>
-                    <LinearGradient colors={['#7B2FA0', '#C41E7A']} style={s.sharePlanIcon}>
-                      <MaterialIcons name="share" size={16} color="#FFF" />
-                    </LinearGradient>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[s.sharePlanTitle, { color: colors.textPrimary }]}>Share Meal Plan</Text>
-                      <Text style={[s.sharePlanSub, { color: colors.textMuted }]}>Send to family or friends</Text>
+                <View style={{ width: '100%', gap: 10 }}>
+                  <Pressable
+                    style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+                    onPress={handleExportPDF}
+                    disabled={pdfLoading}
+                  >
+                    <View style={[s.sharePlanBtn, { backgroundColor: colors.surface, borderColor: 'rgba(245,183,49,0.30)' }]}>
+                      <LinearGradient colors={['#F5B731', '#D9A020']} style={s.sharePlanIcon}>
+                        {pdfLoading ? (
+                          <ActivityIndicator size="small" color="#FFF" />
+                        ) : (
+                          <MaterialIcons name="picture-as-pdf" size={16} color="#FFF" />
+                        )}
+                      </LinearGradient>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[s.sharePlanTitle, { color: colors.textPrimary }]}>Download PDF</Text>
+                        <Text style={[s.sharePlanSub, { color: colors.textMuted }]}>A4 format with nutrition charts & grocery list</Text>
+                      </View>
+                      <MaterialIcons name="arrow-forward-ios" size={14} color="#F5B731" />
                     </View>
-                    <MaterialIcons name="arrow-forward-ios" size={14} color="#7B2FA0" />
-                  </View>
-                </Pressable>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+                    onPress={handleSharePlan}
+                  >
+                    <View style={[s.sharePlanBtn, { backgroundColor: colors.surface, borderColor: 'rgba(123,47,160,0.25)' }]}>
+                      <LinearGradient colors={['#7B2FA0', '#C41E7A']} style={s.sharePlanIcon}>
+                        <MaterialIcons name="share" size={16} color="#FFF" />
+                      </LinearGradient>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[s.sharePlanTitle, { color: colors.textPrimary }]}>Share as Text</Text>
+                        <Text style={[s.sharePlanSub, { color: colors.textMuted }]}>Send to family or friends</Text>
+                      </View>
+                      <MaterialIcons name="arrow-forward-ios" size={14} color="#7B2FA0" />
+                    </View>
+                  </Pressable>
+                </View>
               ) : null}
 
               <Pressable
