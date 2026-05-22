@@ -131,6 +131,42 @@ Respond ONLY with this JSON structure:
   ]
 }`;
       }
+    } else if (action === 'generate_cooking_steps') {
+      const { mealName, mealType, ingredients, persons: stepPersons } = preferences || {};
+      const personCount = stepPersons || 1;
+
+      systemPrompt = `You are FoodGenie AI, an expert Indian chef. Generate detailed step-by-step cooking instructions.
+
+RULES:
+- Respond ONLY in valid JSON format
+- Steps should be clear, concise, and beginner-friendly
+- Include timing for each step
+- Scale ingredient quantities for ${personCount} person(s)
+- Include pro tips where relevant
+- Keep steps between 5-10 for most dishes`;
+
+      userMessage = `Generate detailed cooking steps for: ${mealName || 'Unknown dish'}
+Meal type: ${mealType || 'lunch'}
+Ingredients available: ${(ingredients || []).join(', ') || 'standard ingredients'}
+Serving: ${personCount} person(s)
+
+Respond ONLY with this JSON structure:
+{
+  "dishName": "${mealName}",
+  "servings": ${personCount},
+  "totalTime": "estimated total time",
+  "difficulty": "Easy|Medium|Hard",
+  "steps": [
+    {
+      "step": 1,
+      "title": "short step title",
+      "instruction": "detailed instruction",
+      "duration": "2 min",
+      "tip": "optional pro tip or null"
+    }
+  ],
+  "chefTip": "one final pro tip for this dish"
+}`;
     } else if (action === 'chat') {
       systemPrompt = `You are FoodGenie AI, an expert Indian meal planner, nutritionist, and grocery budget advisor. Help users plan their meals and grocery budgets.
 

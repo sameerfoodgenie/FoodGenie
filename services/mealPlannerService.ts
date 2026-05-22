@@ -110,6 +110,58 @@ export async function generateMealPlan(
   }
 }
 
+export interface CookingStep {
+  step: number;
+  title: string;
+  instruction: string;
+  duration: string;
+  tip?: string | null;
+}
+
+export interface CookingStepsData {
+  dishName: string;
+  servings: number;
+  totalTime: string;
+  difficulty: string;
+  steps: CookingStep[];
+  chefTip: string;
+}
+
+export async function generateCookingSteps(
+  mealName: string,
+  mealType: string,
+  ingredients: string[],
+  persons: number,
+): Promise<{ data: CookingStepsData | null; error: string | null }> {
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.functions.invoke('ai-meal-planner', {
+      body: {
+        action: 'generate_cooking_steps',
+        preferences: { mealName, mealType, ingredients, persons },
+      },
+    });
+
+    if (error) {
+      let errorMessage = error.message;
+      if (error instanceof FunctionsHttpError) {
+        try {
+          const textContent = await error.context?.text();
+          errorMessage = textContent || error.message;
+        } catch { /* ignore */ }
+      }
+      return { data: null, error: errorMessage };
+    }
+
+    const content = data?.content || '';
+    const jsonStr = extractJSON(content);
+    const parsed = JSON.parse(jsonStr);
+    return { data: parsed, error: null };
+  } catch (err: any) {
+    return { data: null, error: err.message || 'Failed to generate cooking steps' };
+  }
+}
+
 export async function sendMealChat(
   message: string,
   preferences: UserMealPreferences,
