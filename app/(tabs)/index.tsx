@@ -23,6 +23,13 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useCoin } from '../../hooks/useCoin';
 import { useTheme } from '../../hooks/useTheme';
 import { fetchProfile, UserProfile } from '../../services/profileService';
+import {
+  loadSubscription,
+  UserSubscription,
+  isSubscriptionActive,
+  getTrialDaysRemaining,
+  SUBSCRIPTION_PLANS,
+} from '../../services/subscriptionService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const SERVICE_CARD_W = (SCREEN_W - 52) / 2;
@@ -92,6 +99,70 @@ const QUICK_ACTIONS = [
   { id: 'chefs', emoji: '👨‍🍳', label: 'Master Chefs', color: '#F59E0B', route: '/(tabs)/master-chefs' },
 ];
 
+// ── Subscription Status Widget ──
+function SubscriptionWidget({ subscription, colors, isDark, router }: {
+  subscription: UserSubscription | null; colors: any; isDark: boolean; router: any;
+}) {
+  const isActive = isSubscriptionActive(subscription);
+  const trialDays = getTrialDaysRemaining(subscription);
+  const isTrial = subscription?.is_trial_active && trialDays > 0;
+  const isFreePlan = !subscription || subscription.subscription_status === 'inactive' || subscription.subscription_status === 'expired';
+  const planInfo = SUBSCRIPTION_PLANS.find(p => p.id === subscription?.plan_name);
+
+  // Don't show if user has active paid subscription
+  const showUpgradeCta = isFreePlan || isTrial;
+
+  return (
+    <Animated.View entering={FadeInDown.delay(80).duration(300)}>
+      <Pressable
+        style={({ pressed }) => [
+          s.subWidget,
+          {
+            backgroundColor: isDark ? 'rgba(212,175,55,0.06)' : 'rgba(212,175,55,0.04)',
+            borderColor: isDark ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.12)',
+          },
+          pressed && { opacity: 0.92 },
+        ]}
+        onPress={() => { Haptics.selectionAsync(); router.push('/subscription' as any); }}
+      >
+        <View style={s.subWidgetLeft}>
+          <View style={s.subWidgetTokenWrap}>
+            <Image source={require('../../assets/images/genie-coin.png')} style={{ width: 20, height: 20 }} contentFit="contain" />
+            <Text style={s.subWidgetTokenValue}>{subscription?.token_balance ?? 0}</Text>
+            <Text style={s.subWidgetTokenLabel}>tokens</Text>
+          </View>
+          <View style={s.subWidgetInfoRow}>
+            {isTrial ? (
+              <View style={s.subWidgetTrialBadge}>
+                <Text style={{ fontSize: 10 }}>⏱️</Text>
+                <Text style={s.subWidgetTrialText}>Trial • {trialDays}d left</Text>
+              </View>
+            ) : isActive && planInfo ? (
+              <View style={s.subWidgetPlanBadge}>
+                <Text style={{ fontSize: 10 }}>👑</Text>
+                <Text style={s.subWidgetPlanText}>{planInfo.name}</Text>
+              </View>
+            ) : (
+              <View style={s.subWidgetFreeBadge}>
+                <Text style={{ fontSize: 10 }}>🆓</Text>
+                <Text style={s.subWidgetFreeText}>No active plan</Text>
+              </View>
+            )}
+          </View>
+        </View>
+        {showUpgradeCta ? (
+          <View style={s.subWidgetCta}>
+            <Text style={s.subWidgetCtaText}>{isTrial ? 'Upgrade' : 'Get Tokens'}</Text>
+            <MaterialIcons name="arrow-forward" size={12} color="#FFF" />
+          </View>
+        ) : (
+          <MaterialIcons name="chevron-right" size={20} color="rgba(212,175,55,0.5)" />
+        )}
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 // ── Feature Banner Card ──
 function FeatureBannerCard({
   banner, index, onPress, colors, isDark,
@@ -145,9 +216,12 @@ export default function HomeScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
 
+  const [subscription, setSubscription] = useState<UserSubscription | null>(null);
+
   useEffect(() => {
     if (user?.id) {
       fetchProfile(user.id).then(({ data }) => { if (data) setProfile(data); });
+      loadSubscription(user.id).then(sub => { if (sub) setSubscription(sub); });
     }
   }, [user?.id]);
 
@@ -232,6 +306,11 @@ export default function HomeScreen() {
             </Pressable>
           </Animated.View>
         </View>
+
+        {/* ═══════ Subscription Status Widget ═══════ */}
+        {user?.id ? (
+          <SubscriptionWidget subscription={subscription} colors={colors} isDark={isDark} router={router} />
+        ) : null}
 
         {/* ═══════ Feature Banners (Top) ═══════ */}
         <View style={s.featureSection}>
@@ -446,6 +525,42 @@ const s = StyleSheet.create({
   },
   searchPlaceholder: { flex: 1, fontSize: 14, fontWeight: '500' },
   searchDivider: { width: 1, height: 20 },
+
+  /* ── Subscription Widget ── */
+  subWidget: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginHorizontal: 20, marginTop: 12, paddingHorizontal: 14, paddingVertical: 12,
+    borderRadius: 14, borderWidth: 1,
+  },
+  subWidgetLeft: { flex: 1, gap: 4 },
+  subWidgetTokenWrap: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  subWidgetTokenValue: { fontSize: 18, fontWeight: '900', color: '#D4AF37' },
+  subWidgetTokenLabel: { fontSize: 11, fontWeight: '600', color: 'rgba(212,175,55,0.6)' },
+  subWidgetInfoRow: { flexDirection: 'row', alignItems: 'center' },
+  subWidgetTrialBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
+    backgroundColor: 'rgba(74,222,128,0.10)',
+  },
+  subWidgetTrialText: { fontSize: 10, fontWeight: '700', color: '#4ADE80' },
+  subWidgetPlanBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
+    backgroundColor: 'rgba(212,175,55,0.10)',
+  },
+  subWidgetPlanText: { fontSize: 10, fontWeight: '700', color: '#D4AF37' },
+  subWidgetFreeBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
+    backgroundColor: 'rgba(156,163,175,0.10)',
+  },
+  subWidgetFreeText: { fontSize: 10, fontWeight: '700', color: '#9CA3AF' },
+  subWidgetCta: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10,
+    backgroundColor: '#D4AF37',
+  },
+  subWidgetCtaText: { fontSize: 11, fontWeight: '800', color: '#FFF' },
 
 
 
