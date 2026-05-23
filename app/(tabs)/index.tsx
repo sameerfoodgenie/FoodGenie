@@ -256,9 +256,9 @@ export default function HomeScreen() {
               onPress={() => { Haptics.selectionAsync(); router.push('/(tabs)/profile'); }}
               style={({ pressed }) => [s.topBarLeft, pressed && { opacity: 0.8 }]}
             >
-              <LinearGradient colors={['#1E1456', '#7B2FA0']} style={s.avatar}>
-                <Text style={s.avatarText}>{initials}</Text>
-              </LinearGradient>
+              <View style={s.logoWrap}>
+                <Image source={require('../../assets/images/foodgenie-logo.png')} style={s.logoImage} contentFit="contain" transition={200} />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={[s.greeting, { color: colors.textMuted }]}>{getGreeting()}</Text>
                 <Text style={[s.userName, { color: colors.textPrimary }]} numberOfLines={1}>{name}</Text>
@@ -498,8 +498,12 @@ const s = StyleSheet.create({
   topSection: { paddingHorizontal: 20, paddingBottom: 16 },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   topBarLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: 15, fontWeight: '800', color: '#FFF' },
+  logoWrap: {
+    width: 42, height: 42, borderRadius: 12, overflow: 'hidden',
+    borderWidth: 1.5, borderColor: 'rgba(123,47,160,0.25)',
+    shadowColor: '#7B2FA0', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 3,
+  },
+  logoImage: { width: '100%', height: '100%' },
   greeting: { fontSize: 11, fontWeight: '500' },
   userName: { fontSize: 16, fontWeight: '800', maxWidth: 150 },
   topBarRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
