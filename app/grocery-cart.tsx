@@ -16,10 +16,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn, FadeInDown, FadeInLeft, FadeInRight, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import * as Location from 'expo-location';
 import { useTheme } from '../hooks/useTheme';
-import { fetchPriceComparisons, PriceComparison, PriceEntry, PROVIDER_META, needsRefresh, GroceryItemInput, getMatchScoreColor, getMatchScoreLabel } from '../services/priceComparisonService';
+import { fetchPriceComparisons, PriceComparison, PriceEntry, PROVIDER_META, GroceryItemInput, getMatchScoreColor, getMatchScoreLabel } from '../services/priceComparisonService';
+import { calculateSmartSplit, calculateMealCost, estimateMealCosts } from '../services/smartSplitService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -39,92 +40,107 @@ interface GroceryCategory {
   emoji: string;
   color: string;
   items: GroceryItem[];
+  collapsed: boolean;
 }
 
-interface DeliveryPartner {
-  id: string;
-  name: string;
-  emoji: string;
-  color: string;
-  tagline: string;
-  deliveryTime: string;
-  discount?: string;
-  url: string;
-  deepLink: string;
-}
-
-// ── Price Comparison Types ──
 interface ItemPriceData {
   loading: boolean;
   comparison: PriceComparison | null;
   expanded: boolean;
 }
 
-// ── Enhanced Product Match Card ──
-function ProductMatchCard({ entry, colors, isDark, isFirst }: {
+// ── AI Recommendation Tags ──
+const AI_TAGS: Record<string, { label: string; color: string; icon: string }> = {
+  'best_price': { label: 'Best Price', color: '#4ADE80', icon: 'local-offer' },
+  'fastest': { label: 'Fastest', color: '#7B2D8E', icon: 'bolt' },
+  'best_match': { label: 'Best Match', color: '#F5B731', icon: 'auto-awesome' },
+  'fresh': { label: 'Fresh Pick', color: '#84C225', icon: 'eco' },
+  'budget': { label: 'Budget Friendly', color: '#60A5FA', icon: 'savings' },
+  'popular': { label: 'Most Popular', color: '#F97316', icon: 'trending-up' },
+};
+
+function getItemTags(entry: PriceEntry, isBest: boolean, isFastest: boolean): string[] {
+  const tags: string[] = [];
+  if (isBest) tags.push('best_price');
+  if (isFastest) tags.push('fastest');
+  if ((entry.match_score || 0) >= 85) tags.push('best_match');
+  if (entry.provider_name === 'Local Kirana') tags.push('fresh');
+  if ((entry.discount_price || entry.price || 999) < 50) tags.push('budget');
+  return tags.slice(0, 2);
+}
+
+// ── Product Match Card ──
+function ProductMatchCard({ entry, colors, isDark, isFirst, tags }: {
   entry: PriceEntry;
   colors: any;
   isDark: boolean;
   isFirst: boolean;
+  tags: string[];
 }) {
   const meta = PROVIDER_META[entry.provider_name] || { emoji: '📦', color: '#6B7280', tagline: '' };
   const scoreColor = getMatchScoreColor(entry.match_score || 0);
-  const scoreLabel = getMatchScoreLabel(entry.match_score || 0);
 
   return (
     <View style={[
       pm.card,
       {
-        backgroundColor: isFirst
-          ? isDark ? 'rgba(74,222,128,0.05)' : 'rgba(74,222,128,0.03)'
-          : colors.surface,
-        borderColor: isFirst ? 'rgba(74,222,128,0.25)' : colors.border,
+        backgroundColor: isFirst ? (isDark ? 'rgba(74,222,128,0.04)' : 'rgba(74,222,128,0.02)') : colors.surface,
+        borderColor: isFirst ? 'rgba(74,222,128,0.20)' : colors.border,
       },
     ]}>
       <View style={pm.cardTop}>
-        <View style={[pm.providerBadge, { backgroundColor: `${meta.color}15` }]}>
-          <Text style={{ fontSize: 14 }}>{meta.emoji}</Text>
+        <View style={[pm.providerBadge, { backgroundColor: `${meta.color}12` }]}>
+          <Text style={{ fontSize: 13 }}>{meta.emoji}</Text>
           <Text style={[pm.providerText, { color: meta.color }]}>{entry.provider_name}</Text>
         </View>
-        <View style={[pm.scoreBadge, { backgroundColor: `${scoreColor}15`, borderColor: `${scoreColor}30` }]}>
-          <Text style={[pm.scoreText, { color: scoreColor }]}>{entry.match_score || 0}%</Text>
+        {/* Tags */}
+        <View style={{ flexDirection: 'row', gap: 4 }}>
+          {tags.map(tag => {
+            const t = AI_TAGS[tag];
+            if (!t) return null;
+            return (
+              <View key={tag} style={[pm.tagBadge, { backgroundColor: `${t.color}12` }]}>
+                <MaterialIcons name={t.icon as any} size={8} color={t.color} />
+                <Text style={[pm.tagText, { color: t.color }]}>{t.label}</Text>
+              </View>
+            );
+          })}
         </View>
       </View>
 
-      {/* Product title & brand */}
       <Text style={[pm.productTitle, { color: colors.textPrimary }]} numberOfLines={2}>
         {entry.product_title || entry.query_name}
       </Text>
       {entry.brand_name ? (
         <View style={pm.brandRow}>
-          <MaterialIcons name="verified" size={10} color="#7B2FA0" />
+          <MaterialIcons name="verified" size={9} color="#7B2FA0" />
           <Text style={[pm.brandText, { color: colors.textMuted }]}>{entry.brand_name}</Text>
         </View>
       ) : null}
 
-      {/* Pack size & quantity info */}
+      {/* Quantity info */}
       <View style={pm.qtySection}>
         {entry.recipe_qty ? (
-          <View style={[pm.qtyBadge, { backgroundColor: isDark ? 'rgba(123,47,160,0.08)' : 'rgba(123,47,160,0.04)' }]}>
-            <Text style={[pm.qtyLabel, { color: colors.textMuted }]}>Recipe needs</Text>
+          <View style={[pm.qtyBadge, { backgroundColor: isDark ? 'rgba(123,47,160,0.06)' : 'rgba(123,47,160,0.03)' }]}>
+            <Text style={[pm.qtyLabel, { color: colors.textMuted }]}>Need</Text>
             <Text style={[pm.qtyValue, { color: '#7B2FA0' }]}>{entry.recipe_qty}</Text>
           </View>
         ) : null}
         {entry.recommended_buy_qty ? (
-          <View style={[pm.qtyBadge, { backgroundColor: isDark ? 'rgba(74,222,128,0.08)' : 'rgba(74,222,128,0.04)' }]}>
-            <Text style={[pm.qtyLabel, { color: colors.textMuted }]}>Buy pack</Text>
+          <View style={[pm.qtyBadge, { backgroundColor: isDark ? 'rgba(74,222,128,0.06)' : 'rgba(74,222,128,0.03)' }]}>
+            <Text style={[pm.qtyLabel, { color: colors.textMuted }]}>Buy</Text>
             <Text style={[pm.qtyValue, { color: '#4ADE80' }]}>{entry.recommended_buy_qty}</Text>
           </View>
         ) : null}
         {entry.leftover && entry.leftover !== '0' ? (
-          <View style={[pm.qtyBadge, { backgroundColor: isDark ? 'rgba(245,183,49,0.08)' : 'rgba(245,183,49,0.04)' }]}>
-            <Text style={[pm.qtyLabel, { color: colors.textMuted }]}>Leftover</Text>
+          <View style={[pm.qtyBadge, { backgroundColor: isDark ? 'rgba(245,183,49,0.06)' : 'rgba(245,183,49,0.03)' }]}>
+            <Text style={[pm.qtyLabel, { color: colors.textMuted }]}>Left</Text>
             <Text style={[pm.qtyValue, { color: '#D9A020' }]}>{entry.leftover}</Text>
           </View>
         ) : null}
       </View>
 
-      {/* Price & delivery */}
+      {/* Price */}
       <View style={pm.bottomRow}>
         <View style={pm.priceSection}>
           {entry.mrp && entry.mrp > (entry.discount_price || entry.price || 0) ? (
@@ -134,79 +150,185 @@ function ProductMatchCard({ entry, colors, isDark, isFirst }: {
             ₹{entry.discount_price || entry.price || '—'}
           </Text>
         </View>
-        <View style={pm.deliverySection}>
-          {entry.delivery_time ? (
-            <View style={pm.deliveryBadge}>
-              <MaterialIcons name="schedule" size={10} color={meta.color} />
-              <Text style={[pm.deliveryText, { color: colors.textMuted }]}>{entry.delivery_time}</Text>
-            </View>
-          ) : null}
-          {!entry.availability ? (
-            <Text style={pm.outOfStock}>Out of stock</Text>
-          ) : null}
-        </View>
+        {entry.delivery_time ? (
+          <View style={pm.deliveryBadge}>
+            <MaterialIcons name="schedule" size={9} color={meta.color} />
+            <Text style={[pm.deliveryText, { color: colors.textMuted }]}>{entry.delivery_time}</Text>
+          </View>
+        ) : null}
       </View>
-
-      {/* Match label */}
-      {isFirst ? (
-        <View style={[pm.matchLabel, { backgroundColor: `${scoreColor}10` }]}>
-          <MaterialIcons name="auto-awesome" size={10} color={scoreColor} />
-          <Text style={[pm.matchLabelText, { color: scoreColor }]}>{scoreLabel}</Text>
-        </View>
-      ) : null}
     </View>
   );
 }
 
-const DELIVERY_PARTNERS: DeliveryPartner[] = [
-  {
-    id: 'zepto',
-    name: 'Zepto',
-    emoji: '⚡',
-    color: '#7B2D8E',
-    tagline: 'Fastest 10-min delivery',
-    deliveryTime: '10 min',
-    discount: 'Up to 15% off',
-    url: 'https://www.zeptonow.com',
-    deepLink: 'zepto://',
-  },
-  {
-    id: 'blinkit',
-    name: 'Blinkit',
-    emoji: '🟡',
-    color: '#F8CB2E',
-    tagline: 'Everything in minutes',
-    deliveryTime: '10-15 min',
-    discount: 'Free delivery above ₹499',
-    url: 'https://blinkit.com',
-    deepLink: 'blinkit://',
-  },
-  {
-    id: 'bigbasket',
-    name: 'BigBasket',
-    emoji: '🟢',
-    color: '#84C225',
-    tagline: 'Fresh & quality guaranteed',
-    deliveryTime: '2-4 hrs',
-    discount: 'Save 10% on first order',
-    url: 'https://www.bigbasket.com',
-    deepLink: 'bigbasket://',
-  },
-  {
-    id: 'kirana',
-    name: 'Local Kirana',
-    emoji: '🏪',
-    color: '#FF8C42',
-    tagline: 'Support your neighborhood',
-    deliveryTime: '30-60 min',
-    url: '',
-    deepLink: '',
-  },
-];
+// ── Price Comparison Card ──
+function PriceComparisonCard({ itemName, priceData, colors, isDark, onToggle }: {
+  itemName: string;
+  priceData: ItemPriceData;
+  colors: any;
+  isDark: boolean;
+  onToggle: () => void;
+}) {
+  if (priceData.loading) {
+    return (
+      <View style={pc.loadingRow}>
+        <ActivityIndicator size="small" color="#7B2FA0" />
+        <Text style={[pc.loadingText, { color: colors.textMuted }]}>Matching...</Text>
+      </View>
+    );
+  }
 
-// ── Generate grocery from meal plan data ──
+  const comparison = priceData.comparison;
+  if (!comparison || comparison.prices.length === 0) return null;
+
+  const bestPrice = comparison.bestPrice;
+  const fastestDelivery = comparison.fastestDelivery;
+  const topMatch = comparison.prices[0];
+
+  return (
+    <Animated.View entering={FadeIn.duration(200)}>
+      <Pressable onPress={onToggle} style={({ pressed }) => [pressed && { opacity: 0.85 }]}>
+        <View style={[pc.summaryRow, { backgroundColor: isDark ? 'rgba(123,47,160,0.05)' : 'rgba(123,47,160,0.02)', borderColor: 'rgba(123,47,160,0.12)' }]}>
+          <View style={pc.summaryLeft}>
+            {bestPrice ? (
+              <View style={pc.bestPriceBadge}>
+                <MaterialIcons name="local-offer" size={9} color="#4ADE80" />
+                <Text style={pc.bestPriceText}>₹{bestPrice.discount_price || bestPrice.price}</Text>
+                <Text style={[pc.bestPriceProvider, { color: colors.textMuted }]}>{bestPrice.provider_name}</Text>
+              </View>
+            ) : null}
+            {topMatch?.brand_name ? (
+              <View style={pc.fastBadge}>
+                <MaterialIcons name="verified" size={8} color="#7B2FA0" />
+                <Text style={[pc.fastText, { color: '#7B2FA0' }]}>{topMatch.brand_name}</Text>
+              </View>
+            ) : null}
+          </View>
+          <View style={pc.compareBtn}>
+            <Text style={pc.compareBtnText}>{comparison.prices.length}</Text>
+            <MaterialIcons name={priceData.expanded ? 'expand-less' : 'expand-more'} size={13} color="#7B2FA0" />
+          </View>
+        </View>
+      </Pressable>
+
+      {priceData.expanded ? (
+        <Animated.View entering={FadeInDown.duration(200)} style={pc.expandedList}>
+          {comparison.prices.map((entry, i) => {
+            const isBest = bestPrice?.provider_name === entry.provider_name;
+            const isFastest = fastestDelivery?.provider_name === entry.provider_name;
+            const tags = getItemTags(entry, isBest, isFastest);
+            return (
+              <ProductMatchCard key={i} entry={entry} colors={colors} isDark={isDark} isFirst={i === 0} tags={tags} />
+            );
+          })}
+          {comparison.isEstimated ? (
+            <View style={[pc.estimateNote, { backgroundColor: 'rgba(245,183,49,0.05)' }]}>
+              <MaterialIcons name="info-outline" size={11} color="#D9A020" />
+              <Text style={[pc.estimateText, { color: colors.textMuted }]}>Estimated prices — refreshing shortly</Text>
+            </View>
+          ) : null}
+        </Animated.View>
+      ) : null}
+    </Animated.View>
+  );
+}
+
+// ── Cost Insights Section ──
+function CostInsights({ mealCost, marketCost, leftoverValue, mealBreakdown, colors, isDark }: {
+  mealCost: number;
+  marketCost: number;
+  leftoverValue: number;
+  mealBreakdown: { breakfast: number; lunch: number; snack: number; dinner: number; daily: number; weekly: number; monthly: number };
+  colors: any;
+  isDark: boolean;
+}) {
+  const [showBreakdown, setShowBreakdown] = useState(false);
+
+  return (
+    <View style={{ gap: 12 }}>
+      {/* Main Cost Cards */}
+      <View style={[ci.card, { backgroundColor: isDark ? 'rgba(30,20,86,0.08)' : 'rgba(30,20,86,0.02)', borderColor: isDark ? 'rgba(123,47,160,0.18)' : 'rgba(30,20,86,0.08)' }]}>
+        <View style={ci.headerRow}>
+          <MaterialIcons name="analytics" size={18} color="#7B2FA0" />
+          <Text style={[ci.title, { color: colors.textPrimary }]}>Cost Intelligence</Text>
+        </View>
+
+        <View style={ci.costGrid}>
+          <View style={[ci.costItem, { backgroundColor: isDark ? 'rgba(123,47,160,0.06)' : 'rgba(123,47,160,0.03)', borderColor: 'rgba(123,47,160,0.12)' }]}>
+            <Text style={[ci.costLabel, { color: colors.textMuted }]}>Market Grocery</Text>
+            <Text style={[ci.costAmount, { color: colors.textPrimary }]}>₹{marketCost.toLocaleString()}</Text>
+            <Text style={[ci.costHint, { color: colors.textMuted }]}>Total shopping bill</Text>
+          </View>
+          <View style={[ci.costItem, { backgroundColor: isDark ? 'rgba(74,222,128,0.06)' : 'rgba(74,222,128,0.02)', borderColor: 'rgba(74,222,128,0.15)' }]}>
+            <Text style={[ci.costLabel, { color: colors.textMuted }]}>Actual Meal Cost</Text>
+            <Text style={[ci.costAmount, { color: '#4ADE80' }]}>₹{mealCost.toLocaleString()}</Text>
+            <Text style={[ci.costHint, { color: colors.textMuted }]}>Recipe consumption</Text>
+          </View>
+          <View style={[ci.costItem, { backgroundColor: isDark ? 'rgba(245,183,49,0.06)' : 'rgba(245,183,49,0.02)', borderColor: 'rgba(245,183,49,0.15)' }]}>
+            <Text style={[ci.costLabel, { color: colors.textMuted }]}>Leftover Value</Text>
+            <Text style={[ci.costAmount, { color: '#F5B731' }]}>₹{leftoverValue.toLocaleString()}</Text>
+            <Text style={[ci.costHint, { color: colors.textMuted }]}>Reusable for future</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Per Meal Breakdown */}
+      <Pressable onPress={() => { Haptics.selectionAsync(); setShowBreakdown(!showBreakdown); }}>
+        <View style={[ci.card, { backgroundColor: isDark ? 'rgba(245,183,49,0.04)' : 'rgba(245,183,49,0.02)', borderColor: 'rgba(245,183,49,0.15)' }]}>
+          <View style={ci.breakdownHeader}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <MaterialIcons name="restaurant-menu" size={16} color="#F5B731" />
+              <Text style={[ci.breakdownTitle, { color: colors.textPrimary }]}>Cost Per Meal</Text>
+            </View>
+            <MaterialIcons name={showBreakdown ? 'expand-less' : 'expand-more'} size={18} color={colors.textMuted} />
+          </View>
+
+          {showBreakdown ? (
+            <Animated.View entering={FadeInDown.duration(200)}>
+              <View style={ci.mealGrid}>
+                <MealCostRow icon="free-breakfast" label="Breakfast" cost={mealBreakdown.breakfast} colors={colors} />
+                <MealCostRow icon="lunch-dining" label="Lunch" cost={mealBreakdown.lunch} colors={colors} />
+                <MealCostRow icon="cookie" label="Snack" cost={mealBreakdown.snack} colors={colors} />
+                <MealCostRow icon="dinner-dining" label="Dinner" cost={mealBreakdown.dinner} colors={colors} />
+              </View>
+              <View style={[ci.estimateRow, { borderTopColor: colors.border }]}>
+                <View style={ci.estimateItem}>
+                  <Text style={[ci.estimateLabel, { color: colors.textMuted }]}>Daily</Text>
+                  <Text style={[ci.estimateValue, { color: colors.textPrimary }]}>₹{mealBreakdown.daily}</Text>
+                </View>
+                <View style={ci.estimateItem}>
+                  <Text style={[ci.estimateLabel, { color: colors.textMuted }]}>Weekly</Text>
+                  <Text style={[ci.estimateValue, { color: colors.textPrimary }]}>₹{mealBreakdown.weekly.toLocaleString()}</Text>
+                </View>
+                <View style={ci.estimateItem}>
+                  <Text style={[ci.estimateLabel, { color: colors.textMuted }]}>Monthly</Text>
+                  <Text style={[ci.estimateValue, { color: '#F5B731' }]}>₹{mealBreakdown.monthly.toLocaleString()}</Text>
+                </View>
+              </View>
+            </Animated.View>
+          ) : (
+            <Text style={[ci.breakdownPreview, { color: colors.textMuted }]}>
+              Daily ₹{mealBreakdown.daily} • Weekly ₹{mealBreakdown.weekly.toLocaleString()} • Monthly ₹{mealBreakdown.monthly.toLocaleString()}
+            </Text>
+          )}
+        </View>
+      </Pressable>
+    </View>
+  );
+}
+
+function MealCostRow({ icon, label, cost, colors }: { icon: string; label: string; cost: number; colors: any }) {
+  return (
+    <View style={ci.mealRow}>
+      <MaterialIcons name={icon as any} size={14} color={colors.textMuted} />
+      <Text style={[ci.mealLabel, { color: colors.textSecondary }]}>{label}</Text>
+      <Text style={[ci.mealCost, { color: colors.textPrimary }]}>₹{cost}</Text>
+    </View>
+  );
+}
+
+// ── Generate grocery ──
 function generateGroceryFromMeals(planDataStr: string): GroceryCategory[] {
-  // Parse meal plan data passed as params
   let meals: any[] = [];
   try {
     const parsed = JSON.parse(planDataStr);
@@ -214,11 +336,9 @@ function generateGroceryFromMeals(planDataStr: string): GroceryCategory[] {
     else if (parsed.days) {
       parsed.days.forEach((d: any) => { if (d.meals) meals.push(...d.meals); });
     }
-  } catch { /* use defaults */ }
+  } catch {}
 
-  // Collect all ingredients
   const ingredientMap = new Map<string, { qty: string; category: string; emoji: string }>();
-
   meals.forEach((meal: any) => {
     (meal.ingredients || []).forEach((ing: string) => {
       const lower = ing.toLowerCase();
@@ -229,12 +349,8 @@ function generateGroceryFromMeals(planDataStr: string): GroceryCategory[] {
     });
   });
 
-  // If no ingredients from meals, generate default grocery
-  if (ingredientMap.size === 0) {
-    return getDefaultGrocery();
-  }
+  if (ingredientMap.size === 0) return getDefaultGrocery();
 
-  // Group by category
   const categoryMap = new Map<string, GroceryItem[]>();
   ingredientMap.forEach((info, name) => {
     const items = categoryMap.get(info.category) || [];
@@ -254,9 +370,11 @@ function generateGroceryFromMeals(planDataStr: string): GroceryCategory[] {
     'Fruits': { emoji: '🍎', color: '#FF6B6B' },
     'Dairy': { emoji: '🥛', color: '#60A5FA' },
     'Grains & Staples': { emoji: '🌾', color: '#D4AF37' },
-    'Spices & Seasonings': { emoji: '🌶️', color: '#F97316' },
+    'Spices & Seasonings': { emoji: '🧂', color: '#F97316' },
     'Oils & Fats': { emoji: '🫗', color: '#A78BFA' },
     'Protein': { emoji: '🥩', color: '#EF4444' },
+    'Bakery': { emoji: '🍞', color: '#D2691E' },
+    'Beverages': { emoji: '🥤', color: '#06B6D4' },
     'Others': { emoji: '📦', color: '#6B7280' },
   };
 
@@ -266,15 +384,16 @@ function generateGroceryFromMeals(planDataStr: string): GroceryCategory[] {
     emoji: CATEGORY_META[catName]?.emoji || '📦',
     color: CATEGORY_META[catName]?.color || '#6B7280',
     items,
+    collapsed: false,
   }));
 }
 
 function categorizeIngredient(name: string): { category: string; emoji: string } {
-  const vegs = ['onion', 'tomato', 'potato', 'garlic', 'ginger', 'carrot', 'capsicum', 'peas', 'beans', 'cauliflower', 'cabbage', 'brinjal', 'okra', 'spinach', 'coriander', 'mint', 'cucumber', 'bottle gourd', 'radish', 'beetroot', 'palak', 'methi', 'lady finger'];
+  const vegs = ['onion', 'tomato', 'potato', 'garlic', 'ginger', 'carrot', 'capsicum', 'peas', 'beans', 'cauliflower', 'cabbage', 'brinjal', 'okra', 'spinach', 'coriander', 'mint', 'cucumber', 'bottle gourd', 'radish', 'beetroot', 'palak', 'methi', 'lady finger', 'green chilli'];
   const fruits = ['banana', 'apple', 'mango', 'orange', 'lemon', 'lime', 'papaya', 'pomegranate', 'grapes', 'watermelon'];
   const dairy = ['milk', 'curd', 'yogurt', 'paneer', 'butter', 'ghee', 'cheese', 'cream'];
-  const grains = ['rice', 'wheat', 'atta', 'flour', 'dal', 'lentil', 'chana', 'rajma', 'oats', 'poha', 'semolina', 'sooji', 'bread', 'roti', 'moong', 'masoor', 'toor', 'urad', 'besan'];
-  const spices = ['turmeric', 'cumin', 'coriander powder', 'chilli', 'pepper', 'garam masala', 'salt', 'mustard seed', 'fenugreek', 'bay leaf', 'cinnamon', 'clove', 'cardamom', 'asafoetida', 'hing'];
+  const grains = ['rice', 'wheat', 'atta', 'flour', 'dal', 'lentil', 'chana', 'rajma', 'oats', 'poha', 'semolina', 'sooji', 'bread', 'roti', 'moong', 'masoor', 'toor', 'urad', 'besan', 'maida', 'sugar'];
+  const spices = ['turmeric', 'cumin', 'coriander powder', 'chilli', 'pepper', 'garam masala', 'salt', 'mustard seed', 'fenugreek', 'bay leaf', 'cinnamon', 'clove', 'cardamom', 'asafoetida', 'hing', 'masala'];
   const oils = ['oil', 'sunflower', 'mustard oil', 'olive oil', 'coconut oil', 'sesame'];
   const protein = ['chicken', 'egg', 'fish', 'mutton', 'prawn', 'soya', 'tofu', 'nuts', 'almond', 'cashew', 'peanut'];
 
@@ -282,7 +401,7 @@ function categorizeIngredient(name: string): { category: string; emoji: string }
   if (fruits.some(v => name.includes(v))) return { category: 'Fruits', emoji: '🍎' };
   if (dairy.some(v => name.includes(v))) return { category: 'Dairy', emoji: '🥛' };
   if (grains.some(v => name.includes(v))) return { category: 'Grains & Staples', emoji: '🌾' };
-  if (spices.some(v => name.includes(v))) return { category: 'Spices & Seasonings', emoji: '🌶️' };
+  if (spices.some(v => name.includes(v))) return { category: 'Spices & Seasonings', emoji: '🧂' };
   if (oils.some(v => name.includes(v))) return { category: 'Oils & Fats', emoji: '🫗' };
   if (protein.some(v => name.includes(v))) return { category: 'Protein', emoji: '🥩' };
   return { category: 'Others', emoji: '📦' };
@@ -290,9 +409,10 @@ function categorizeIngredient(name: string): { category: string; emoji: string }
 
 function estimatePrice(name: string): number {
   const priceMap: Record<string, number> = {
-    rice: 280, wheat: 220, atta: 220, flour: 200, oil: 180, milk: 60, curd: 40, paneer: 80,
+    rice: 280, wheat: 220, atta: 220, flour: 200, oil: 180, milk: 60, curd: 40, paneer: 135,
     butter: 55, ghee: 250, chicken: 200, egg: 90, fish: 250, mutton: 400, dal: 140,
-    onion: 40, tomato: 30, potato: 30, sugar: 45, salt: 25, turmeric: 20, cumin: 30,
+    onion: 52, tomato: 35, potato: 45, sugar: 45, salt: 25, turmeric: 38, cumin: 32,
+    bread: 45, cheese: 110, cream: 65, masala: 55,
   };
   for (const [key, price] of Object.entries(priceMap)) {
     if (name.includes(key)) return price;
@@ -303,280 +423,57 @@ function estimatePrice(name: string): number {
 function getDefaultGrocery(): GroceryCategory[] {
   return [
     {
-      id: 'vegs', name: 'Vegetables', emoji: '🥬', color: '#4ADE80',
+      id: 'dairy', name: 'Dairy', emoji: '🥛', color: '#60A5FA', collapsed: false,
       items: [
-        { name: 'Onions', qty: '2 kg', price: 60, emoji: '🧅', category: 'Vegetables', checked: false },
-        { name: 'Tomatoes', qty: '1 kg', price: 40, emoji: '🍅', category: 'Vegetables', checked: false },
-        { name: 'Potatoes', qty: '2 kg', price: 50, emoji: '🥔', category: 'Vegetables', checked: false },
-        { name: 'Green Chillies', qty: '100 g', price: 15, emoji: '🌶️', category: 'Vegetables', checked: false },
-        { name: 'Coriander Leaves', qty: '1 bunch', price: 10, emoji: '🌿', category: 'Vegetables', checked: false },
-        { name: 'Spinach', qty: '500 g', price: 25, emoji: '🥬', category: 'Vegetables', checked: false },
+        { name: 'Milk (Toned)', qty: '1 L', price: 56, emoji: '🥛', category: 'Dairy', checked: false },
+        { name: 'Curd', qty: '400 g', price: 35, emoji: '🥣', category: 'Dairy', checked: false },
+        { name: 'Paneer', qty: '500 g', price: 135, emoji: '🧀', category: 'Dairy', checked: false },
+        { name: 'Butter', qty: '200 g', price: 52, emoji: '🧈', category: 'Dairy', checked: false },
       ],
     },
     {
-      id: 'grains', name: 'Grains & Staples', emoji: '🌾', color: '#D4AF37',
+      id: 'vegs', name: 'Vegetables', emoji: '🥬', color: '#4ADE80', collapsed: false,
       items: [
-        { name: 'Basmati Rice', qty: '5 kg', price: 450, emoji: '🍚', category: 'Grains & Staples', checked: false },
-        { name: 'Atta (Wheat Flour)', qty: '5 kg', price: 220, emoji: '🌾', category: 'Grains & Staples', checked: false },
-        { name: 'Toor Dal', qty: '1 kg', price: 140, emoji: '🫘', category: 'Grains & Staples', checked: false },
-        { name: 'Moong Dal', qty: '500 g', price: 80, emoji: '🫘', category: 'Grains & Staples', checked: false },
+        { name: 'Onions', qty: '2 kg', price: 52, emoji: '🧅', category: 'Vegetables', checked: false },
+        { name: 'Tomatoes', qty: '1 kg', price: 35, emoji: '🍅', category: 'Vegetables', checked: false },
+        { name: 'Potatoes', qty: '2 kg', price: 45, emoji: '🥔', category: 'Vegetables', checked: false },
+        { name: 'Green Chillies', qty: '100 g', price: 10, emoji: '🌶️', category: 'Vegetables', checked: false },
+        { name: 'Coriander Leaves', qty: '1 bunch', price: 8, emoji: '🌿', category: 'Vegetables', checked: false },
+        { name: 'Spinach', qty: '500 g', price: 20, emoji: '🥬', category: 'Vegetables', checked: false },
       ],
     },
     {
-      id: 'dairy', name: 'Dairy', emoji: '🥛', color: '#60A5FA',
+      id: 'grains', name: 'Grains & Staples', emoji: '🌾', color: '#D4AF37', collapsed: false,
       items: [
-        { name: 'Milk (Toned)', qty: '7 L', price: 350, emoji: '🥛', category: 'Dairy', checked: false },
-        { name: 'Curd', qty: '1 kg', price: 40, emoji: '🥣', category: 'Dairy', checked: false },
-        { name: 'Paneer', qty: '500 g', price: 80, emoji: '🧀', category: 'Dairy', checked: false },
+        { name: 'Basmati Rice', qty: '5 kg', price: 399, emoji: '🍚', category: 'Grains & Staples', checked: false },
+        { name: 'Atta (Wheat Flour)', qty: '5 kg', price: 198, emoji: '🌾', category: 'Grains & Staples', checked: false },
+        { name: 'Toor Dal', qty: '1 kg', price: 135, emoji: '🫘', category: 'Grains & Staples', checked: false },
+        { name: 'Moong Dal', qty: '1 kg', price: 115, emoji: '🫘', category: 'Grains & Staples', checked: false },
       ],
     },
     {
-      id: 'spices', name: 'Spices & Seasonings', emoji: '🌶️', color: '#F97316',
+      id: 'spices', name: 'Spices & Masalas', emoji: '🧂', color: '#F97316', collapsed: false,
       items: [
-        { name: 'Turmeric Powder', qty: '200 g', price: 40, emoji: '🟡', category: 'Spices & Seasonings', checked: false },
-        { name: 'Cumin Seeds', qty: '100 g', price: 30, emoji: '🟤', category: 'Spices & Seasonings', checked: false },
-        { name: 'Garam Masala', qty: '100 g', price: 45, emoji: '🌶️', category: 'Spices & Seasonings', checked: false },
-        { name: 'Red Chilli Powder', qty: '200 g', price: 50, emoji: '🔴', category: 'Spices & Seasonings', checked: false },
+        { name: 'Turmeric Powder', qty: '200 g', price: 38, emoji: '🟡', category: 'Spices & Seasonings', checked: false },
+        { name: 'Cumin Seeds', qty: '100 g', price: 32, emoji: '🟤', category: 'Spices & Seasonings', checked: false },
+        { name: 'Garam Masala', qty: '100 g', price: 55, emoji: '🌶️', category: 'Spices & Seasonings', checked: false },
+        { name: 'Red Chilli Powder', qty: '200 g', price: 48, emoji: '🔴', category: 'Spices & Seasonings', checked: false },
       ],
     },
     {
-      id: 'oils', name: 'Oils & Fats', emoji: '🫗', color: '#A78BFA',
+      id: 'oils', name: 'Oils & Fats', emoji: '🫗', color: '#A78BFA', collapsed: false,
       items: [
-        { name: 'Sunflower Oil', qty: '2 L', price: 280, emoji: '🫗', category: 'Oils & Fats', checked: false },
-        { name: 'Ghee', qty: '500 ml', price: 250, emoji: '🧈', category: 'Oils & Fats', checked: false },
+        { name: 'Sunflower Oil', qty: '2 L', price: 249, emoji: '🫗', category: 'Oils & Fats', checked: false },
+        { name: 'Ghee', qty: '500 ml', price: 245, emoji: '🧈', category: 'Oils & Fats', checked: false },
+      ],
+    },
+    {
+      id: 'protein', name: 'Protein', emoji: '🥩', color: '#EF4444', collapsed: false,
+      items: [
+        { name: 'Eggs', qty: '12 pcs', price: 78, emoji: '🥚', category: 'Protein', checked: false },
       ],
     },
   ];
-}
-
-// ── Price Comparison Card Component (Enhanced) ──
-function PriceComparisonCard({ itemName, priceData, colors, isDark, onToggle }: {
-  itemName: string;
-  priceData: ItemPriceData;
-  colors: any;
-  isDark: boolean;
-  onToggle: () => void;
-}) {
-  if (priceData.loading) {
-    return (
-      <View style={pc.loadingRow}>
-        <ActivityIndicator size="small" color="#7B2FA0" />
-        <Text style={[pc.loadingText, { color: colors.textMuted }]}>Matching products...</Text>
-      </View>
-    );
-  }
-
-  const comparison = priceData.comparison;
-  if (!comparison || comparison.prices.length === 0) return null;
-
-  const bestPrice = comparison.bestPrice;
-  const fastestDelivery = comparison.fastestDelivery;
-  const topMatch = comparison.prices[0]; // Highest match score
-
-  return (
-    <Animated.View entering={FadeIn.duration(250)}>
-      <Pressable onPress={onToggle} style={({ pressed }) => [pressed && { opacity: 0.85 }]}>
-        <View style={[pc.summaryRow, { backgroundColor: isDark ? 'rgba(123,47,160,0.06)' : 'rgba(123,47,160,0.03)', borderColor: 'rgba(123,47,160,0.15)' }]}>
-          <View style={pc.summaryLeft}>
-            {bestPrice ? (
-              <View style={pc.bestPriceBadge}>
-                <MaterialIcons name="local-offer" size={10} color="#4ADE80" />
-                <Text style={pc.bestPriceText}>₹{bestPrice.discount_price || bestPrice.price}</Text>
-                <Text style={[pc.bestPriceProvider, { color: colors.textMuted }]}>{bestPrice.provider_name}</Text>
-              </View>
-            ) : null}
-            {topMatch?.brand_name ? (
-              <View style={pc.fastBadge}>
-                <MaterialIcons name="verified" size={9} color="#7B2FA0" />
-                <Text style={[pc.fastText, { color: '#7B2FA0' }]}>{topMatch.brand_name}</Text>
-              </View>
-            ) : null}
-            {topMatch?.recommended_buy_qty ? (
-              <View style={pc.fastBadge}>
-                <MaterialIcons name="inventory-2" size={9} color="#D9A020" />
-                <Text style={[pc.fastText, { color: '#D9A020' }]}>{topMatch.recommended_buy_qty}</Text>
-              </View>
-            ) : null}
-          </View>
-          <View style={pc.compareBtn}>
-            <Text style={pc.compareBtnText}>{comparison.prices.length} matches</Text>
-            <MaterialIcons name={priceData.expanded ? 'expand-less' : 'expand-more'} size={14} color="#7B2FA0" />
-          </View>
-        </View>
-      </Pressable>
-
-      {priceData.expanded ? (
-        <Animated.View entering={FadeInDown.duration(200)} style={pc.expandedList}>
-          {comparison.prices.map((entry, i) => (
-            <ProductMatchCard
-              key={i}
-              entry={entry}
-              colors={colors}
-              isDark={isDark}
-              isFirst={i === 0}
-            />
-          ))}
-          {comparison.isEstimated ? (
-            <View style={[pc.estimateNote, { backgroundColor: 'rgba(245,183,49,0.06)' }]}>
-              <MaterialIcons name="info-outline" size={12} color="#D9A020" />
-              <Text style={[pc.estimateText, { color: colors.textMuted }]}>Estimated prices. Real-time data will update shortly.</Text>
-            </View>
-          ) : null}
-          {comparison.lastUpdated ? (
-            <Text style={[pc.lastUpdated, { color: colors.textMuted }]}>
-              Updated {getTimeAgo(comparison.lastUpdated)}
-            </Text>
-          ) : null}
-          {/* Replace option */}
-          <Pressable style={({ pressed }) => [pc.replaceBtn, pressed && { opacity: 0.7 }]}>
-            <MaterialIcons name="swap-horiz" size={12} color="#7B2FA0" />
-            <Text style={pc.replaceBtnText}>Replace product</Text>
-          </Pressable>
-        </Animated.View>
-      ) : null}
-    </Animated.View>
-  );
-}
-
-// ── Total By Provider Component ──
-function TotalByProvider({ priceMap, categories, colors, isDark, onSelectPartner }: {
-  priceMap: Record<string, ItemPriceData>;
-  categories: GroceryCategory[];
-  colors: any;
-  isDark: boolean;
-  onSelectPartner: (id: string) => void;
-}) {
-  const allItems = categories.flatMap(c => c.items);
-
-  // Calculate totals per provider
-  const providerTotals: { name: string; total: number; itemCount: number; missingCount: number; emoji: string; color: string }[] = [];
-
-  const providerNames = ['Zepto', 'Blinkit', 'BigBasket', 'Instamart', 'Local Kirana'];
-
-  providerNames.forEach(providerName => {
-    let total = 0;
-    let itemCount = 0;
-    let missingCount = 0;
-
-    allItems.forEach(item => {
-      const data = priceMap[item.name];
-      if (data?.comparison?.prices) {
-        const entry = data.comparison.prices.find(
-          p => p.provider_name === providerName && p.availability && p.price !== null
-        );
-        if (entry) {
-          total += (entry.discount_price || entry.price || 0);
-          itemCount++;
-        } else {
-          missingCount++;
-          total += item.price; // fallback to estimated
-        }
-      } else {
-        missingCount++;
-        total += item.price;
-      }
-    });
-
-    const meta = PROVIDER_META[providerName] || { emoji: '📦', color: '#6B7280', tagline: '' };
-    providerTotals.push({
-      name: providerName,
-      total: Math.round(total),
-      itemCount,
-      missingCount,
-      emoji: meta.emoji,
-      color: meta.color,
-    });
-  });
-
-  // Sort by total (cheapest first)
-  providerTotals.sort((a, b) => a.total - b.total);
-  const cheapest = providerTotals[0];
-
-  return (
-    <View style={[tp.card, { backgroundColor: isDark ? 'rgba(74,222,128,0.03)' : 'rgba(74,222,128,0.02)', borderColor: 'rgba(74,222,128,0.20)' }]}>
-      <View style={tp.headerRow}>
-        <MaterialIcons name="leaderboard" size={20} color="#4ADE80" />
-        <View style={{ flex: 1 }}>
-          <Text style={[tp.title, { color: colors.textPrimary }]}>Total by Provider</Text>
-          <Text style={[tp.subtitle, { color: colors.textMuted }]}>Full cart cost comparison across all partners</Text>
-        </View>
-      </View>
-
-      <View style={tp.providerList}>
-        {providerTotals.map((provider, i) => {
-          const isCheapest = provider.name === cheapest.name;
-          const savings = provider.total - cheapest.total;
-          const partnerId = provider.name.toLowerCase().replace(/\s/g, '');
-          // Map to delivery partner id
-          const partnerIdMap: Record<string, string> = { 'zepto': 'zepto', 'blinkit': 'blinkit', 'bigbasket': 'bigbasket', 'instamart': 'instamart', 'localkirana': 'kirana' };
-          const mappedId = partnerIdMap[partnerId] || partnerId;
-
-          return (
-            <Pressable
-              key={provider.name}
-              style={({ pressed }) => [
-                tp.providerRow,
-                {
-                  backgroundColor: isCheapest
-                    ? isDark ? 'rgba(74,222,128,0.08)' : 'rgba(74,222,128,0.05)'
-                    : colors.surface,
-                  borderColor: isCheapest ? 'rgba(74,222,128,0.30)' : colors.border,
-                },
-                pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
-              ]}
-              onPress={() => onSelectPartner(mappedId)}
-            >
-              <View style={tp.rankBadge}>
-                <Text style={[tp.rankText, { color: isCheapest ? '#4ADE80' : colors.textMuted }]}>#{i + 1}</Text>
-              </View>
-              <View style={[tp.providerIcon, { backgroundColor: `${provider.color}15` }]}>
-                <Text style={{ fontSize: 18 }}>{provider.emoji}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={[tp.providerName, { color: colors.textPrimary }]}>{provider.name}</Text>
-                  {isCheapest ? (
-                    <View style={tp.cheapestBadge}>
-                      <MaterialIcons name="workspace-premium" size={9} color="#FFF" />
-                      <Text style={tp.cheapestText}>Cheapest</Text>
-                    </View>
-                  ) : null}
-                </View>
-                <Text style={[tp.itemCountText, { color: colors.textMuted }]}>
-                  {provider.itemCount} items priced{provider.missingCount > 0 ? ` • ${provider.missingCount} estimated` : ''}
-                </Text>
-              </View>
-              <View style={tp.priceCol}>
-                <Text style={[tp.totalPrice, { color: isCheapest ? '#4ADE80' : colors.textPrimary }]}>₹{provider.total.toLocaleString()}</Text>
-                {!isCheapest && savings > 0 ? (
-                  <Text style={[tp.savingsText, { color: '#F04E50' }]}>+₹{savings}</Text>
-                ) : null}
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {cheapest ? (
-        <View style={[tp.tipRow, { backgroundColor: 'rgba(74,222,128,0.06)' }]}>
-          <MaterialIcons name="tips-and-updates" size={12} color="#4ADE80" />
-          <Text style={[tp.tipText, { color: colors.textSecondary }]}>
-            {cheapest.emoji} {cheapest.name} is cheapest for your full cart — save up to ₹{providerTotals[providerTotals.length - 1].total - cheapest.total} vs costliest
-          </Text>
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-function getTimeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 // ── Main Screen ──
@@ -589,7 +486,6 @@ export default function GroceryCartScreen() {
   const [categories, setCategories] = useState<GroceryCategory[]>(() =>
     generateGroceryFromMeals(params.planData || '{}')
   );
-  const [showPartners, setShowPartners] = useState(false);
   const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
   const [priceMap, setPriceMap] = useState<Record<string, ItemPriceData>>({});
   const [pricesLoading, setPricesLoading] = useState(false);
@@ -598,72 +494,43 @@ export default function GroceryCartScreen() {
   const [pincodeInput, setPincodeInput] = useState('400001');
   const [locationLoading, setLocationLoading] = useState(false);
 
-  // Detect location and reverse-geocode to pincode
   const handleUseMyLocation = useCallback(async () => {
     try {
       setLocationLoading(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setLocationLoading(false);
-        return;
-      }
-
+      if (status !== 'granted') { setLocationLoading(false); return; }
       const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const [geocode] = await Location.reverseGeocodeAsync({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
-
-      if (geocode?.postalCode) {
-        setPincodeInput(geocode.postalCode);
-        setPincode(geocode.postalCode);
-      }
-    } catch (err) {
-      console.error('Location error:', err);
-    } finally {
-      setLocationLoading(false);
-    }
+      const [geocode] = await Location.reverseGeocodeAsync({ latitude: location.coords.latitude, longitude: location.coords.longitude });
+      if (geocode?.postalCode) { setPincodeInput(geocode.postalCode); setPincode(geocode.postalCode); }
+    } catch (err) { console.error('Location error:', err); }
+    finally { setLocationLoading(false); }
   }, []);
 
-  // Fetch price comparisons on mount and when pincode changes
-  useEffect(() => {
-    loadPriceComparisons();
-  }, [pincode]);
+  useEffect(() => { loadPriceComparisons(); }, [pincode]);
 
   const loadPriceComparisons = useCallback(async () => {
     const allItems: GroceryItemInput[] = categories.flatMap(c => c.items.map(i => ({ name: i.name, qty: i.qty })));
     if (allItems.length === 0) return;
 
     setPricesLoading(true);
-    // Initialize loading state for all items
     const initialMap: Record<string, ItemPriceData> = {};
-    allItems.forEach(item => {
-      initialMap[item.name] = { loading: true, comparison: null, expanded: false };
-    });
+    allItems.forEach(item => { initialMap[item.name] = { loading: true, comparison: null, expanded: false }; });
     setPriceMap(initialMap);
 
-    const { data, error } = await fetchPriceComparisons(allItems.slice(0, 15), pincode);
+    const { data } = await fetchPriceComparisons(allItems.slice(0, 20), pincode);
     
     if (data) {
       const updatedMap: Record<string, ItemPriceData> = {};
       allItems.forEach(item => {
         const key = Object.keys(data).find(k => k.toLowerCase() === item.name.toLowerCase()) || item.name;
-        updatedMap[item.name] = {
-          loading: false,
-          comparison: data[key] || null,
-          expanded: false,
-        };
+        updatedMap[item.name] = { loading: false, comparison: data[key] || null, expanded: false };
       });
       setPriceMap(updatedMap);
       setPricesLoaded(true);
     } else {
-      // Clear loading state on error
       const clearedMap: Record<string, ItemPriceData> = {};
-      allItems.forEach(item => {
-        clearedMap[item.name] = { loading: false, comparison: null, expanded: false };
-      });
+      allItems.forEach(item => { clearedMap[item.name] = { loading: false, comparison: null, expanded: false }; });
       setPriceMap(clearedMap);
     }
     setPricesLoading(false);
@@ -671,17 +538,25 @@ export default function GroceryCartScreen() {
 
   const togglePriceExpand = useCallback((itemName: string) => {
     Haptics.selectionAsync();
-    setPriceMap(prev => ({
-      ...prev,
-      [itemName]: { ...prev[itemName], expanded: !prev[itemName]?.expanded },
-    }));
+    setPriceMap(prev => ({ ...prev, [itemName]: { ...prev[itemName], expanded: !prev[itemName]?.expanded } }));
+  }, []);
+
+  const toggleCategory = useCallback((catId: string) => {
+    Haptics.selectionAsync();
+    setCategories(prev => prev.map(c => c.id === catId ? { ...c, collapsed: !c.collapsed } : c));
   }, []);
 
   const totalItems = useMemo(() => categories.reduce((s, c) => s + c.items.length, 0), [categories]);
   const totalCost = useMemo(() => categories.reduce((s, c) => s + c.items.reduce((si, item) => si + item.price, 0), 0), [categories]);
   const checkedCount = useMemo(() => categories.reduce((s, c) => s + c.items.filter(i => i.checked).length, 0), [categories]);
-  const estimatedSavings = useMemo(() => Math.round(totalCost * 0.15), [totalCost]);
-  const marketPrice = totalCost + estimatedSavings;
+
+  // Cost Intelligence
+  const costData = useMemo(() => {
+    const allItems = categories.flatMap(c => c.items);
+    return calculateMealCost(allItems, priceMap as any);
+  }, [categories, priceMap]);
+
+  const mealBreakdown = useMemo(() => estimateMealCosts(costData.mealCost), [costData.mealCost]);
 
   const toggleItem = useCallback((catId: string, itemIdx: number) => {
     Haptics.selectionAsync();
@@ -691,16 +566,12 @@ export default function GroceryCartScreen() {
     }));
   }, []);
 
-  const handlePartnerSelect = useCallback((partner: DeliveryPartner) => {
+  const handleSmartSplit = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    setSelectedPartner(partner.id);
-    // Future: Route order directly to partner
-    if (partner.url) {
-      setTimeout(() => {
-        Linking.openURL(partner.url).catch(() => {});
-      }, 300);
-    }
-  }, []);
+    const allItems = categories.flatMap(c => c.items.map(i => ({ name: i.name, qty: i.qty, price: i.price, category: i.category })));
+    const splitResult = calculateSmartSplit(allItems, priceMap as any);
+    router.push({ pathname: '/smart-split', params: { splitData: JSON.stringify(splitResult) } });
+  }, [categories, priceMap]);
 
   const handleShareList = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -711,492 +582,360 @@ export default function GroceryCartScreen() {
         lines.push(`  ${item.checked ? '✅' : '⬜'} ${item.name} — ${item.qty} (₹${item.price})`);
       });
     });
-    lines.push(`\n💰 Total: ₹${totalCost} | Savings: ₹${estimatedSavings}`);
-    try {
-      await Share.share({ message: lines.join('\n') });
-    } catch { /* ignore */ }
-  }, [categories, totalCost, estimatedSavings]);
+    lines.push(`\n💰 Total: ₹${totalCost}`);
+    try { await Share.share({ message: lines.join('\n') }); } catch {}
+  }, [categories, totalCost]);
 
   return (
     <View style={[st.container, { backgroundColor: colors.background }]}>
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         {/* Header */}
-        <LinearGradient
-          colors={['#1E1456', '#7B2FA0']}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={st.header}
-        >
+        <LinearGradient colors={['#1E1456', '#7B2FA0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.header}>
           <View style={st.headerRow}>
             <Pressable style={({ pressed }) => [st.backBtn, pressed && { opacity: 0.7 }]} onPress={() => router.back()}>
               <MaterialIcons name="arrow-back" size={22} color="#FFF" />
             </Pressable>
             <View style={{ flex: 1 }}>
-              <Text style={st.headerTitle}>Ready Grocery Cart 🛒</Text>
-              <Text style={st.headerSub}>
-                {totalItems} items from your {params.planType || 'today'} meal plan
-              </Text>
+              <Text style={st.headerTitle}>Smart Grocery 🛒</Text>
+              <Text style={st.headerSub}>{totalItems} items • {params.planType || 'today'} plan</Text>
             </View>
             <Pressable style={({ pressed }) => [st.shareBtn, pressed && { opacity: 0.7 }]} onPress={handleShareList}>
-              <MaterialIcons name="share" size={20} color="#FFF" />
+              <MaterialIcons name="share" size={18} color="#FFF" />
             </Pressable>
           </View>
-
-          {/* Cost Summary */}
-          <Animated.View entering={FadeIn.duration(500)} style={st.costSummary}>
-            <View style={st.costItem}>
-              <Text style={st.costLabel}>Market Price</Text>
-              <Text style={st.costStrikethrough}>₹{marketPrice.toLocaleString()}</Text>
-            </View>
-            <View style={st.costItem}>
-              <Text style={st.costLabel}>Your Cost</Text>
-              <Text style={st.costValue}>₹{totalCost.toLocaleString()}</Text>
-            </View>
-            <View style={st.costItem}>
-              <Text style={st.costLabel}>You Save</Text>
-              <View style={st.savingsBadge}>
-                <MaterialIcons name="local-offer" size={12} color="#FFF" />
-                <Text style={st.savingsValue}>₹{estimatedSavings}</Text>
-              </View>
-            </View>
-          </Animated.View>
 
           {/* Progress */}
           <View style={st.progressRow}>
             <View style={st.progressBar}>
               <View style={[st.progressFill, { width: `${totalItems > 0 ? (checkedCount / totalItems) * 100 : 0}%` }]} />
             </View>
-            <Text style={st.progressText}>{checkedCount}/{totalItems} checked</Text>
+            <Text style={st.progressText}>{checkedCount}/{totalItems}</Text>
           </View>
         </LinearGradient>
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 160 }}
-        >
-          {/* Pincode Input */}
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 140 }}>
+          {/* Pincode */}
           <Animated.View entering={FadeInDown.delay(50).duration(300)} style={[st.pincodeSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={st.pincodeLeft}>
-              <MaterialIcons name="location-on" size={18} color="#7B2FA0" />
-              <View>
-                <Text style={[st.pincodeLabel, { color: colors.textMuted }]}>Delivery Pincode</Text>
-                <Text style={[st.pincodeHint, { color: colors.textMuted }]}>Prices vary by location</Text>
-              </View>
+              <MaterialIcons name="location-on" size={16} color="#7B2FA0" />
+              <Text style={[st.pincodeLabel, { color: colors.textSecondary }]}>Pincode</Text>
             </View>
             <View style={st.pincodeRight}>
               <Pressable
-                style={({ pressed }) => [
-                  st.locationBtn,
-                  { backgroundColor: isDark ? 'rgba(123,47,160,0.12)' : 'rgba(123,47,160,0.06)', borderColor: 'rgba(123,47,160,0.20)' },
-                  pressed && { opacity: 0.7 },
-                ]}
+                style={({ pressed }) => [st.locationBtn, { backgroundColor: isDark ? 'rgba(123,47,160,0.10)' : 'rgba(123,47,160,0.05)' }, pressed && { opacity: 0.7 }]}
                 onPress={handleUseMyLocation}
                 disabled={locationLoading}
               >
-                {locationLoading ? (
-                  <ActivityIndicator size="small" color="#7B2FA0" />
-                ) : (
-                  <MaterialIcons name="my-location" size={16} color="#7B2FA0" />
-                )}
+                {locationLoading ? <ActivityIndicator size="small" color="#7B2FA0" /> : <MaterialIcons name="my-location" size={14} color="#7B2FA0" />}
               </Pressable>
               <TextInput
-                style={[st.pincodeInput, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? 'rgba(123,47,160,0.06)' : 'rgba(123,47,160,0.03)' }]}
+                style={[st.pincodeInput, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? 'rgba(123,47,160,0.05)' : 'rgba(123,47,160,0.02)' }]}
                 value={pincodeInput}
-                onChangeText={(text) => setPincodeInput(text.replace(/[^0-9]/g, '').slice(0, 6))}
+                onChangeText={(t) => setPincodeInput(t.replace(/[^0-9]/g, '').slice(0, 6))}
                 keyboardType="number-pad"
                 maxLength={6}
                 placeholder="400001"
                 placeholderTextColor={colors.textMuted}
               />
               <Pressable
-                style={({ pressed }) => [
-                  st.pincodeApplyBtn,
-                  pincodeInput.length === 6 && pincodeInput !== pincode ? { backgroundColor: '#7B2FA0' } : { backgroundColor: isDark ? 'rgba(123,47,160,0.15)' : 'rgba(123,47,160,0.08)' },
-                  pressed && { opacity: 0.7 },
-                ]}
-                onPress={() => {
-                  if (pincodeInput.length === 6 && pincodeInput !== pincode) {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    setPincode(pincodeInput);
-                  }
-                }}
+                style={({ pressed }) => [st.pincodeApplyBtn, pincodeInput.length === 6 && pincodeInput !== pincode ? { backgroundColor: '#7B2FA0' } : { backgroundColor: isDark ? 'rgba(123,47,160,0.12)' : 'rgba(123,47,160,0.06)' }, pressed && { opacity: 0.7 }]}
+                onPress={() => { if (pincodeInput.length === 6 && pincodeInput !== pincode) { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setPincode(pincodeInput); } }}
                 disabled={pincodeInput.length !== 6 || pincodeInput === pincode}
               >
-                <MaterialIcons name="check" size={16} color={pincodeInput.length === 6 && pincodeInput !== pincode ? '#FFF' : '#7B2FA0'} />
+                <MaterialIcons name="check" size={14} color={pincodeInput.length === 6 && pincodeInput !== pincode ? '#FFF' : '#7B2FA0'} />
               </Pressable>
             </View>
           </Animated.View>
 
-          {/* Grocery Categories */}
-          {categories.map((cat, ci) => (
-            <Animated.View key={cat.id} entering={FadeInDown.delay(100 + ci * 60).duration(350)} style={st.categorySection}>
-              <View style={st.categoryHeader}>
-                <View style={[st.categoryIcon, { backgroundColor: `${cat.color}15` }]}>
-                  <Text style={{ fontSize: 20 }}>{cat.emoji}</Text>
-                </View>
-                <Text style={[st.categoryName, { color: colors.textPrimary }]}>{cat.name}</Text>
-                <View style={[st.categoryCount, { backgroundColor: `${cat.color}15` }]}>
-                  <Text style={[st.categoryCountText, { color: cat.color }]}>{cat.items.length}</Text>
-                </View>
-                <Text style={[st.categoryTotal, { color: colors.textMuted }]}>
-                  ₹{cat.items.reduce((s, i) => s + i.price, 0)}
-                </Text>
-              </View>
+          {/* Cost Intelligence */}
+          <Animated.View entering={FadeInDown.delay(100).duration(350)} style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+            <CostInsights
+              mealCost={costData.mealCost}
+              marketCost={costData.marketCost || totalCost}
+              leftoverValue={costData.leftoverValue}
+              mealBreakdown={mealBreakdown}
+              colors={colors}
+              isDark={isDark}
+            />
+          </Animated.View>
 
-              {cat.items.map((item, ii) => (
-                <View key={ii}>
-                  <Pressable
-                    style={({ pressed }) => [
-                      st.groceryItem,
-                      {
-                        backgroundColor: item.checked
-                          ? isDark ? 'rgba(74,222,128,0.06)' : 'rgba(74,222,128,0.04)'
-                          : colors.surface,
-                        borderColor: item.checked ? 'rgba(74,222,128,0.20)' : colors.border,
-                      },
-                      pressed && { opacity: 0.85 },
-                    ]}
-                    onPress={() => toggleItem(cat.id, ii)}
-                  >
-                    <View style={[st.checkbox, item.checked && { backgroundColor: '#4ADE80', borderColor: '#4ADE80' }, !item.checked && { borderColor: colors.border }]}>
-                      {item.checked ? <MaterialIcons name="check" size={14} color="#FFF" /> : null}
-                    </View>
-                    <Text style={{ fontSize: 16 }}>{item.emoji}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[st.itemName, { color: colors.textPrimary }, item.checked && { textDecorationLine: 'line-through', opacity: 0.5 }]}>{item.name}</Text>
-                      <Text style={[st.itemQty, { color: colors.textMuted }]}>{item.qty}</Text>
-                    </View>
-                    <Text style={[st.itemPrice, { color: item.checked ? colors.textMuted : '#F5B731' }]}>₹{item.price}</Text>
-                  </Pressable>
-                  {/* Price Comparison for this item */}
-                  {priceMap[item.name] ? (
-                    <PriceComparisonCard
-                      itemName={item.name}
-                      priceData={priceMap[item.name]}
-                      colors={colors}
-                      isDark={isDark}
-                      onToggle={() => togglePriceExpand(item.name)}
-                    />
-                  ) : null}
+          {/* Grocery Categories */}
+          {categories.map((cat, ci2) => (
+            <Animated.View key={cat.id} entering={FadeInDown.delay(150 + ci2 * 40).duration(300)} style={st.categorySection}>
+              <Pressable onPress={() => toggleCategory(cat.id)} style={({ pressed }) => [pressed && { opacity: 0.85 }]}>
+                <View style={[st.categoryHeader, { borderColor: colors.border }]}>
+                  <View style={[st.categoryIcon, { backgroundColor: `${cat.color}12` }]}>
+                    <Text style={{ fontSize: 18 }}>{cat.emoji}</Text>
+                  </View>
+                  <Text style={[st.categoryName, { color: colors.textPrimary }]}>{cat.name}</Text>
+                  <View style={[st.categoryCount, { backgroundColor: `${cat.color}12` }]}>
+                    <Text style={[st.categoryCountText, { color: cat.color }]}>{cat.items.length}</Text>
+                  </View>
+                  <Text style={[st.categoryTotal, { color: colors.textMuted }]}>₹{cat.items.reduce((s, i) => s + i.price, 0)}</Text>
+                  <MaterialIcons name={cat.collapsed ? 'expand-more' : 'expand-less'} size={20} color={colors.textMuted} />
                 </View>
-              ))}
+              </Pressable>
+
+              {!cat.collapsed ? (
+                <View style={st.itemsList}>
+                  {cat.items.map((item, ii) => (
+                    <View key={ii}>
+                      <Pressable
+                        style={({ pressed }) => [
+                          st.groceryItem,
+                          { backgroundColor: item.checked ? (isDark ? 'rgba(74,222,128,0.04)' : 'rgba(74,222,128,0.02)') : colors.surface, borderColor: item.checked ? 'rgba(74,222,128,0.15)' : colors.border },
+                          pressed && { opacity: 0.85 },
+                        ]}
+                        onPress={() => toggleItem(cat.id, ii)}
+                      >
+                        <View style={[st.checkbox, item.checked && { backgroundColor: '#4ADE80', borderColor: '#4ADE80' }, !item.checked && { borderColor: colors.border }]}>
+                          {item.checked ? <MaterialIcons name="check" size={12} color="#FFF" /> : null}
+                        </View>
+                        <Text style={{ fontSize: 15 }}>{item.emoji}</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[st.itemName, { color: colors.textPrimary }, item.checked && { textDecorationLine: 'line-through', opacity: 0.5 }]}>{item.name}</Text>
+                          <Text style={[st.itemQty, { color: colors.textMuted }]}>{item.qty}</Text>
+                        </View>
+                        <Text style={[st.itemPrice, { color: item.checked ? colors.textMuted : '#F5B731' }]}>₹{item.price}</Text>
+                      </Pressable>
+                      {priceMap[item.name] ? (
+                        <PriceComparisonCard itemName={item.name} priceData={priceMap[item.name]} colors={colors} isDark={isDark} onToggle={() => togglePriceExpand(item.name)} />
+                      ) : null}
+                    </View>
+                  ))}
+                </View>
+              ) : null}
             </Animated.View>
           ))}
 
-          {/* Total by Provider */}
+          {/* Provider Comparison */}
           {pricesLoaded ? (
-            <Animated.View entering={FadeInDown.delay(80).duration(350)} style={{ paddingHorizontal: 20, paddingTop: 24 }}>
-              <TotalByProvider priceMap={priceMap} categories={categories} colors={colors} isDark={isDark} onSelectPartner={(id) => { setSelectedPartner(id); }} />
-            </Animated.View>
-          ) : null}
-
-          {/* Price Comparison Summary */}
-          {pricesLoaded ? (
-            <Animated.View entering={FadeInDown.delay(100).duration(350)} style={[st.priceSummarySection, { paddingHorizontal: 20, paddingTop: 24 }]}>
-              <View style={[st.priceSummaryCard, { backgroundColor: isDark ? 'rgba(123,47,160,0.06)' : 'rgba(123,47,160,0.03)', borderColor: 'rgba(123,47,160,0.20)' }]}>
-                <View style={st.priceSummaryHeader}>
-                  <MaterialIcons name="compare-arrows" size={20} color="#7B2FA0" />
-                  <Text style={[st.priceSummaryTitle, { color: colors.textPrimary }]}>Price Comparison</Text>
+            <Animated.View entering={FadeInDown.delay(100).duration(300)} style={{ paddingHorizontal: 16, paddingTop: 20 }}>
+              <View style={[st.provCompCard, { backgroundColor: isDark ? 'rgba(74,222,128,0.03)' : 'rgba(74,222,128,0.01)', borderColor: 'rgba(74,222,128,0.15)' }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <MaterialIcons name="leaderboard" size={18} color="#4ADE80" />
+                  <Text style={[st.provCompTitle, { color: colors.textPrimary }]}>Provider Totals</Text>
+                  {pricesLoading ? <ActivityIndicator size="small" color="#7B2FA0" /> : (
+                    <Pressable onPress={loadPriceComparisons} style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+                      <MaterialIcons name="refresh" size={16} color="#7B2FA0" />
+                    </Pressable>
+                  )}
                 </View>
-                <Text style={[st.priceSummarySub, { color: colors.textMuted }]}>
-                  Prices from Zepto, Blinkit, BigBasket, Instamart & Local Kirana
-                </Text>
-                <View style={st.priceSummaryStats}>
-                  <View style={[st.statBadge, { backgroundColor: 'rgba(74,222,128,0.08)' }]}>
-                    <MaterialIcons name="local-offer" size={12} color="#4ADE80" />
-                    <Text style={[st.statText, { color: '#4ADE80' }]}>Best prices highlighted</Text>
-                  </View>
-                  <View style={[st.statBadge, { backgroundColor: 'rgba(245,183,49,0.08)' }]}>
-                    <MaterialIcons name="bolt" size={12} color="#F5B731" />
-                    <Text style={[st.statText, { color: '#D9A020' }]}>Fastest delivery shown</Text>
-                  </View>
-                </View>
-                {pricesLoading ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                    <ActivityIndicator size="small" color="#7B2FA0" />
-                    <Text style={[{ fontSize: 12, fontWeight: '500' }, { color: colors.textMuted }]}>Refreshing prices...</Text>
-                  </View>
-                ) : (
-                  <Pressable
-                    style={({ pressed }) => [st.refreshBtn, pressed && { opacity: 0.7 }]}
-                    onPress={loadPriceComparisons}
-                  >
-                    <MaterialIcons name="refresh" size={14} color="#7B2FA0" />
-                    <Text style={st.refreshText}>Refresh Prices</Text>
-                  </Pressable>
-                )}
+                <ProviderTotalsCompact priceMap={priceMap} categories={categories} colors={colors} isDark={isDark} />
               </View>
             </Animated.View>
           ) : pricesLoading ? (
-            <View style={{ paddingHorizontal: 20, paddingTop: 24, alignItems: 'center', gap: 8 }}>
+            <View style={{ paddingHorizontal: 16, paddingTop: 20, alignItems: 'center', gap: 6 }}>
               <ActivityIndicator size="small" color="#7B2FA0" />
-              <Text style={[{ fontSize: 12, fontWeight: '600' }, { color: colors.textMuted }]}>Loading live prices from partners...</Text>
+              <Text style={[{ fontSize: 11, fontWeight: '600' }, { color: colors.textMuted }]}>Loading live prices...</Text>
             </View>
           ) : null}
-
-          {/* Delivery Partners Section */}
-          <View style={st.partnersSection}>
-            <Text style={[st.sectionTitle, { color: colors.textPrimary }]}>🚀 Choose Delivery Partner</Text>
-            <Text style={[st.sectionSub, { color: colors.textMuted }]}>Order directly from your preferred app</Text>
-
-            <View style={st.partnerGrid}>
-              {DELIVERY_PARTNERS.map((partner, i) => {
-                const isSelected = selectedPartner === partner.id;
-                return (
-                  <Animated.View key={partner.id} entering={FadeInUp.delay(100 + i * 80).duration(350)}>
-                    <Pressable
-                      style={({ pressed }) => [
-                        st.partnerCard,
-                        {
-                          backgroundColor: isSelected
-                            ? isDark ? `${partner.color}18` : `${partner.color}08`
-                            : colors.surface,
-                          borderColor: isSelected ? partner.color : colors.border,
-                          borderWidth: isSelected ? 2 : 1,
-                        },
-                        pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] },
-                      ]}
-                      onPress={() => handlePartnerSelect(partner)}
-                    >
-                      <View style={[st.partnerIcon, { backgroundColor: `${partner.color}15` }]}>
-                        <Text style={{ fontSize: 28 }}>{partner.emoji}</Text>
-                      </View>
-                      <Text style={[st.partnerName, { color: colors.textPrimary }]}>{partner.name}</Text>
-                      <Text style={[st.partnerTagline, { color: colors.textMuted }]}>{partner.tagline}</Text>
-                      <View style={[st.partnerTime, { backgroundColor: `${partner.color}12` }]}>
-                        <MaterialIcons name="schedule" size={11} color={partner.color} />
-                        <Text style={[st.partnerTimeText, { color: partner.color }]}>{partner.deliveryTime}</Text>
-                      </View>
-                      {partner.discount ? (
-                        <View style={[st.partnerDiscount, { backgroundColor: partner.color }]}>
-                          <Text style={st.partnerDiscountText}>{partner.discount}</Text>
-                        </View>
-                      ) : null}
-                      {isSelected ? (
-                        <View style={[st.partnerCheck, { backgroundColor: partner.color }]}>
-                          <MaterialIcons name="check" size={12} color="#FFF" />
-                        </View>
-                      ) : null}
-                    </Pressable>
-                  </Animated.View>
-                );
-              })}
-            </View>
-
-            {/* Future-ready note */}
-            <View style={[st.futureNote, { backgroundColor: isDark ? 'rgba(245,183,49,0.06)' : 'rgba(245,183,49,0.04)', borderColor: 'rgba(245,183,49,0.20)' }]}>
-              <MaterialIcons name="rocket-launch" size={16} color="#F5B731" />
-              <Text style={[st.futureNoteText, { color: colors.textSecondary }]}>
-                Coming soon: One-tap ordering directly routes your cart to the selected partner app
-              </Text>
-            </View>
-          </View>
         </ScrollView>
 
         {/* Bottom CTA */}
-        <View style={[st.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: insets.bottom + 12 }]}>
+        <View style={[st.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: insets.bottom + 10 }]}>
           <View style={st.bottomLeft}>
             <Text style={[st.bottomLabel, { color: colors.textMuted }]}>Total</Text>
             <Text style={st.bottomPrice}>₹{totalCost.toLocaleString()}</Text>
-            <Text style={[st.bottomSave, { color: '#4ADE80' }]}>Save ₹{estimatedSavings}</Text>
           </View>
-          <Pressable
-            style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-              if (selectedPartner) {
-                const partner = DELIVERY_PARTNERS.find(p => p.id === selectedPartner);
-                if (partner?.url) Linking.openURL(partner.url).catch(() => {});
-              } else {
-                setShowPartners(true);
-              }
-            }}
-          >
-            <LinearGradient colors={['#F5B731', '#D9A020']} style={st.bottomCta}>
-              <MaterialIcons name="shopping-cart-checkout" size={20} color="#FFF" />
-              <Text style={st.bottomCtaText}>
-                {selectedPartner ? `Order on ${DELIVERY_PARTNERS.find(p => p.id === selectedPartner)?.name}` : 'Select Partner & Order'}
-              </Text>
-            </LinearGradient>
-          </Pressable>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Pressable
+              style={({ pressed }) => [st.smartSplitBtn, pressed && { opacity: 0.85 }]}
+              onPress={handleSmartSplit}
+            >
+              <MaterialIcons name="auto-awesome" size={16} color="#7B2FA0" />
+              <Text style={st.smartSplitText}>Smart Split</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                if (selectedPartner) {
+                  const url = selectedPartner === 'zepto' ? 'https://www.zeptonow.com' : selectedPartner === 'blinkit' ? 'https://blinkit.com' : selectedPartner === 'bigbasket' ? 'https://www.bigbasket.com' : '';
+                  if (url) Linking.openURL(url).catch(() => {});
+                }
+              }}
+            >
+              <LinearGradient colors={['#F5B731', '#D9A020']} style={st.orderBtn}>
+                <MaterialIcons name="shopping-cart-checkout" size={18} color="#FFF" />
+                <Text style={st.orderBtnText}>Order</Text>
+              </LinearGradient>
+            </Pressable>
+          </View>
         </View>
       </SafeAreaView>
     </View>
   );
 }
 
+// ── Provider Totals Compact ──
+function ProviderTotalsCompact({ priceMap, categories, colors, isDark }: {
+  priceMap: Record<string, ItemPriceData>;
+  categories: GroceryCategory[];
+  colors: any;
+  isDark: boolean;
+}) {
+  const allItems = categories.flatMap(c => c.items);
+  const providerNames = ['Zepto', 'Blinkit', 'BigBasket', 'Instamart', 'Local Kirana'];
+  const totals: { name: string; total: number; items: number; emoji: string; color: string }[] = [];
+
+  providerNames.forEach(pName => {
+    let total = 0;
+    let items = 0;
+    allItems.forEach(item => {
+      const data = priceMap[item.name];
+      if (data?.comparison?.prices) {
+        const entry = data.comparison.prices.find(p => p.provider_name === pName && p.availability && p.price);
+        if (entry) { total += (entry.discount_price || entry.price || 0); items++; }
+        else { total += item.price; }
+      } else { total += item.price; }
+    });
+    const meta = PROVIDER_META[pName] || { emoji: '📦', color: '#6B7280', tagline: '' };
+    totals.push({ name: pName, total: Math.round(total), items, emoji: meta.emoji, color: meta.color });
+  });
+
+  totals.sort((a, b) => a.total - b.total);
+  const cheapest = totals[0];
+
+  return (
+    <View style={{ gap: 6 }}>
+      {totals.map((p, i) => (
+        <View key={p.name} style={[prc.row, { backgroundColor: i === 0 ? (isDark ? 'rgba(74,222,128,0.05)' : 'rgba(74,222,128,0.02)') : 'transparent', borderColor: i === 0 ? 'rgba(74,222,128,0.20)' : colors.border }]}>
+          <Text style={{ fontSize: 15 }}>{p.emoji}</Text>
+          <Text style={[prc.name, { color: colors.textPrimary }]}>{p.name}</Text>
+          {i === 0 ? (
+            <View style={prc.cheapBadge}>
+              <Text style={prc.cheapText}>Cheapest</Text>
+            </View>
+          ) : null}
+          <View style={{ flex: 1 }} />
+          <Text style={[prc.total, { color: i === 0 ? '#4ADE80' : colors.textPrimary }]}>₹{p.total.toLocaleString()}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// ── Styles ──
 const st = StyleSheet.create({
   container: { flex: 1 },
-
-  // Header
-  header: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20, gap: 14 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  backBtn: { width: 42, height: 42, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.20)', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 20, fontWeight: '900', color: '#FFF', letterSpacing: -0.3 },
-  headerSub: { fontSize: 12, fontWeight: '500', color: 'rgba(255,255,255,0.85)', marginTop: 2 },
-  shareBtn: { width: 42, height: 42, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.20)', alignItems: 'center', justifyContent: 'center' },
-
-  // Cost Summary
-  costSummary: { flexDirection: 'row', justifyContent: 'space-between' },
-  costItem: { alignItems: 'center', gap: 4 },
-  costLabel: { fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.70)', textTransform: 'uppercase', letterSpacing: 0.5 },
-  costStrikethrough: { fontSize: 16, fontWeight: '700', color: 'rgba(255,255,255,0.50)', textDecorationLine: 'line-through' },
-  costValue: { fontSize: 22, fontWeight: '900', color: '#FFF' },
-  savingsBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.25)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
-  savingsValue: { fontSize: 14, fontWeight: '800', color: '#FFF' },
-
-  // Progress
-  progressRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  progressBar: { flex: 1, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.20)', overflow: 'hidden' },
+  header: { paddingHorizontal: 16, paddingTop: 6, paddingBottom: 14, gap: 10 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  backBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 19, fontWeight: '900', color: '#FFF', letterSpacing: -0.3 },
+  headerSub: { fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.8)', marginTop: 1 },
+  shareBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
+  progressRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  progressBar: { flex: 1, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.20)', overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 3, backgroundColor: '#FFF' },
-  progressText: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.80)' },
-
-  // Category
-  categorySection: { paddingHorizontal: 20, paddingTop: 20, gap: 8 },
-  categoryHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  categoryIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  categoryName: { fontSize: 16, fontWeight: '800', flex: 1 },
-  categoryCount: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  categoryCountText: { fontSize: 11, fontWeight: '800' },
-  categoryTotal: { fontSize: 13, fontWeight: '700' },
-
-  // Grocery Item
-  groceryItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 14, borderWidth: 1, marginBottom: 6 },
-  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  itemName: { fontSize: 14, fontWeight: '600' },
-  itemQty: { fontSize: 11, fontWeight: '500', marginTop: 1 },
-  itemPrice: { fontSize: 14, fontWeight: '800' },
-
-  // Partners
-  partnersSection: { paddingHorizontal: 20, paddingTop: 28, gap: 12 },
-  sectionTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
-  sectionSub: { fontSize: 13, fontWeight: '500', marginTop: -6 },
-  partnerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  partnerCard: {
-    width: (SCREEN_W - 50) / 2, padding: 16, borderRadius: 18,
-    alignItems: 'center', gap: 6, position: 'relative',
-  },
-  partnerIcon: { width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  partnerName: { fontSize: 15, fontWeight: '800' },
-  partnerTagline: { fontSize: 10, fontWeight: '500', textAlign: 'center' },
-  partnerTime: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  partnerTimeText: { fontSize: 10, fontWeight: '700' },
-  partnerDiscount: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginTop: 2 },
-  partnerDiscountText: { fontSize: 9, fontWeight: '800', color: '#FFF' },
-  partnerCheck: { position: 'absolute', top: 8, right: 8, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-
-  // Future Note
-  futureNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 14, borderRadius: 14, borderWidth: 1, marginTop: 4 },
-  futureNoteText: { flex: 1, fontSize: 12, fontWeight: '500', lineHeight: 18 },
-
-  // Price Summary Section
-  priceSummarySection: {},
-  priceSummaryCard: { padding: 16, borderRadius: 18, borderWidth: 1, gap: 10 },
-  priceSummaryHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  priceSummaryTitle: { fontSize: 16, fontWeight: '800' },
-  priceSummarySub: { fontSize: 12, fontWeight: '500' },
-  priceSummaryStats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
-  statBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
-  statText: { fontSize: 11, fontWeight: '700' },
-  refreshBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(123,47,160,0.08)' },
-  refreshText: { fontSize: 11, fontWeight: '700', color: '#7B2FA0' },
+  progressText: { fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.8)' },
 
   // Pincode
-  pincodeSection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 20, marginTop: 16, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 14, borderWidth: 1 },
-  pincodeLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  pincodeSection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 16, marginTop: 14, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1 },
+  pincodeLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   pincodeLabel: { fontSize: 12, fontWeight: '700' },
-  pincodeHint: { fontSize: 9, fontWeight: '500', marginTop: 1 },
-  pincodeRight: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 },
-  locationBtn: { width: 32, height: 32, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  pincodeInput: { width: 80, height: 36, borderRadius: 10, borderWidth: 1, paddingHorizontal: 10, fontSize: 14, fontWeight: '700', textAlign: 'center' },
-  pincodeApplyBtn: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  pincodeRight: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  locationBtn: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  pincodeInput: { width: 72, height: 32, borderRadius: 8, borderWidth: 1, paddingHorizontal: 8, fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  pincodeApplyBtn: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+
+  // Category
+  categorySection: { paddingHorizontal: 16, paddingTop: 16 },
+  categoryHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 8, borderBottomWidth: 0.5 },
+  categoryIcon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  categoryName: { fontSize: 14, fontWeight: '800', flex: 1 },
+  categoryCount: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  categoryCountText: { fontSize: 10, fontWeight: '800' },
+  categoryTotal: { fontSize: 12, fontWeight: '700' },
+  itemsList: { gap: 4, marginTop: 6 },
+
+  // Grocery Item
+  groceryItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1 },
+  checkbox: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  itemName: { fontSize: 13, fontWeight: '600' },
+  itemQty: { fontSize: 10, fontWeight: '500', marginTop: 1 },
+  itemPrice: { fontSize: 13, fontWeight: '800' },
+
+  // Provider Comparison
+  provCompCard: { padding: 14, borderRadius: 16, borderWidth: 1 },
+  provCompTitle: { fontSize: 14, fontWeight: '800', flex: 1 },
 
   // Bottom Bar
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 } as any,
-  bottomLeft: { gap: 1 },
-  bottomLabel: { fontSize: 10, fontWeight: '600' },
-  bottomPrice: { fontSize: 22, fontWeight: '900', color: '#F5B731' },
-  bottomSave: { fontSize: 11, fontWeight: '700', color: '#F5B731' },
-  bottomCta: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16 },
-  bottomCtaText: { fontSize: 15, fontWeight: '800', color: '#FFF' },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 10, borderTopWidth: 1 },
+  bottomLeft: { gap: 0 },
+  bottomLabel: { fontSize: 9, fontWeight: '600' },
+  bottomPrice: { fontSize: 20, fontWeight: '900', color: '#F5B731' },
+  smartSplitBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, backgroundColor: 'rgba(123,47,160,0.08)', borderWidth: 1, borderColor: 'rgba(123,47,160,0.20)' },
+  smartSplitText: { fontSize: 12, fontWeight: '800', color: '#7B2FA0' },
+  orderBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
+  orderBtnText: { fontSize: 14, fontWeight: '800', color: '#FFF' },
 });
 
-// Total by Provider styles
-const tp = StyleSheet.create({
-  card: { padding: 16, borderRadius: 18, borderWidth: 1, gap: 14 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  title: { fontSize: 16, fontWeight: '800' },
-  subtitle: { fontSize: 11, fontWeight: '500', marginTop: 1 },
-  providerList: { gap: 6 },
-  providerRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 12, paddingVertical: 12, borderRadius: 14, borderWidth: 1,
-  },
-  rankBadge: { width: 24, alignItems: 'center' },
-  rankText: { fontSize: 12, fontWeight: '900' },
-  providerIcon: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  providerName: { fontSize: 13, fontWeight: '700' },
-  itemCountText: { fontSize: 10, fontWeight: '500', marginTop: 1 },
-  cheapestBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 2,
-    backgroundColor: '#4ADE80', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
-  },
-  cheapestText: { fontSize: 8, fontWeight: '800', color: '#FFF' },
-  priceCol: { alignItems: 'flex-end' },
-  totalPrice: { fontSize: 16, fontWeight: '900' },
-  savingsText: { fontSize: 10, fontWeight: '700', marginTop: 1 },
-  tipRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: 10 },
-  tipText: { flex: 1, fontSize: 11, fontWeight: '600', lineHeight: 16 },
+const ci = StyleSheet.create({
+  card: { padding: 14, borderRadius: 16, borderWidth: 1, gap: 10 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  title: { fontSize: 14, fontWeight: '800' },
+  costGrid: { flexDirection: 'row', gap: 6 },
+  costItem: { flex: 1, padding: 10, borderRadius: 12, borderWidth: 1, alignItems: 'center', gap: 3 },
+  costLabel: { fontSize: 9, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.3 },
+  costAmount: { fontSize: 16, fontWeight: '900' },
+  costHint: { fontSize: 8, fontWeight: '500' },
+  breakdownHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  breakdownTitle: { fontSize: 14, fontWeight: '800' },
+  breakdownPreview: { fontSize: 11, fontWeight: '600', marginTop: 6 },
+  mealGrid: { marginTop: 10, gap: 6 },
+  mealRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  mealLabel: { fontSize: 12, fontWeight: '600', flex: 1 },
+  mealCost: { fontSize: 13, fontWeight: '700' },
+  estimateRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTopWidth: 0.5 },
+  estimateItem: { alignItems: 'center' },
+  estimateLabel: { fontSize: 9, fontWeight: '600', textTransform: 'uppercase' },
+  estimateValue: { fontSize: 14, fontWeight: '800', marginTop: 2 },
 });
 
-// Product Match Card styles
 const pm = StyleSheet.create({
-  card: { padding: 12, borderRadius: 14, borderWidth: 1, gap: 8, marginBottom: 6 },
+  card: { padding: 10, borderRadius: 12, borderWidth: 1, gap: 6, marginBottom: 4 },
   cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  providerBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  providerText: { fontSize: 11, fontWeight: '700' },
-  scoreBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
-  scoreText: { fontSize: 10, fontWeight: '800' },
-  productTitle: { fontSize: 13, fontWeight: '700', lineHeight: 18 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  brandText: { fontSize: 11, fontWeight: '600' },
-  qtySection: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  qtyBadge: { paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
-  qtyLabel: { fontSize: 9, fontWeight: '600' },
-  qtyValue: { fontSize: 12, fontWeight: '800', marginTop: 1 },
-  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 },
-  priceSection: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  mrp: { fontSize: 11, fontWeight: '500', textDecorationLine: 'line-through' },
-  price: { fontSize: 16, fontWeight: '900' },
-  deliverySection: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  providerBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 },
+  providerText: { fontSize: 10, fontWeight: '700' },
+  tagBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5 },
+  tagText: { fontSize: 8, fontWeight: '700' },
+  productTitle: { fontSize: 12, fontWeight: '700', lineHeight: 16 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  brandText: { fontSize: 10, fontWeight: '600' },
+  qtySection: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  qtyBadge: { paddingHorizontal: 7, paddingVertical: 4, borderRadius: 6 },
+  qtyLabel: { fontSize: 8, fontWeight: '600' },
+  qtyValue: { fontSize: 11, fontWeight: '800', marginTop: 1 },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  priceSection: { flexDirection: 'row', alignItems: 'baseline', gap: 5 },
+  mrp: { fontSize: 10, fontWeight: '500', textDecorationLine: 'line-through' },
+  price: { fontSize: 15, fontWeight: '900' },
   deliveryBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  deliveryText: { fontSize: 10, fontWeight: '500' },
-  outOfStock: { fontSize: 10, fontWeight: '600', color: '#F04E50' },
-  matchLabel: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start' },
-  matchLabelText: { fontSize: 9, fontWeight: '700' },
+  deliveryText: { fontSize: 9, fontWeight: '500' },
 });
 
-// Price Comparison styles
 const pc = StyleSheet.create({
-  loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 6, marginLeft: 46 },
-  loadingText: { fontSize: 10, fontWeight: '500' },
-  summaryRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    marginLeft: 46, marginRight: 14, marginTop: -2, marginBottom: 6,
-    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1,
-  },
-  summaryLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1 },
+  loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 4, marginLeft: 40 },
+  loadingText: { fontSize: 9, fontWeight: '500' },
+  summaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginLeft: 40, marginRight: 12, marginTop: -1, marginBottom: 4, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, borderWidth: 1 },
+  summaryLeft: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, flexWrap: 'wrap' },
   bestPriceBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  bestPriceText: { fontSize: 12, fontWeight: '800', color: '#4ADE80' },
-  bestPriceProvider: { fontSize: 9, fontWeight: '600' },
-  fastBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  fastText: { fontSize: 10, fontWeight: '700', color: '#F5B731' },
-  fastProvider: { fontSize: 9, fontWeight: '600' },
-  compareBtn: { flexDirection: 'row', alignItems: 'center', gap: 3, flexShrink: 0 },
-  compareBtnText: { fontSize: 10, fontWeight: '700', color: '#7B2FA0' },
-  expandedList: { marginLeft: 46, marginRight: 14, marginBottom: 8, gap: 6 },
-  estimateNote: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8, borderRadius: 8 },
-  estimateText: { fontSize: 10, fontWeight: '500' },
-  lastUpdated: { fontSize: 9, fontWeight: '500', textAlign: 'right', marginTop: 4 },
-  replaceBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(123,47,160,0.06)' },
-  replaceBtnText: { fontSize: 10, fontWeight: '700', color: '#7B2FA0' },
+  bestPriceText: { fontSize: 11, fontWeight: '800', color: '#4ADE80' },
+  bestPriceProvider: { fontSize: 8, fontWeight: '600' },
+  fastBadge: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  fastText: { fontSize: 9, fontWeight: '700' },
+  compareBtn: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  compareBtnText: { fontSize: 9, fontWeight: '700', color: '#7B2FA0' },
+  expandedList: { marginLeft: 40, marginRight: 12, marginBottom: 6, gap: 4 },
+  estimateNote: { flexDirection: 'row', alignItems: 'center', gap: 5, padding: 6, borderRadius: 6 },
+  estimateText: { fontSize: 9, fontWeight: '500' },
+});
+
+const prc = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
+  name: { fontSize: 12, fontWeight: '700' },
+  cheapBadge: { backgroundColor: '#4ADE80', paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4 },
+  cheapText: { fontSize: 8, fontWeight: '800', color: '#FFF' },
+  total: { fontSize: 14, fontWeight: '900' },
 });

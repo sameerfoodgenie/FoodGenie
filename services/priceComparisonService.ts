@@ -1,9 +1,10 @@
 import { getSupabaseClient } from '@/template';
 
 export interface PriceEntry {
-  id: string;
+  id?: string;
   product_id: string | null;
   query_name: string;
+  original_ingredient?: string;
   provider_name: string;
   brand_name: string | null;
   product_title: string | null;
@@ -16,8 +17,25 @@ export interface PriceEntry {
   product_url: string | null;
   image_url: string | null;
   pincode: string | null;
-  last_updated: string;
-  raw_response: any;
+  last_updated?: string;
+  match_score?: number;
+  recipe_qty?: string;
+  recommended_buy_qty?: string;
+  leftover?: string;
+  raw_response?: any;
+}
+
+export interface NormalizedInfo {
+  original_name: string;
+  normalized_name: string;
+  recipe_qty: string;
+  recipe_qty_value: number;
+  recipe_unit: string;
+  search_queries: string[];
+  recommended_pack: string;
+  preferred_brands: string[];
+  category: string;
+  substitute_names: string[];
 }
 
 export interface PriceComparison {
@@ -27,23 +45,33 @@ export interface PriceComparison {
   fastestDelivery: PriceEntry | null;
   lastUpdated: string | null;
   isEstimated: boolean;
+  normalized?: NormalizedInfo;
 }
 
-// Fetch price comparisons for grocery items
+export interface GroceryItemInput {
+  name: string;
+  qty: string;
+}
+
+// Fetch price comparisons with enhanced matching
 export async function fetchPriceComparisons(
-  items: string[],
+  items: (string | GroceryItemInput)[],
   pincode: string = '400001',
 ): Promise<{ data: Record<string, PriceComparison> | null; error: string | null }> {
   try {
     const supabase = getSupabaseClient();
 
-    // Call the Edge Function to scrape/retrieve prices
+    // Format items with quantities for enhanced matching
+    const formattedItems = items.map(item => {
+      if (typeof item === 'string') return { name: item, qty: '1 pack' };
+      return item;
+    });
+
     const { data, error } = await supabase.functions.invoke('grocery-price-scraper', {
-      body: { items, pincode },
+      body: { items: formattedItems, pincode },
     });
 
     if (error) {
-      // Try to get detailed error
       let errorMessage = error.message || 'Failed to fetch prices';
       try {
         if (error.context) {
@@ -59,18 +87,26 @@ export async function fetchPriceComparisons(
       return { data: null, error: 'No price data returned' };
     }
 
-    // Process results into PriceComparison format
+    // Process enhanced results
     const comparisons: Record<string, PriceComparison> = {};
 
-    for (const [itemName, prices] of Object.entries(data.data as Record<string, PriceEntry[]>)) {
-      const validPrices = (prices || []).filter((p: PriceEntry) => p.price !== null && p.availability);
-      const allPrices = prices || [];
+    for (const [itemName, result] of Object.entries(data.data as Record<string, { normalized: NormalizedInfo; products: PriceEntry[] }>)) {
+      const products = result.products || [];
+      const normalized = result.normalized;
 
-      // Find best price
+      const validPrices = products.filter((p: PriceEntry) => p.price !== null && p.availability);
+      const allPrices = products;
+
+      // Find best price (highest match score + lowest price)
       const bestPrice = validPrices.length > 0
-        ? validPrices.reduce((best: PriceEntry, curr: PriceEntry) =>
-            (curr.discount_price || curr.price || Infinity) < (best.discount_price || best.price || Infinity) ? curr : best
-          )
+        ? validPrices.reduce((best: PriceEntry, curr: PriceEntry) => {
+            const currEffective = curr.discount_price || curr.price || Infinity;
+            const bestEffective = best.discount_price || best.price || Infinity;
+            // Prefer higher match score, then lower price
+            if ((curr.match_score || 0) > (best.match_score || 0) + 10) return curr;
+            if (currEffective < bestEffective) return curr;
+            return best;
+          })
         : null;
 
       // Find fastest delivery
@@ -83,7 +119,6 @@ export async function fetchPriceComparisons(
           })
         : null;
 
-      // Check if results are estimated
       const isEstimated = allPrices.every((p: PriceEntry) =>
         p.raw_response?.estimated === true
       );
@@ -95,6 +130,7 @@ export async function fetchPriceComparisons(
         fastestDelivery,
         lastUpdated: allPrices[0]?.last_updated || null,
         isEstimated,
+        normalized,
       };
     }
 
@@ -105,7 +141,7 @@ export async function fetchPriceComparisons(
   }
 }
 
-// Get cached prices from database directly (faster, no Edge Function call)
+// Get cached prices directly from DB
 export async function getCachedPrices(
   items: string[],
   pincode: string = '400001',
@@ -124,7 +160,6 @@ export async function getCachedPrices(
       return { data: null, error: error.message };
     }
 
-    // Group by query_name
     const grouped: Record<string, PriceEntry[]> = {};
     (data || []).forEach((entry: PriceEntry) => {
       const key = entry.query_name;
@@ -138,7 +173,7 @@ export async function getCachedPrices(
   }
 }
 
-// Check if prices need refresh (older than 30 minutes)
+// Check if prices need refresh
 export function needsRefresh(lastUpdated: string | null): boolean {
   if (!lastUpdated) return true;
   const updated = new Date(lastUpdated).getTime();
@@ -154,3 +189,19 @@ export const PROVIDER_META: Record<string, { emoji: string; color: string; tagli
   'Instamart': { emoji: '🟠', color: '#FC8019', tagline: '15-30 min delivery' },
   'Local Kirana': { emoji: '🏪', color: '#FF8C42', tagline: 'Neighborhood store' },
 };
+
+// Match score color based on confidence
+export function getMatchScoreColor(score: number): string {
+  if (score >= 90) return '#4ADE80';
+  if (score >= 80) return '#84CC16';
+  if (score >= 70) return '#F5B731';
+  return '#F97316';
+}
+
+// Match score label
+export function getMatchScoreLabel(score: number): string {
+  if (score >= 90) return 'Excellent Match';
+  if (score >= 80) return 'Good Match';
+  if (score >= 70) return 'Fair Match';
+  return 'Best Available';
+}
