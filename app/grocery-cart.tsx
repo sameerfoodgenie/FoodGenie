@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInLeft, FadeInRight, FadeInUp } from 'react-native-reanimated';
+import * as Location from 'expo-location';
 import { useTheme } from '../hooks/useTheme';
 import { fetchPriceComparisons, PriceComparison, PriceEntry, PROVIDER_META, needsRefresh } from '../services/priceComparisonService';
 
@@ -535,6 +536,36 @@ export default function GroceryCartScreen() {
   const [pricesLoaded, setPricesLoaded] = useState(false);
   const [pincode, setPincode] = useState('400001');
   const [pincodeInput, setPincodeInput] = useState('400001');
+  const [locationLoading, setLocationLoading] = useState(false);
+
+  // Detect location and reverse-geocode to pincode
+  const handleUseMyLocation = useCallback(async () => {
+    try {
+      setLocationLoading(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationLoading(false);
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const [geocode] = await Location.reverseGeocodeAsync({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+
+      if (geocode?.postalCode) {
+        setPincodeInput(geocode.postalCode);
+        setPincode(geocode.postalCode);
+      }
+    } catch (err) {
+      console.error('Location error:', err);
+    } finally {
+      setLocationLoading(false);
+    }
+  }, []);
 
   // Fetch price comparisons on mount and when pincode changes
   useEffect(() => {
@@ -692,6 +723,21 @@ export default function GroceryCartScreen() {
               </View>
             </View>
             <View style={st.pincodeRight}>
+              <Pressable
+                style={({ pressed }) => [
+                  st.locationBtn,
+                  { backgroundColor: isDark ? 'rgba(123,47,160,0.12)' : 'rgba(123,47,160,0.06)', borderColor: 'rgba(123,47,160,0.20)' },
+                  pressed && { opacity: 0.7 },
+                ]}
+                onPress={handleUseMyLocation}
+                disabled={locationLoading}
+              >
+                {locationLoading ? (
+                  <ActivityIndicator size="small" color="#7B2FA0" />
+                ) : (
+                  <MaterialIcons name="my-location" size={16} color="#7B2FA0" />
+                )}
+              </Pressable>
               <TextInput
                 style={[st.pincodeInput, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? 'rgba(123,47,160,0.06)' : 'rgba(123,47,160,0.03)' }]}
                 value={pincodeInput}
@@ -999,7 +1045,8 @@ const st = StyleSheet.create({
   pincodeLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   pincodeLabel: { fontSize: 12, fontWeight: '700' },
   pincodeHint: { fontSize: 9, fontWeight: '500', marginTop: 1 },
-  pincodeRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pincodeRight: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 },
+  locationBtn: { width: 32, height: 32, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   pincodeInput: { width: 80, height: 36, borderRadius: 10, borderWidth: 1, paddingHorizontal: 10, fontSize: 14, fontWeight: '700', textAlign: 'center' },
   pincodeApplyBtn: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
 
