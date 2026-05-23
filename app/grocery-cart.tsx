@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Dimensions,
   Linking,
   Share,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -16,6 +17,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInLeft, FadeInRight, FadeInUp } from 'react-native-reanimated';
 import { useTheme } from '../hooks/useTheme';
+import { fetchPriceComparisons, PriceComparison, PriceEntry, PROVIDER_META, needsRefresh } from '../services/priceComparisonService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -47,6 +49,13 @@ interface DeliveryPartner {
   discount?: string;
   url: string;
   deepLink: string;
+}
+
+// ── Price Comparison Types ──
+interface ItemPriceData {
+  loading: boolean;
+  comparison: PriceComparison | null;
+  expanded: boolean;
 }
 
 const DELIVERY_PARTNERS: DeliveryPartner[] = [
@@ -240,6 +249,143 @@ function getDefaultGrocery(): GroceryCategory[] {
   ];
 }
 
+// ── Price Comparison Card Component ──
+function PriceComparisonCard({ itemName, priceData, colors, isDark, onToggle }: {
+  itemName: string;
+  priceData: ItemPriceData;
+  colors: any;
+  isDark: boolean;
+  onToggle: () => void;
+}) {
+  if (priceData.loading) {
+    return (
+      <View style={pc.loadingRow}>
+        <ActivityIndicator size="small" color="#7B2FA0" />
+        <Text style={[pc.loadingText, { color: colors.textMuted }]}>Fetching prices...</Text>
+      </View>
+    );
+  }
+
+  const comparison = priceData.comparison;
+  if (!comparison || comparison.prices.length === 0) return null;
+
+  const bestPrice = comparison.bestPrice;
+  const fastestDelivery = comparison.fastestDelivery;
+
+  return (
+    <Animated.View entering={FadeIn.duration(250)}>
+      <Pressable onPress={onToggle} style={({ pressed }) => [pressed && { opacity: 0.85 }]}>
+        <View style={[pc.summaryRow, { backgroundColor: isDark ? 'rgba(123,47,160,0.06)' : 'rgba(123,47,160,0.03)', borderColor: 'rgba(123,47,160,0.15)' }]}>
+          <View style={pc.summaryLeft}>
+            {bestPrice ? (
+              <View style={pc.bestPriceBadge}>
+                <MaterialIcons name="local-offer" size={10} color="#4ADE80" />
+                <Text style={pc.bestPriceText}>₹{bestPrice.discount_price || bestPrice.price}</Text>
+                <Text style={[pc.bestPriceProvider, { color: colors.textMuted }]}>{bestPrice.provider_name}</Text>
+              </View>
+            ) : null}
+            {fastestDelivery && fastestDelivery.provider_name !== bestPrice?.provider_name ? (
+              <View style={pc.fastBadge}>
+                <MaterialIcons name="bolt" size={10} color="#F5B731" />
+                <Text style={pc.fastText}>{fastestDelivery.delivery_time}</Text>
+                <Text style={[pc.fastProvider, { color: colors.textMuted }]}>{fastestDelivery.provider_name}</Text>
+              </View>
+            ) : null}
+          </View>
+          <View style={pc.compareBtn}>
+            <Text style={pc.compareBtnText}>{comparison.prices.length} prices</Text>
+            <MaterialIcons name={priceData.expanded ? 'expand-less' : 'expand-more'} size={14} color="#7B2FA0" />
+          </View>
+        </View>
+      </Pressable>
+
+      {priceData.expanded ? (
+        <Animated.View entering={FadeInDown.duration(200)} style={pc.expandedList}>
+          {comparison.prices.map((entry, i) => {
+            const meta = PROVIDER_META[entry.provider_name] || { emoji: '📦', color: '#6B7280', tagline: '' };
+            const isBest = bestPrice?.provider_name === entry.provider_name;
+            const isFastest = fastestDelivery?.provider_name === entry.provider_name;
+            return (
+              <View
+                key={i}
+                style={[
+                  pc.priceRow,
+                  {
+                    backgroundColor: isBest
+                      ? isDark ? 'rgba(74,222,128,0.06)' : 'rgba(74,222,128,0.04)'
+                      : colors.surface,
+                    borderColor: isBest ? 'rgba(74,222,128,0.25)' : colors.border,
+                  },
+                ]}
+              >
+                <View style={[pc.providerIcon, { backgroundColor: `${meta.color}15` }]}>
+                  <Text style={{ fontSize: 16 }}>{meta.emoji}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={pc.providerRow}>
+                    <Text style={[pc.providerName, { color: colors.textPrimary }]}>{entry.provider_name}</Text>
+                    {isBest ? (
+                      <View style={pc.tag}>
+                        <Text style={pc.tagBest}>Best Price</Text>
+                      </View>
+                    ) : null}
+                    {isFastest && !isBest ? (
+                      <View style={[pc.tag, { backgroundColor: 'rgba(245,183,49,0.10)' }]}>
+                        <Text style={[pc.tagBest, { color: '#D9A020' }]}>Fastest</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <View style={pc.priceDetailRow}>
+                    {entry.delivery_time ? (
+                      <Text style={[pc.deliveryText, { color: colors.textMuted }]}>🚚 {entry.delivery_time}</Text>
+                    ) : null}
+                    {!entry.availability ? (
+                      <Text style={pc.unavailableText}>Out of stock</Text>
+                    ) : null}
+                  </View>
+                </View>
+                <View style={pc.priceColumn}>
+                  {entry.mrp && entry.mrp > (entry.price || 0) ? (
+                    <Text style={[pc.mrpText, { color: colors.textMuted }]}>₹{entry.mrp}</Text>
+                  ) : null}
+                  <Text style={[
+                    pc.priceText,
+                    { color: entry.availability ? (isBest ? '#4ADE80' : colors.textPrimary) : colors.textMuted },
+                    !entry.availability && { textDecorationLine: 'line-through' },
+                  ]}>
+                    {entry.price ? `₹${entry.discount_price || entry.price}` : '—'}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+          {comparison.isEstimated ? (
+            <View style={[pc.estimateNote, { backgroundColor: 'rgba(245,183,49,0.06)' }]}>
+              <MaterialIcons name="info-outline" size={12} color="#D9A020" />
+              <Text style={[pc.estimateText, { color: colors.textMuted }]}>Estimated prices. Tap item to refresh live data.</Text>
+            </View>
+          ) : null}
+          {comparison.lastUpdated ? (
+            <Text style={[pc.lastUpdated, { color: colors.textMuted }]}>
+              Updated {getTimeAgo(comparison.lastUpdated)}
+            </Text>
+          ) : null}
+        </Animated.View>
+      ) : null}
+    </Animated.View>
+  );
+}
+
+function getTimeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
 // ── Main Screen ──
 export default function GroceryCartScreen() {
   const router = useRouter();
@@ -252,6 +398,59 @@ export default function GroceryCartScreen() {
   );
   const [showPartners, setShowPartners] = useState(false);
   const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
+  const [priceMap, setPriceMap] = useState<Record<string, ItemPriceData>>({});
+  const [pricesLoading, setPricesLoading] = useState(false);
+  const [pricesLoaded, setPricesLoaded] = useState(false);
+
+  // Fetch price comparisons on mount
+  useEffect(() => {
+    loadPriceComparisons();
+  }, []);
+
+  const loadPriceComparisons = useCallback(async () => {
+    const allItems = categories.flatMap(c => c.items.map(i => i.name));
+    if (allItems.length === 0) return;
+
+    setPricesLoading(true);
+    // Initialize loading state for all items
+    const initialMap: Record<string, ItemPriceData> = {};
+    allItems.forEach(name => {
+      initialMap[name] = { loading: true, comparison: null, expanded: false };
+    });
+    setPriceMap(initialMap);
+
+    const { data, error } = await fetchPriceComparisons(allItems.slice(0, 15)); // Limit for performance
+    
+    if (data) {
+      const updatedMap: Record<string, ItemPriceData> = {};
+      allItems.forEach(name => {
+        const key = Object.keys(data).find(k => k.toLowerCase() === name.toLowerCase()) || name;
+        updatedMap[name] = {
+          loading: false,
+          comparison: data[key] || null,
+          expanded: false,
+        };
+      });
+      setPriceMap(updatedMap);
+      setPricesLoaded(true);
+    } else {
+      // Clear loading state on error
+      const clearedMap: Record<string, ItemPriceData> = {};
+      allItems.forEach(name => {
+        clearedMap[name] = { loading: false, comparison: null, expanded: false };
+      });
+      setPriceMap(clearedMap);
+    }
+    setPricesLoading(false);
+  }, [categories]);
+
+  const togglePriceExpand = useCallback((itemName: string) => {
+    Haptics.selectionAsync();
+    setPriceMap(prev => ({
+      ...prev,
+      [itemName]: { ...prev[itemName], expanded: !prev[itemName]?.expanded },
+    }));
+  }, []);
 
   const totalItems = useMemo(() => categories.reduce((s, c) => s + c.items.length, 0), [categories]);
   const totalCost = useMemo(() => categories.reduce((s, c) => s + c.items.reduce((si, item) => si + item.price, 0), 0), [categories]);
@@ -366,33 +565,88 @@ export default function GroceryCartScreen() {
               </View>
 
               {cat.items.map((item, ii) => (
-                <Pressable
-                  key={ii}
-                  style={({ pressed }) => [
-                    st.groceryItem,
-                    {
-                      backgroundColor: item.checked
-                        ? isDark ? 'rgba(74,222,128,0.06)' : 'rgba(74,222,128,0.04)'
-                        : colors.surface,
-                      borderColor: item.checked ? 'rgba(74,222,128,0.20)' : colors.border,
-                    },
-                    pressed && { opacity: 0.85 },
-                  ]}
-                  onPress={() => toggleItem(cat.id, ii)}
-                >
-                  <View style={[st.checkbox, item.checked && { backgroundColor: '#4ADE80', borderColor: '#4ADE80' }, !item.checked && { borderColor: colors.border }]}>
-                    {item.checked ? <MaterialIcons name="check" size={14} color="#FFF" /> : null}
-                  </View>
-                  <Text style={{ fontSize: 16 }}>{item.emoji}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[st.itemName, { color: colors.textPrimary }, item.checked && { textDecorationLine: 'line-through', opacity: 0.5 }]}>{item.name}</Text>
-                    <Text style={[st.itemQty, { color: colors.textMuted }]}>{item.qty}</Text>
-                  </View>
-                  <Text style={[st.itemPrice, { color: item.checked ? colors.textMuted : '#F5B731' }]}>₹{item.price}</Text>
-                </Pressable>
+                <View key={ii}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      st.groceryItem,
+                      {
+                        backgroundColor: item.checked
+                          ? isDark ? 'rgba(74,222,128,0.06)' : 'rgba(74,222,128,0.04)'
+                          : colors.surface,
+                        borderColor: item.checked ? 'rgba(74,222,128,0.20)' : colors.border,
+                      },
+                      pressed && { opacity: 0.85 },
+                    ]}
+                    onPress={() => toggleItem(cat.id, ii)}
+                  >
+                    <View style={[st.checkbox, item.checked && { backgroundColor: '#4ADE80', borderColor: '#4ADE80' }, !item.checked && { borderColor: colors.border }]}>
+                      {item.checked ? <MaterialIcons name="check" size={14} color="#FFF" /> : null}
+                    </View>
+                    <Text style={{ fontSize: 16 }}>{item.emoji}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[st.itemName, { color: colors.textPrimary }, item.checked && { textDecorationLine: 'line-through', opacity: 0.5 }]}>{item.name}</Text>
+                      <Text style={[st.itemQty, { color: colors.textMuted }]}>{item.qty}</Text>
+                    </View>
+                    <Text style={[st.itemPrice, { color: item.checked ? colors.textMuted : '#F5B731' }]}>₹{item.price}</Text>
+                  </Pressable>
+                  {/* Price Comparison for this item */}
+                  {priceMap[item.name] ? (
+                    <PriceComparisonCard
+                      itemName={item.name}
+                      priceData={priceMap[item.name]}
+                      colors={colors}
+                      isDark={isDark}
+                      onToggle={() => togglePriceExpand(item.name)}
+                    />
+                  ) : null}
+                </View>
               ))}
             </Animated.View>
           ))}
+
+          {/* Price Comparison Summary */}
+          {pricesLoaded ? (
+            <Animated.View entering={FadeInDown.delay(100).duration(350)} style={[st.priceSummarySection, { paddingHorizontal: 20, paddingTop: 24 }]}>
+              <View style={[st.priceSummaryCard, { backgroundColor: isDark ? 'rgba(123,47,160,0.06)' : 'rgba(123,47,160,0.03)', borderColor: 'rgba(123,47,160,0.20)' }]}>
+                <View style={st.priceSummaryHeader}>
+                  <MaterialIcons name="compare-arrows" size={20} color="#7B2FA0" />
+                  <Text style={[st.priceSummaryTitle, { color: colors.textPrimary }]}>Price Comparison</Text>
+                </View>
+                <Text style={[st.priceSummarySub, { color: colors.textMuted }]}>
+                  Prices from Zepto, Blinkit, BigBasket, Instamart & Local Kirana
+                </Text>
+                <View style={st.priceSummaryStats}>
+                  <View style={[st.statBadge, { backgroundColor: 'rgba(74,222,128,0.08)' }]}>
+                    <MaterialIcons name="local-offer" size={12} color="#4ADE80" />
+                    <Text style={[st.statText, { color: '#4ADE80' }]}>Best prices highlighted</Text>
+                  </View>
+                  <View style={[st.statBadge, { backgroundColor: 'rgba(245,183,49,0.08)' }]}>
+                    <MaterialIcons name="bolt" size={12} color="#F5B731" />
+                    <Text style={[st.statText, { color: '#D9A020' }]}>Fastest delivery shown</Text>
+                  </View>
+                </View>
+                {pricesLoading ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                    <ActivityIndicator size="small" color="#7B2FA0" />
+                    <Text style={[{ fontSize: 12, fontWeight: '500' }, { color: colors.textMuted }]}>Refreshing prices...</Text>
+                  </View>
+                ) : (
+                  <Pressable
+                    style={({ pressed }) => [st.refreshBtn, pressed && { opacity: 0.7 }]}
+                    onPress={loadPriceComparisons}
+                  >
+                    <MaterialIcons name="refresh" size={14} color="#7B2FA0" />
+                    <Text style={st.refreshText}>Refresh Prices</Text>
+                  </Pressable>
+                )}
+              </View>
+            </Animated.View>
+          ) : pricesLoading ? (
+            <View style={{ paddingHorizontal: 20, paddingTop: 24, alignItems: 'center', gap: 8 }}>
+              <ActivityIndicator size="small" color="#7B2FA0" />
+              <Text style={[{ fontSize: 12, fontWeight: '600' }, { color: colors.textMuted }]}>Loading live prices from partners...</Text>
+            </View>
+          ) : null}
 
           {/* Delivery Partners Section */}
           <View style={st.partnersSection}>
@@ -549,12 +803,63 @@ const st = StyleSheet.create({
   futureNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 14, borderRadius: 14, borderWidth: 1, marginTop: 4 },
   futureNoteText: { flex: 1, fontSize: 12, fontWeight: '500', lineHeight: 18 },
 
+  // Price Summary Section
+  priceSummarySection: {},
+  priceSummaryCard: { padding: 16, borderRadius: 18, borderWidth: 1, gap: 10 },
+  priceSummaryHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  priceSummaryTitle: { fontSize: 16, fontWeight: '800' },
+  priceSummarySub: { fontSize: 12, fontWeight: '500' },
+  priceSummaryStats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  statBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+  statText: { fontSize: 11, fontWeight: '700' },
+  refreshBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(123,47,160,0.08)' },
+  refreshText: { fontSize: 11, fontWeight: '700', color: '#7B2FA0' },
+
   // Bottom Bar
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 } as any,
   bottomLeft: { gap: 1 },
   bottomLabel: { fontSize: 10, fontWeight: '600' },
   bottomPrice: { fontSize: 22, fontWeight: '900', color: '#F5B731' },
   bottomSave: { fontSize: 11, fontWeight: '700', color: '#F5B731' },
   bottomCta: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16 },
   bottomCtaText: { fontSize: 15, fontWeight: '800', color: '#FFF' },
+});
+
+// Price Comparison styles
+const pc = StyleSheet.create({
+  loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 6, marginLeft: 46 },
+  loadingText: { fontSize: 10, fontWeight: '500' },
+  summaryRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginLeft: 46, marginRight: 14, marginTop: -2, marginBottom: 6,
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1,
+  },
+  summaryLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  bestPriceBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  bestPriceText: { fontSize: 12, fontWeight: '800', color: '#4ADE80' },
+  bestPriceProvider: { fontSize: 9, fontWeight: '600' },
+  fastBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  fastText: { fontSize: 10, fontWeight: '700', color: '#F5B731' },
+  fastProvider: { fontSize: 9, fontWeight: '600' },
+  compareBtn: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  compareBtnText: { fontSize: 10, fontWeight: '700', color: '#7B2FA0' },
+  expandedList: { marginLeft: 46, marginRight: 14, marginBottom: 8, gap: 4 },
+  priceRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1,
+  },
+  providerIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  providerRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  providerName: { fontSize: 12, fontWeight: '700' },
+  tag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, backgroundColor: 'rgba(74,222,128,0.10)' },
+  tagBest: { fontSize: 8, fontWeight: '800', color: '#4ADE80' },
+  priceDetailRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
+  deliveryText: { fontSize: 10, fontWeight: '500' },
+  unavailableText: { fontSize: 10, fontWeight: '600', color: '#F04E50' },
+  priceColumn: { alignItems: 'flex-end' },
+  mrpText: { fontSize: 10, fontWeight: '500', textDecorationLine: 'line-through' },
+  priceText: { fontSize: 14, fontWeight: '800' },
+  estimateNote: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8, borderRadius: 8 },
+  estimateText: { fontSize: 10, fontWeight: '500' },
+  lastUpdated: { fontSize: 9, fontWeight: '500', textAlign: 'right', marginTop: 4 },
 });
