@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Platform, View, StyleSheet } from 'react-native';
+import { Platform, View, StyleSheet, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
@@ -15,7 +15,7 @@ import { theme } from '../../constants/theme';
 import { useTheme } from '../../hooks/useTheme';
 import OnboardingWalkthrough, { useOnboardingStatus } from '../../components/OnboardingWalkthrough';
 
-function GlowingPlusButton({ focused }: { focused: boolean }) {
+function GenieAIButton({ focused }: { focused: boolean }) {
   const glowScale = useSharedValue(1);
   const glowOpacity = useSharedValue(0.20);
 
@@ -41,15 +41,15 @@ function GlowingPlusButton({ focused }: { focused: boolean }) {
     <View style={styles.postTabWrap}>
       <Animated.View style={[styles.glowRing, glowStyle]} />
       <LinearGradient
-        colors={focused ? ['#F5B731', '#D9A020'] : ['#FFFDF8', '#FFF9F0']}
+        colors={focused ? ['#7B2FA0', '#C41E7A'] : ['#1E1456', '#7B2FA0']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.postTabBtn}
       >
         <MaterialIcons
-          name="add"
-          size={30}
-          color={focused ? '#FFFFFF' : '#F5B731'}
+          name="auto-awesome"
+          size={24}
+          color="#FDD85D"
         />
       </LinearGradient>
     </View>
@@ -120,43 +120,51 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <MaterialIcons name={focused ? 'home-filled' : 'home'} size={25} color={color} />
+            <MaterialIcons name={focused ? 'home-filled' : 'home'} size={24} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="grocery"
+        options={{
+          title: 'Grocery',
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialIcons name={focused ? 'shopping-cart' : 'shopping-cart-checkout'} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: '',
+          tabBarIcon: ({ focused }) => <GenieAIButton focused={focused} />,
+          tabBarLabelStyle: { display: 'none' },
         }}
       />
       <Tabs.Screen
         name="foodies"
         options={{
-          title: 'Foodies',
+          title: 'Community',
           tabBarIcon: ({ color, focused }) => (
-            <MaterialIcons name="local-fire-department" size={25} color={color} />
+            <MaterialIcons name={focused ? 'people' : 'people-outline'} size={24} color={color} />
           ),
         }}
       />
-      <Tabs.Screen
-        name="camera"
-        options={{
-          title: '',
-          tabBarIcon: ({ focused }) => <GlowingPlusButton focused={focused} />,
-          tabBarLabelStyle: { display: 'none' },
-        }}
-      />
-      <Tabs.Screen name="master-chefs" options={{ href: null }} />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <MaterialIcons name={focused ? 'person' : 'person-outline'} size={25} color={color} />
+            <MaterialIcons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
           ),
         }}
       />
-      <Tabs.Screen name="grocery" options={{ href: null }} />
+      {/* Hidden tabs */}
+      <Tabs.Screen name="camera" options={{ href: null }} />
+      <Tabs.Screen name="master-chefs" options={{ href: null }} />
       <Tabs.Screen name="cook" options={{ href: null }} />
-      {/* Hide unused tabs */}
       <Tabs.Screen name="preferences" options={{ href: null }} />
       <Tabs.Screen name="account" options={{ href: null }} />
-      <Tabs.Screen name="chat" options={{ href: null }} />
       <Tabs.Screen name="plans" options={{ href: null }} />
       <Tabs.Screen name="cart" options={{ href: null }} />
     </Tabs>

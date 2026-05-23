@@ -334,7 +334,7 @@ export default function HomeScreen() {
           <Animated.View entering={FadeInDown.delay(180).duration(380)}>
             <Pressable
               style={({ pressed }) => [pressed && { opacity: 0.94, transform: [{ scale: 0.98 }] }]}
-              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/smart-grocery' as any); }}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/grocery-planner' as any); }}
             >
               <View style={[s.smartGroceryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={s.sgHeader}>
