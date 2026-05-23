@@ -9,6 +9,7 @@ import {
   Linking,
   Share,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -532,11 +533,13 @@ export default function GroceryCartScreen() {
   const [priceMap, setPriceMap] = useState<Record<string, ItemPriceData>>({});
   const [pricesLoading, setPricesLoading] = useState(false);
   const [pricesLoaded, setPricesLoaded] = useState(false);
+  const [pincode, setPincode] = useState('400001');
+  const [pincodeInput, setPincodeInput] = useState('400001');
 
-  // Fetch price comparisons on mount
+  // Fetch price comparisons on mount and when pincode changes
   useEffect(() => {
     loadPriceComparisons();
-  }, []);
+  }, [pincode]);
 
   const loadPriceComparisons = useCallback(async () => {
     const allItems = categories.flatMap(c => c.items.map(i => i.name));
@@ -550,7 +553,7 @@ export default function GroceryCartScreen() {
     });
     setPriceMap(initialMap);
 
-    const { data, error } = await fetchPriceComparisons(allItems.slice(0, 15)); // Limit for performance
+    const { data, error } = await fetchPriceComparisons(allItems.slice(0, 15), pincode); // Limit for performance
     
     if (data) {
       const updatedMap: Record<string, ItemPriceData> = {};
@@ -573,7 +576,7 @@ export default function GroceryCartScreen() {
       setPriceMap(clearedMap);
     }
     setPricesLoading(false);
-  }, [categories]);
+  }, [categories, pincode]);
 
   const togglePriceExpand = useCallback((itemName: string) => {
     Haptics.selectionAsync();
@@ -679,6 +682,44 @@ export default function GroceryCartScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + 160 }}
         >
+          {/* Pincode Input */}
+          <Animated.View entering={FadeInDown.delay(50).duration(300)} style={[st.pincodeSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={st.pincodeLeft}>
+              <MaterialIcons name="location-on" size={18} color="#7B2FA0" />
+              <View>
+                <Text style={[st.pincodeLabel, { color: colors.textMuted }]}>Delivery Pincode</Text>
+                <Text style={[st.pincodeHint, { color: colors.textMuted }]}>Prices vary by location</Text>
+              </View>
+            </View>
+            <View style={st.pincodeRight}>
+              <TextInput
+                style={[st.pincodeInput, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? 'rgba(123,47,160,0.06)' : 'rgba(123,47,160,0.03)' }]}
+                value={pincodeInput}
+                onChangeText={(text) => setPincodeInput(text.replace(/[^0-9]/g, '').slice(0, 6))}
+                keyboardType="number-pad"
+                maxLength={6}
+                placeholder="400001"
+                placeholderTextColor={colors.textMuted}
+              />
+              <Pressable
+                style={({ pressed }) => [
+                  st.pincodeApplyBtn,
+                  pincodeInput.length === 6 && pincodeInput !== pincode ? { backgroundColor: '#7B2FA0' } : { backgroundColor: isDark ? 'rgba(123,47,160,0.15)' : 'rgba(123,47,160,0.08)' },
+                  pressed && { opacity: 0.7 },
+                ]}
+                onPress={() => {
+                  if (pincodeInput.length === 6 && pincodeInput !== pincode) {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    setPincode(pincodeInput);
+                  }
+                }}
+                disabled={pincodeInput.length !== 6 || pincodeInput === pincode}
+              >
+                <MaterialIcons name="check" size={16} color={pincodeInput.length === 6 && pincodeInput !== pincode ? '#FFF' : '#7B2FA0'} />
+              </Pressable>
+            </View>
+          </Animated.View>
+
           {/* Grocery Categories */}
           {categories.map((cat, ci) => (
             <Animated.View key={cat.id} entering={FadeInDown.delay(100 + ci * 60).duration(350)} style={st.categorySection}>
@@ -952,6 +993,15 @@ const st = StyleSheet.create({
   statText: { fontSize: 11, fontWeight: '700' },
   refreshBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(123,47,160,0.08)' },
   refreshText: { fontSize: 11, fontWeight: '700', color: '#7B2FA0' },
+
+  // Pincode
+  pincodeSection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 20, marginTop: 16, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 14, borderWidth: 1 },
+  pincodeLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  pincodeLabel: { fontSize: 12, fontWeight: '700' },
+  pincodeHint: { fontSize: 9, fontWeight: '500', marginTop: 1 },
+  pincodeRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pincodeInput: { width: 80, height: 36, borderRadius: 10, borderWidth: 1, paddingHorizontal: 10, fontSize: 14, fontWeight: '700', textAlign: 'center' },
+  pincodeApplyBtn: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
 
   // Bottom Bar
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 } as any,
