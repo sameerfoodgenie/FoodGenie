@@ -288,15 +288,15 @@ function MealCard({ meal, index, colors, isDark, router, persons, prefs, onSwap 
                 <Text style={[mc.mealActionText, { color: '#D9A020' }]}>Add to Cart</Text>
               </Pressable>
               <Pressable
-                style={[mc.mealActionBtn, { backgroundColor: 'rgba(30,20,86,0.06)', borderColor: 'rgba(30,20,86,0.20)' }]}
+                style={[mc.mealActionBtn, { backgroundColor: 'rgba(123,47,160,0.12)', borderColor: 'rgba(123,47,160,0.40)' }]}
                 onPress={handleViewSteps}
               >
                 {stepsLoading ? (
-                  <ActivityIndicator size={14} color="#1E1456" />
+                  <ActivityIndicator size={14} color="#7B2FA0" />
                 ) : (
-                  <MaterialIcons name="menu-book" size={14} color="#1E1456" />
+                  <MaterialIcons name="menu-book" size={14} color="#7B2FA0" />
                 )}
-                <Text style={[mc.mealActionText, { color: '#1E1456' }]}>{showSteps ? 'Hide Steps' : 'View Steps'}</Text>
+                <Text style={[mc.mealActionText, { color: '#7B2FA0' }]}>{showSteps ? 'Hide Steps' : 'View Steps'}</Text>
               </Pressable>
               <Pressable
                 style={[mc.mealActionBtn, { backgroundColor: 'rgba(196,30,122,0.06)', borderColor: 'rgba(196,30,122,0.20)' }]}
