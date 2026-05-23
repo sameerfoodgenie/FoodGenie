@@ -376,6 +376,137 @@ function PriceComparisonCard({ itemName, priceData, colors, isDark, onToggle }: 
   );
 }
 
+// ── Total By Provider Component ──
+function TotalByProvider({ priceMap, categories, colors, isDark, onSelectPartner }: {
+  priceMap: Record<string, ItemPriceData>;
+  categories: GroceryCategory[];
+  colors: any;
+  isDark: boolean;
+  onSelectPartner: (id: string) => void;
+}) {
+  const allItems = categories.flatMap(c => c.items);
+
+  // Calculate totals per provider
+  const providerTotals: { name: string; total: number; itemCount: number; missingCount: number; emoji: string; color: string }[] = [];
+
+  const providerNames = ['Zepto', 'Blinkit', 'BigBasket', 'Instamart', 'Local Kirana'];
+
+  providerNames.forEach(providerName => {
+    let total = 0;
+    let itemCount = 0;
+    let missingCount = 0;
+
+    allItems.forEach(item => {
+      const data = priceMap[item.name];
+      if (data?.comparison?.prices) {
+        const entry = data.comparison.prices.find(
+          p => p.provider_name === providerName && p.availability && p.price !== null
+        );
+        if (entry) {
+          total += (entry.discount_price || entry.price || 0);
+          itemCount++;
+        } else {
+          missingCount++;
+          total += item.price; // fallback to estimated
+        }
+      } else {
+        missingCount++;
+        total += item.price;
+      }
+    });
+
+    const meta = PROVIDER_META[providerName] || { emoji: '📦', color: '#6B7280', tagline: '' };
+    providerTotals.push({
+      name: providerName,
+      total: Math.round(total),
+      itemCount,
+      missingCount,
+      emoji: meta.emoji,
+      color: meta.color,
+    });
+  });
+
+  // Sort by total (cheapest first)
+  providerTotals.sort((a, b) => a.total - b.total);
+  const cheapest = providerTotals[0];
+
+  return (
+    <View style={[tp.card, { backgroundColor: isDark ? 'rgba(74,222,128,0.03)' : 'rgba(74,222,128,0.02)', borderColor: 'rgba(74,222,128,0.20)' }]}>
+      <View style={tp.headerRow}>
+        <MaterialIcons name="leaderboard" size={20} color="#4ADE80" />
+        <View style={{ flex: 1 }}>
+          <Text style={[tp.title, { color: colors.textPrimary }]}>Total by Provider</Text>
+          <Text style={[tp.subtitle, { color: colors.textMuted }]}>Full cart cost comparison across all partners</Text>
+        </View>
+      </View>
+
+      <View style={tp.providerList}>
+        {providerTotals.map((provider, i) => {
+          const isCheapest = provider.name === cheapest.name;
+          const savings = provider.total - cheapest.total;
+          const partnerId = provider.name.toLowerCase().replace(/\s/g, '');
+          // Map to delivery partner id
+          const partnerIdMap: Record<string, string> = { 'zepto': 'zepto', 'blinkit': 'blinkit', 'bigbasket': 'bigbasket', 'instamart': 'instamart', 'localkirana': 'kirana' };
+          const mappedId = partnerIdMap[partnerId] || partnerId;
+
+          return (
+            <Pressable
+              key={provider.name}
+              style={({ pressed }) => [
+                tp.providerRow,
+                {
+                  backgroundColor: isCheapest
+                    ? isDark ? 'rgba(74,222,128,0.08)' : 'rgba(74,222,128,0.05)'
+                    : colors.surface,
+                  borderColor: isCheapest ? 'rgba(74,222,128,0.30)' : colors.border,
+                },
+                pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
+              ]}
+              onPress={() => onSelectPartner(mappedId)}
+            >
+              <View style={tp.rankBadge}>
+                <Text style={[tp.rankText, { color: isCheapest ? '#4ADE80' : colors.textMuted }]}>#{i + 1}</Text>
+              </View>
+              <View style={[tp.providerIcon, { backgroundColor: `${provider.color}15` }]}>
+                <Text style={{ fontSize: 18 }}>{provider.emoji}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={[tp.providerName, { color: colors.textPrimary }]}>{provider.name}</Text>
+                  {isCheapest ? (
+                    <View style={tp.cheapestBadge}>
+                      <MaterialIcons name="workspace-premium" size={9} color="#FFF" />
+                      <Text style={tp.cheapestText}>Cheapest</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text style={[tp.itemCountText, { color: colors.textMuted }]}>
+                  {provider.itemCount} items priced{provider.missingCount > 0 ? ` • ${provider.missingCount} estimated` : ''}
+                </Text>
+              </View>
+              <View style={tp.priceCol}>
+                <Text style={[tp.totalPrice, { color: isCheapest ? '#4ADE80' : colors.textPrimary }]}>₹{provider.total.toLocaleString()}</Text>
+                {!isCheapest && savings > 0 ? (
+                  <Text style={[tp.savingsText, { color: '#F04E50' }]}>+₹{savings}</Text>
+                ) : null}
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {cheapest ? (
+        <View style={[tp.tipRow, { backgroundColor: 'rgba(74,222,128,0.06)' }]}>
+          <MaterialIcons name="tips-and-updates" size={12} color="#4ADE80" />
+          <Text style={[tp.tipText, { color: colors.textSecondary }]}>
+            {cheapest.emoji} {cheapest.name} is cheapest for your full cart — save up to ₹{providerTotals[providerTotals.length - 1].total - cheapest.total} vs costliest
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 function getTimeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
@@ -604,6 +735,13 @@ export default function GroceryCartScreen() {
             </Animated.View>
           ))}
 
+          {/* Total by Provider */}
+          {pricesLoaded ? (
+            <Animated.View entering={FadeInDown.delay(80).duration(350)} style={{ paddingHorizontal: 20, paddingTop: 24 }}>
+              <TotalByProvider priceMap={priceMap} categories={categories} colors={colors} isDark={isDark} onSelectPartner={(id) => { setSelectedPartner(id); }} />
+            </Animated.View>
+          ) : null}
+
           {/* Price Comparison Summary */}
           {pricesLoaded ? (
             <Animated.View entering={FadeInDown.delay(100).duration(350)} style={[st.priceSummarySection, { paddingHorizontal: 20, paddingTop: 24 }]}>
@@ -823,6 +961,34 @@ const st = StyleSheet.create({
   bottomSave: { fontSize: 11, fontWeight: '700', color: '#F5B731' },
   bottomCta: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16 },
   bottomCtaText: { fontSize: 15, fontWeight: '800', color: '#FFF' },
+});
+
+// Total by Provider styles
+const tp = StyleSheet.create({
+  card: { padding: 16, borderRadius: 18, borderWidth: 1, gap: 14 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  title: { fontSize: 16, fontWeight: '800' },
+  subtitle: { fontSize: 11, fontWeight: '500', marginTop: 1 },
+  providerList: { gap: 6 },
+  providerRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 12, paddingVertical: 12, borderRadius: 14, borderWidth: 1,
+  },
+  rankBadge: { width: 24, alignItems: 'center' },
+  rankText: { fontSize: 12, fontWeight: '900' },
+  providerIcon: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  providerName: { fontSize: 13, fontWeight: '700' },
+  itemCountText: { fontSize: 10, fontWeight: '500', marginTop: 1 },
+  cheapestBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 2,
+    backgroundColor: '#4ADE80', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
+  },
+  cheapestText: { fontSize: 8, fontWeight: '800', color: '#FFF' },
+  priceCol: { alignItems: 'flex-end' },
+  totalPrice: { fontSize: 16, fontWeight: '900' },
+  savingsText: { fontSize: 10, fontWeight: '700', marginTop: 1 },
+  tipRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: 10 },
+  tipText: { flex: 1, fontSize: 11, fontWeight: '600', lineHeight: 16 },
 });
 
 // Price Comparison styles
