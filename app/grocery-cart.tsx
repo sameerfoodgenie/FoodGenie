@@ -19,7 +19,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInLeft, FadeInRight, FadeInUp } from 'react-native-reanimated';
 import * as Location from 'expo-location';
 import { useTheme } from '../hooks/useTheme';
-import { fetchPriceComparisons, PriceComparison, PriceEntry, PROVIDER_META, needsRefresh } from '../services/priceComparisonService';
+import { fetchPriceComparisons, PriceComparison, PriceEntry, PROVIDER_META, needsRefresh, GroceryItemInput, getMatchScoreColor, getMatchScoreLabel } from '../services/priceComparisonService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -58,6 +58,104 @@ interface ItemPriceData {
   loading: boolean;
   comparison: PriceComparison | null;
   expanded: boolean;
+}
+
+// ── Enhanced Product Match Card ──
+function ProductMatchCard({ entry, colors, isDark, isFirst }: {
+  entry: PriceEntry;
+  colors: any;
+  isDark: boolean;
+  isFirst: boolean;
+}) {
+  const meta = PROVIDER_META[entry.provider_name] || { emoji: '📦', color: '#6B7280', tagline: '' };
+  const scoreColor = getMatchScoreColor(entry.match_score || 0);
+  const scoreLabel = getMatchScoreLabel(entry.match_score || 0);
+
+  return (
+    <View style={[
+      pm.card,
+      {
+        backgroundColor: isFirst
+          ? isDark ? 'rgba(74,222,128,0.05)' : 'rgba(74,222,128,0.03)'
+          : colors.surface,
+        borderColor: isFirst ? 'rgba(74,222,128,0.25)' : colors.border,
+      },
+    ]}>
+      <View style={pm.cardTop}>
+        <View style={[pm.providerBadge, { backgroundColor: `${meta.color}15` }]}>
+          <Text style={{ fontSize: 14 }}>{meta.emoji}</Text>
+          <Text style={[pm.providerText, { color: meta.color }]}>{entry.provider_name}</Text>
+        </View>
+        <View style={[pm.scoreBadge, { backgroundColor: `${scoreColor}15`, borderColor: `${scoreColor}30` }]}>
+          <Text style={[pm.scoreText, { color: scoreColor }]}>{entry.match_score || 0}%</Text>
+        </View>
+      </View>
+
+      {/* Product title & brand */}
+      <Text style={[pm.productTitle, { color: colors.textPrimary }]} numberOfLines={2}>
+        {entry.product_title || entry.query_name}
+      </Text>
+      {entry.brand_name ? (
+        <View style={pm.brandRow}>
+          <MaterialIcons name="verified" size={10} color="#7B2FA0" />
+          <Text style={[pm.brandText, { color: colors.textMuted }]}>{entry.brand_name}</Text>
+        </View>
+      ) : null}
+
+      {/* Pack size & quantity info */}
+      <View style={pm.qtySection}>
+        {entry.recipe_qty ? (
+          <View style={[pm.qtyBadge, { backgroundColor: isDark ? 'rgba(123,47,160,0.08)' : 'rgba(123,47,160,0.04)' }]}>
+            <Text style={[pm.qtyLabel, { color: colors.textMuted }]}>Recipe needs</Text>
+            <Text style={[pm.qtyValue, { color: '#7B2FA0' }]}>{entry.recipe_qty}</Text>
+          </View>
+        ) : null}
+        {entry.recommended_buy_qty ? (
+          <View style={[pm.qtyBadge, { backgroundColor: isDark ? 'rgba(74,222,128,0.08)' : 'rgba(74,222,128,0.04)' }]}>
+            <Text style={[pm.qtyLabel, { color: colors.textMuted }]}>Buy pack</Text>
+            <Text style={[pm.qtyValue, { color: '#4ADE80' }]}>{entry.recommended_buy_qty}</Text>
+          </View>
+        ) : null}
+        {entry.leftover && entry.leftover !== '0' ? (
+          <View style={[pm.qtyBadge, { backgroundColor: isDark ? 'rgba(245,183,49,0.08)' : 'rgba(245,183,49,0.04)' }]}>
+            <Text style={[pm.qtyLabel, { color: colors.textMuted }]}>Leftover</Text>
+            <Text style={[pm.qtyValue, { color: '#D9A020' }]}>{entry.leftover}</Text>
+          </View>
+        ) : null}
+      </View>
+
+      {/* Price & delivery */}
+      <View style={pm.bottomRow}>
+        <View style={pm.priceSection}>
+          {entry.mrp && entry.mrp > (entry.discount_price || entry.price || 0) ? (
+            <Text style={[pm.mrp, { color: colors.textMuted }]}>₹{entry.mrp}</Text>
+          ) : null}
+          <Text style={[pm.price, { color: entry.availability ? (isFirst ? '#4ADE80' : colors.textPrimary) : colors.textMuted }]}>
+            ₹{entry.discount_price || entry.price || '—'}
+          </Text>
+        </View>
+        <View style={pm.deliverySection}>
+          {entry.delivery_time ? (
+            <View style={pm.deliveryBadge}>
+              <MaterialIcons name="schedule" size={10} color={meta.color} />
+              <Text style={[pm.deliveryText, { color: colors.textMuted }]}>{entry.delivery_time}</Text>
+            </View>
+          ) : null}
+          {!entry.availability ? (
+            <Text style={pm.outOfStock}>Out of stock</Text>
+          ) : null}
+        </View>
+      </View>
+
+      {/* Match label */}
+      {isFirst ? (
+        <View style={[pm.matchLabel, { backgroundColor: `${scoreColor}10` }]}>
+          <MaterialIcons name="auto-awesome" size={10} color={scoreColor} />
+          <Text style={[pm.matchLabelText, { color: scoreColor }]}>{scoreLabel}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
 }
 
 const DELIVERY_PARTNERS: DeliveryPartner[] = [
@@ -251,7 +349,7 @@ function getDefaultGrocery(): GroceryCategory[] {
   ];
 }
 
-// ── Price Comparison Card Component ──
+// ── Price Comparison Card Component (Enhanced) ──
 function PriceComparisonCard({ itemName, priceData, colors, isDark, onToggle }: {
   itemName: string;
   priceData: ItemPriceData;
@@ -263,7 +361,7 @@ function PriceComparisonCard({ itemName, priceData, colors, isDark, onToggle }: 
     return (
       <View style={pc.loadingRow}>
         <ActivityIndicator size="small" color="#7B2FA0" />
-        <Text style={[pc.loadingText, { color: colors.textMuted }]}>Fetching prices...</Text>
+        <Text style={[pc.loadingText, { color: colors.textMuted }]}>Matching products...</Text>
       </View>
     );
   }
@@ -273,6 +371,7 @@ function PriceComparisonCard({ itemName, priceData, colors, isDark, onToggle }: 
 
   const bestPrice = comparison.bestPrice;
   const fastestDelivery = comparison.fastestDelivery;
+  const topMatch = comparison.prices[0]; // Highest match score
 
   return (
     <Animated.View entering={FadeIn.duration(250)}>
@@ -286,16 +385,21 @@ function PriceComparisonCard({ itemName, priceData, colors, isDark, onToggle }: 
                 <Text style={[pc.bestPriceProvider, { color: colors.textMuted }]}>{bestPrice.provider_name}</Text>
               </View>
             ) : null}
-            {fastestDelivery && fastestDelivery.provider_name !== bestPrice?.provider_name ? (
+            {topMatch?.brand_name ? (
               <View style={pc.fastBadge}>
-                <MaterialIcons name="bolt" size={10} color="#F5B731" />
-                <Text style={pc.fastText}>{fastestDelivery.delivery_time}</Text>
-                <Text style={[pc.fastProvider, { color: colors.textMuted }]}>{fastestDelivery.provider_name}</Text>
+                <MaterialIcons name="verified" size={9} color="#7B2FA0" />
+                <Text style={[pc.fastText, { color: '#7B2FA0' }]}>{topMatch.brand_name}</Text>
+              </View>
+            ) : null}
+            {topMatch?.recommended_buy_qty ? (
+              <View style={pc.fastBadge}>
+                <MaterialIcons name="inventory-2" size={9} color="#D9A020" />
+                <Text style={[pc.fastText, { color: '#D9A020' }]}>{topMatch.recommended_buy_qty}</Text>
               </View>
             ) : null}
           </View>
           <View style={pc.compareBtn}>
-            <Text style={pc.compareBtnText}>{comparison.prices.length} prices</Text>
+            <Text style={pc.compareBtnText}>{comparison.prices.length} matches</Text>
             <MaterialIcons name={priceData.expanded ? 'expand-less' : 'expand-more'} size={14} color="#7B2FA0" />
           </View>
         </View>
@@ -303,68 +407,19 @@ function PriceComparisonCard({ itemName, priceData, colors, isDark, onToggle }: 
 
       {priceData.expanded ? (
         <Animated.View entering={FadeInDown.duration(200)} style={pc.expandedList}>
-          {comparison.prices.map((entry, i) => {
-            const meta = PROVIDER_META[entry.provider_name] || { emoji: '📦', color: '#6B7280', tagline: '' };
-            const isBest = bestPrice?.provider_name === entry.provider_name;
-            const isFastest = fastestDelivery?.provider_name === entry.provider_name;
-            return (
-              <View
-                key={i}
-                style={[
-                  pc.priceRow,
-                  {
-                    backgroundColor: isBest
-                      ? isDark ? 'rgba(74,222,128,0.06)' : 'rgba(74,222,128,0.04)'
-                      : colors.surface,
-                    borderColor: isBest ? 'rgba(74,222,128,0.25)' : colors.border,
-                  },
-                ]}
-              >
-                <View style={[pc.providerIcon, { backgroundColor: `${meta.color}15` }]}>
-                  <Text style={{ fontSize: 16 }}>{meta.emoji}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={pc.providerRow}>
-                    <Text style={[pc.providerName, { color: colors.textPrimary }]}>{entry.provider_name}</Text>
-                    {isBest ? (
-                      <View style={pc.tag}>
-                        <Text style={pc.tagBest}>Best Price</Text>
-                      </View>
-                    ) : null}
-                    {isFastest && !isBest ? (
-                      <View style={[pc.tag, { backgroundColor: 'rgba(245,183,49,0.10)' }]}>
-                        <Text style={[pc.tagBest, { color: '#D9A020' }]}>Fastest</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <View style={pc.priceDetailRow}>
-                    {entry.delivery_time ? (
-                      <Text style={[pc.deliveryText, { color: colors.textMuted }]}>🚚 {entry.delivery_time}</Text>
-                    ) : null}
-                    {!entry.availability ? (
-                      <Text style={pc.unavailableText}>Out of stock</Text>
-                    ) : null}
-                  </View>
-                </View>
-                <View style={pc.priceColumn}>
-                  {entry.mrp && entry.mrp > (entry.price || 0) ? (
-                    <Text style={[pc.mrpText, { color: colors.textMuted }]}>₹{entry.mrp}</Text>
-                  ) : null}
-                  <Text style={[
-                    pc.priceText,
-                    { color: entry.availability ? (isBest ? '#4ADE80' : colors.textPrimary) : colors.textMuted },
-                    !entry.availability && { textDecorationLine: 'line-through' },
-                  ]}>
-                    {entry.price ? `₹${entry.discount_price || entry.price}` : '—'}
-                  </Text>
-                </View>
-              </View>
-            );
-          })}
+          {comparison.prices.map((entry, i) => (
+            <ProductMatchCard
+              key={i}
+              entry={entry}
+              colors={colors}
+              isDark={isDark}
+              isFirst={i === 0}
+            />
+          ))}
           {comparison.isEstimated ? (
             <View style={[pc.estimateNote, { backgroundColor: 'rgba(245,183,49,0.06)' }]}>
               <MaterialIcons name="info-outline" size={12} color="#D9A020" />
-              <Text style={[pc.estimateText, { color: colors.textMuted }]}>Estimated prices. Tap item to refresh live data.</Text>
+              <Text style={[pc.estimateText, { color: colors.textMuted }]}>Estimated prices. Real-time data will update shortly.</Text>
             </View>
           ) : null}
           {comparison.lastUpdated ? (
@@ -372,6 +427,11 @@ function PriceComparisonCard({ itemName, priceData, colors, isDark, onToggle }: 
               Updated {getTimeAgo(comparison.lastUpdated)}
             </Text>
           ) : null}
+          {/* Replace option */}
+          <Pressable style={({ pressed }) => [pc.replaceBtn, pressed && { opacity: 0.7 }]}>
+            <MaterialIcons name="swap-horiz" size={12} color="#7B2FA0" />
+            <Text style={pc.replaceBtnText}>Replace product</Text>
+          </Pressable>
         </Animated.View>
       ) : null}
     </Animated.View>
@@ -573,24 +633,24 @@ export default function GroceryCartScreen() {
   }, [pincode]);
 
   const loadPriceComparisons = useCallback(async () => {
-    const allItems = categories.flatMap(c => c.items.map(i => i.name));
+    const allItems: GroceryItemInput[] = categories.flatMap(c => c.items.map(i => ({ name: i.name, qty: i.qty })));
     if (allItems.length === 0) return;
 
     setPricesLoading(true);
     // Initialize loading state for all items
     const initialMap: Record<string, ItemPriceData> = {};
-    allItems.forEach(name => {
-      initialMap[name] = { loading: true, comparison: null, expanded: false };
+    allItems.forEach(item => {
+      initialMap[item.name] = { loading: true, comparison: null, expanded: false };
     });
     setPriceMap(initialMap);
 
-    const { data, error } = await fetchPriceComparisons(allItems.slice(0, 15), pincode); // Limit for performance
+    const { data, error } = await fetchPriceComparisons(allItems.slice(0, 15), pincode);
     
     if (data) {
       const updatedMap: Record<string, ItemPriceData> = {};
-      allItems.forEach(name => {
-        const key = Object.keys(data).find(k => k.toLowerCase() === name.toLowerCase()) || name;
-        updatedMap[name] = {
+      allItems.forEach(item => {
+        const key = Object.keys(data).find(k => k.toLowerCase() === item.name.toLowerCase()) || item.name;
+        updatedMap[item.name] = {
           loading: false,
           comparison: data[key] || null,
           expanded: false,
@@ -601,8 +661,8 @@ export default function GroceryCartScreen() {
     } else {
       // Clear loading state on error
       const clearedMap: Record<string, ItemPriceData> = {};
-      allItems.forEach(name => {
-        clearedMap[name] = { loading: false, comparison: null, expanded: false };
+      allItems.forEach(item => {
+        clearedMap[item.name] = { loading: false, comparison: null, expanded: false };
       });
       setPriceMap(clearedMap);
     }
@@ -1088,6 +1148,33 @@ const tp = StyleSheet.create({
   tipText: { flex: 1, fontSize: 11, fontWeight: '600', lineHeight: 16 },
 });
 
+// Product Match Card styles
+const pm = StyleSheet.create({
+  card: { padding: 12, borderRadius: 14, borderWidth: 1, gap: 8, marginBottom: 6 },
+  cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  providerBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  providerText: { fontSize: 11, fontWeight: '700' },
+  scoreBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
+  scoreText: { fontSize: 10, fontWeight: '800' },
+  productTitle: { fontSize: 13, fontWeight: '700', lineHeight: 18 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  brandText: { fontSize: 11, fontWeight: '600' },
+  qtySection: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  qtyBadge: { paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
+  qtyLabel: { fontSize: 9, fontWeight: '600' },
+  qtyValue: { fontSize: 12, fontWeight: '800', marginTop: 1 },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 },
+  priceSection: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  mrp: { fontSize: 11, fontWeight: '500', textDecorationLine: 'line-through' },
+  price: { fontSize: 16, fontWeight: '900' },
+  deliverySection: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  deliveryBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  deliveryText: { fontSize: 10, fontWeight: '500' },
+  outOfStock: { fontSize: 10, fontWeight: '600', color: '#F04E50' },
+  matchLabel: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start' },
+  matchLabelText: { fontSize: 9, fontWeight: '700' },
+});
+
 // Price Comparison styles
 const pc = StyleSheet.create({
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 6, marginLeft: 46 },
@@ -1097,32 +1184,19 @@ const pc = StyleSheet.create({
     marginLeft: 46, marginRight: 14, marginTop: -2, marginBottom: 6,
     paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1,
   },
-  summaryLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  summaryLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1 },
   bestPriceBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   bestPriceText: { fontSize: 12, fontWeight: '800', color: '#4ADE80' },
   bestPriceProvider: { fontSize: 9, fontWeight: '600' },
   fastBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   fastText: { fontSize: 10, fontWeight: '700', color: '#F5B731' },
   fastProvider: { fontSize: 9, fontWeight: '600' },
-  compareBtn: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  compareBtn: { flexDirection: 'row', alignItems: 'center', gap: 3, flexShrink: 0 },
   compareBtnText: { fontSize: 10, fontWeight: '700', color: '#7B2FA0' },
-  expandedList: { marginLeft: 46, marginRight: 14, marginBottom: 8, gap: 4 },
-  priceRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1,
-  },
-  providerIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  providerRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  providerName: { fontSize: 12, fontWeight: '700' },
-  tag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, backgroundColor: 'rgba(74,222,128,0.10)' },
-  tagBest: { fontSize: 8, fontWeight: '800', color: '#4ADE80' },
-  priceDetailRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
-  deliveryText: { fontSize: 10, fontWeight: '500' },
-  unavailableText: { fontSize: 10, fontWeight: '600', color: '#F04E50' },
-  priceColumn: { alignItems: 'flex-end' },
-  mrpText: { fontSize: 10, fontWeight: '500', textDecorationLine: 'line-through' },
-  priceText: { fontSize: 14, fontWeight: '800' },
+  expandedList: { marginLeft: 46, marginRight: 14, marginBottom: 8, gap: 6 },
   estimateNote: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8, borderRadius: 8 },
   estimateText: { fontSize: 10, fontWeight: '500' },
   lastUpdated: { fontSize: 9, fontWeight: '500', textAlign: 'right', marginTop: 4 },
+  replaceBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(123,47,160,0.06)' },
+  replaceBtnText: { fontSize: 10, fontWeight: '700', color: '#7B2FA0' },
 });
