@@ -139,7 +139,7 @@ export default function LoginScreen() {
             <Animated.View entering={FadeInDown.duration(500)} style={styles.loginHeader}>
               <View style={styles.logoContainer}>
                 <Image
-                  source={require('../assets/images/icon.png')}
+                  source={require('../assets/images/foodgenie-logo.png')}
                   style={styles.loginLogo}
                   contentFit="contain"
                   transition={200}
@@ -180,7 +180,7 @@ export default function LoginScreen() {
                     onPress={handleVerifyOTP}
                     disabled={operationLoading}
                   >
-                    <LinearGradient colors={['#D4AF37', '#FFD700']} style={styles.primaryButtonGradient}>
+                    <LinearGradient colors={['#F5B731', '#FDD85D']} style={styles.primaryButtonGradient}>
                       <Text style={styles.primaryButtonText}>
                         {operationLoading ? 'Verifying...' : 'Verify & Sign In'}
                       </Text>
@@ -218,7 +218,7 @@ export default function LoginScreen() {
                     disabled={operationLoading}
                   >
                     <LinearGradient
-                      colors={['#D4AF37', '#FFD700']}
+                      colors={['#F5B731', '#FDD85D']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       style={styles.primaryButtonGradient}
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     width: 240,
     height: 240,
     borderRadius: 120,
-    backgroundColor: 'rgba(212,175,55,0.06)',
+    backgroundColor: 'rgba(123,47,160,0.06)',
   },
   bgOrb2: {
     position: 'absolute',
@@ -280,36 +280,36 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: 'rgba(212,175,55,0.04)',
+    backgroundColor: 'rgba(196,30,122,0.04)',
   },
 
   // Login
   logoContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 28,
+    width: 120,
+    height: 120,
+    borderRadius: 32,
     overflow: 'hidden',
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.18)',
-    shadowColor: '#D4AF37',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 8,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: 'rgba(123,47,160,0.25)',
+    shadowColor: '#7B2FA0',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.30,
+    shadowRadius: 24,
+    elevation: 10,
   },
-  loginLogo: { width: 96, height: 96 },
+  loginLogo: { width: 120, height: 120 },
   brandName: {
-    fontSize: 34,
+    fontSize: 36,
     fontWeight: '900',
-    color: '#FFD700',
+    color: '#7B2FA0',
     letterSpacing: 0.5,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   brandTagline: {
     fontSize: 14,
     fontWeight: '600',
-    color: 'rgba(212,175,55,0.60)',
+    color: '#C41E7A',
     letterSpacing: 1.5,
     textTransform: 'uppercase',
     marginBottom: 28,
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: theme.textPrimary,
     borderWidth: 1,
-    borderColor: theme.glass.borderGold,
+    borderColor: 'rgba(123,47,160,0.25)',
     letterSpacing: 14,
   },
   otpNote: { fontSize: 13, color: theme.textMuted, textAlign: 'center', lineHeight: 18, marginTop: 6 },
