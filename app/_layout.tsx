@@ -78,6 +78,7 @@ function RootInner() {
           <Stack.Screen name="smart-split" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
           <Stack.Screen name="smart-grocery" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="grocery-planner" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="genie-rewards" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
           <Stack.Screen name="booking-history" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="meal-preferences" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
           <Stack.Screen name="recipe-videos" options={{ headerShown: false, animation: 'slide_from_right' }} />

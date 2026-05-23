@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Platform, View, StyleSheet, Text } from 'react-native';
+import { Platform, View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
@@ -11,11 +11,12 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
+import { Text } from 'react-native';
 import { theme } from '../../constants/theme';
 import { useTheme } from '../../hooks/useTheme';
 import OnboardingWalkthrough, { useOnboardingStatus } from '../../components/OnboardingWalkthrough';
 
-function GenieAIButton({ focused }: { focused: boolean }) {
+function GenieRewardsButton({ focused }: { focused: boolean }) {
   const glowScale = useSharedValue(1);
   const glowOpacity = useSharedValue(0.20);
 
@@ -41,16 +42,12 @@ function GenieAIButton({ focused }: { focused: boolean }) {
     <View style={styles.postTabWrap}>
       <Animated.View style={[styles.glowRing, glowStyle]} />
       <LinearGradient
-        colors={focused ? ['#7B2FA0', '#C41E7A'] : ['#1E1456', '#7B2FA0']}
+        colors={focused ? ['#C41E7A', '#F5B731'] : ['#1E1456', '#7B2FA0']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.postTabBtn}
       >
-        <MaterialIcons
-          name="auto-awesome"
-          size={24}
-          color="#FDD85D"
-        />
+        <Text style={{ fontSize: 22 }}>🪔</Text>
       </LinearGradient>
     </View>
   );
@@ -137,7 +134,7 @@ export default function TabLayout() {
         name="chat"
         options={{
           title: '',
-          tabBarIcon: ({ focused }) => <GenieAIButton focused={focused} />,
+          tabBarIcon: ({ focused }) => <GenieRewardsButton focused={focused} />,
           tabBarLabelStyle: { display: 'none' },
         }}
       />

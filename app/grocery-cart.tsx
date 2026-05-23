@@ -21,6 +21,7 @@ import * as Location from 'expo-location';
 import { useTheme } from '../hooks/useTheme';
 import { fetchPriceComparisons, PriceComparison, PriceEntry, PROVIDER_META, GroceryItemInput, getMatchScoreColor, getMatchScoreLabel } from '../services/priceComparisonService';
 import { calculateSmartSplit, calculateMealCost, estimateMealCosts } from '../services/smartSplitService';
+import { isDietaryAllowed } from '../services/groceryPlannerService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -328,7 +329,7 @@ function MealCostRow({ icon, label, cost, colors }: { icon: string; label: strin
 }
 
 // ── Generate grocery ──
-function generateGroceryFromMeals(planDataStr: string): GroceryCategory[] {
+function generateGroceryFromMeals(planDataStr: string, dietType?: string): GroceryCategory[] {
   let meals: any[] = [];
   try {
     const parsed = JSON.parse(planDataStr);
@@ -342,6 +343,8 @@ function generateGroceryFromMeals(planDataStr: string): GroceryCategory[] {
   meals.forEach((meal: any) => {
     (meal.ingredients || []).forEach((ing: string) => {
       const lower = ing.toLowerCase();
+      // Apply dietary filtering
+      if (dietType && !isDietaryAllowed(lower, dietType)) return;
       if (!ingredientMap.has(lower)) {
         const cat = categorizeIngredient(lower);
         ingredientMap.set(lower, { qty: '1 pack', category: cat.category, emoji: cat.emoji });
@@ -349,7 +352,7 @@ function generateGroceryFromMeals(planDataStr: string): GroceryCategory[] {
     });
   });
 
-  if (ingredientMap.size === 0) return getDefaultGrocery();
+  if (ingredientMap.size === 0) return getDefaultGrocery(dietType);
 
   const categoryMap = new Map<string, GroceryItem[]>();
   ingredientMap.forEach((info, name) => {
@@ -420,8 +423,8 @@ function estimatePrice(name: string): number {
   return Math.floor(30 + Math.random() * 70);
 }
 
-function getDefaultGrocery(): GroceryCategory[] {
-  return [
+function getDefaultGrocery(dietType?: string): GroceryCategory[] {
+  const allCategories: GroceryCategory[] = [
     {
       id: 'dairy', name: 'Dairy', emoji: '🥛', color: '#60A5FA', collapsed: false,
       items: [
@@ -474,6 +477,16 @@ function getDefaultGrocery(): GroceryCategory[] {
       ],
     },
   ];
+
+  // Filter items by dietary preference
+  if (dietType) {
+    return allCategories.map(cat => ({
+      ...cat,
+      items: cat.items.filter(item => isDietaryAllowed(item.name, dietType)),
+    })).filter(cat => cat.items.length > 0);
+  }
+
+  return allCategories;
 }
 
 // ── Main Screen ──
@@ -483,8 +496,21 @@ export default function GroceryCartScreen() {
   const { colors, isDark } = useTheme();
   const params = useLocalSearchParams<{ planData?: string; planType?: string }>();
 
+  // Extract diet type from planType for filtering
+  const dietType = useMemo(() => {
+    const pt = params.planType || '';
+    if (pt.includes('vegetarian')) return 'vegetarian';
+    if (pt.includes('jain')) return 'jain';
+    if (pt.includes('vegan')) return 'vegan';
+    if (pt.includes('high_protein')) return 'high_protein';
+    if (pt.includes('healthy')) return 'healthy';
+    if (pt.includes('budget')) return 'budget';
+    if (pt.includes('family')) return 'family';
+    return 'vegetarian'; // Default to vegetarian for Indian users
+  }, [params.planType]);
+
   const [categories, setCategories] = useState<GroceryCategory[]>(() =>
-    generateGroceryFromMeals(params.planData || '{}')
+    generateGroceryFromMeals(params.planData || '{}', dietType)
   );
   const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
   const [priceMap, setPriceMap] = useState<Record<string, ItemPriceData>>({});

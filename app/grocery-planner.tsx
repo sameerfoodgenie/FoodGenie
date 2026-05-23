@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useTheme } from '../hooks/useTheme';
+import { generateSmartGroceryPlan, PlanConfig } from '../services/groceryPlannerService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -85,11 +86,23 @@ export default function GroceryPlannerScreen() {
     if (step < totalSteps) {
       setStep(step + 1);
     } else {
-      // Generate grocery plan and navigate
-      const planConfig = { duration, familySize, mealPlan, brands: Array.from(selectedBrands) };
+      // Generate aggregated grocery plan using the service
+      const planConfig: PlanConfig = { duration, familySize, mealPlan, brands: Array.from(selectedBrands) };
+      const plan = generateSmartGroceryPlan(planConfig);
+
+      // Format into grocery-cart compatible data
+      const meals = [{
+        ingredients: plan.items.map(item => `${item.name} ${item.recommendedPack}`),
+      }];
+
+      const planType = duration === 'monthly' ? 'monthly' : duration === 'weekly' ? 'weekly' : 'today';
+
       router.push({
-        pathname: '/smart-grocery',
-        params: { planConfig: JSON.stringify(planConfig) },
+        pathname: '/grocery-cart',
+        params: {
+          planData: JSON.stringify({ meals }),
+          planType: `${planType} (${familySize} people, ${mealPlan})`,
+        },
       });
     }
   }, [step, duration, familySize, mealPlan, selectedBrands, router]);
