@@ -17,6 +17,52 @@ import { useTheme } from '../hooks/useTheme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
+// ── Bundle Grocery Data (Monthly) ──
+const BUNDLE_GROCERIES: Record<string, { meals: { ingredients: string[] }[] }> = {
+  essential: {
+    meals: [
+      { ingredients: ['rice 5kg', 'atta 5kg', 'toor dal 2kg', 'moong dal 1kg', 'masoor dal 1kg', 'chana dal 1kg', 'urad dal 500g', 'sugar 2kg', 'salt 1kg', 'poha 1kg', 'besan 500g', 'sooji 500g', 'maida 500g'] },
+      { ingredients: ['sunflower oil 5L', 'ghee 1L', 'mustard oil 1L'] },
+      { ingredients: ['milk 30L', 'curd 4kg', 'paneer 2kg', 'butter 500g', 'cheese 200g'] },
+      { ingredients: ['onion 8kg', 'tomato 6kg', 'potato 5kg', 'garlic 500g', 'ginger 500g', 'green chillies 500g', 'coriander leaves 1kg', 'spinach 2kg', 'capsicum 1kg'] },
+      { ingredients: ['turmeric 500g', 'cumin seeds 200g', 'red chilli powder 500g', 'garam masala 200g', 'coriander powder 500g', 'mustard seeds 200g'] },
+      { ingredients: ['egg 60 pcs', 'bread 2kg', 'banana 8kg', 'apple 2kg', 'lemon 1kg'] },
+    ],
+  },
+  healthy: {
+    meals: [
+      { ingredients: ['brown rice 3kg', 'quinoa 1kg', 'oats 2kg', 'atta 3kg', 'moong dal 2kg', 'toor dal 1kg', 'masoor dal 1kg', 'rajma 1kg', 'chana 1kg'] },
+      { ingredients: ['olive oil 1L', 'coconut oil 1L', 'ghee 500ml', 'flaxseed 200g', 'chia seeds 200g', 'pumpkin seeds 200g'] },
+      { ingredients: ['milk 20L', 'greek yogurt 4kg', 'paneer 1.5kg', 'tofu 1kg', 'whey protein 500g'] },
+      { ingredients: ['spinach 3kg', 'broccoli 2kg', 'sweet potato 3kg', 'capsicum 2kg', 'cucumber 2kg', 'carrot 2kg', 'beetroot 1kg', 'avocado 1kg', 'mushroom 1kg'] },
+      { ingredients: ['chicken breast 4kg', 'egg 90 pcs', 'fish 2kg', 'almond 500g', 'walnut 250g', 'peanut butter 500g'] },
+      { ingredients: ['banana 6kg', 'apple 4kg', 'berries 1kg', 'orange 3kg', 'papaya 2kg', 'pomegranate 2kg'] },
+      { ingredients: ['turmeric 300g', 'cumin seeds 200g', 'black pepper 100g', 'cinnamon 100g', 'honey 500g', 'green tea 200g'] },
+    ],
+  },
+  family: {
+    meals: [
+      { ingredients: ['rice 10kg', 'atta 10kg', 'toor dal 3kg', 'moong dal 2kg', 'masoor dal 2kg', 'chana dal 2kg', 'urad dal 1kg', 'rajma 1kg', 'sugar 3kg', 'salt 2kg', 'poha 2kg', 'besan 1kg', 'sooji 1kg', 'maida 1kg', 'vermicelli 500g'] },
+      { ingredients: ['sunflower oil 10L', 'ghee 2L', 'mustard oil 2L', 'butter 1kg'] },
+      { ingredients: ['milk 60L', 'curd 8kg', 'paneer 4kg', 'butter 1kg', 'cheese 500g', 'cream 1L'] },
+      { ingredients: ['onion 15kg', 'tomato 10kg', 'potato 8kg', 'garlic 1kg', 'ginger 1kg', 'green chillies 1kg', 'coriander leaves 2kg', 'spinach 4kg', 'capsicum 2kg', 'cauliflower 3kg', 'cabbage 2kg', 'beans 2kg', 'peas 2kg', 'carrot 2kg'] },
+      { ingredients: ['turmeric 1kg', 'cumin seeds 500g', 'red chilli powder 1kg', 'garam masala 500g', 'coriander powder 1kg', 'mustard seeds 500g', 'bay leaf 100g', 'cardamom 100g', 'cinnamon 100g'] },
+      { ingredients: ['chicken 8kg', 'egg 120 pcs', 'fish 3kg', 'bread 4kg'] },
+      { ingredients: ['banana 12kg', 'apple 4kg', 'orange 3kg', 'lemon 2kg', 'mango 3kg', 'watermelon 5kg'] },
+    ],
+  },
+  budget: {
+    meals: [
+      { ingredients: ['rice 5kg', 'atta 5kg', 'toor dal 1kg', 'moong dal 1kg', 'masoor dal 500g', 'sugar 1kg', 'salt 1kg', 'poha 500g'] },
+      { ingredients: ['sunflower oil 2L', 'mustard oil 500ml'] },
+      { ingredients: ['milk 15L', 'curd 2kg', 'paneer 500g', 'butter 200g'] },
+      { ingredients: ['onion 4kg', 'tomato 3kg', 'potato 3kg', 'garlic 250g', 'ginger 250g', 'green chillies 250g', 'coriander leaves 500g', 'spinach 1kg'] },
+      { ingredients: ['turmeric 200g', 'cumin seeds 100g', 'red chilli powder 200g', 'garam masala 100g', 'coriander powder 200g'] },
+      { ingredients: ['egg 30 pcs', 'bread 1kg', 'banana 4kg', 'lemon 500g'] },
+    ],
+  },
+};
+
 // ── Bundle Data ──
 const BUNDLES = [
   {
@@ -116,6 +162,22 @@ export default function SmartGroceryScreen() {
     });
   }, []);
 
+  const handleBundlePress = useCallback((bundleId: string, bundleName: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const bundleData = BUNDLE_GROCERIES[bundleId];
+    if (bundleData) {
+      router.push({
+        pathname: '/grocery-cart',
+        params: {
+          planData: JSON.stringify(bundleData),
+          planType: `monthly (${bundleName})`,
+        },
+      });
+    } else {
+      router.push('/grocery-cart');
+    }
+  }, [router]);
+
   return (
     <View style={[st.container, { backgroundColor: colors.background }]}>
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
@@ -190,7 +252,7 @@ export default function SmartGroceryScreen() {
                       { backgroundColor: colors.surface, borderColor: colors.border },
                       pressed && { opacity: 0.92, transform: [{ scale: 0.97 }] },
                     ]}
-                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/grocery-cart'); }}
+                    onPress={() => handleBundlePress(bundle.id, bundle.name)}
                   >
                     <View style={[st.bundleIcon, { backgroundColor: `${bundle.color}12` }]}>
                       <Text style={{ fontSize: 26 }}>{bundle.emoji}</Text>
