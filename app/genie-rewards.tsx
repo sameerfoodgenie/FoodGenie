@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, withSequence } from 'react-native-reanimated';
+import { Image } from 'expo-image';
 import { useTheme } from '../hooks/useTheme';
 import { useCoin } from '../hooks/useCoin';
 import { useAuth } from '@/template';
@@ -125,7 +126,7 @@ export default function GenieRewardsScreen() {
           {/* Lamp Section */}
           <View style={st.lampSection}>
             <Animated.View style={[st.lampGlow, glowStyle]} />
-            <Text style={st.lampEmoji}>🪔</Text>
+            <Image source={require('../assets/images/foodgenie-logo.png')} style={{ width: 56, height: 56, borderRadius: 14 }} contentFit="contain" />
             <Text style={st.lampText}>Rub the lamp & unlock rewards</Text>
           </View>
         </LinearGradient>
