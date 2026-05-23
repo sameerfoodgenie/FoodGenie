@@ -71,14 +71,6 @@ const SERVICE_CARDS = [
     iconColor: '#7B2FA0',
   },
   {
-    id: 'smart-grocery',
-    title: 'Smart Grocery',
-    subtitle: 'Plan meals and buy without overspending',
-    emoji: '🛒',
-    route: '/(tabs)/grocery',
-    iconColor: '#F5B731',
-  },
-  {
     id: 'order-food',
     title: 'Order Food',
     subtitle: 'Compare and order from food partners',
@@ -337,9 +329,61 @@ export default function HomeScreen() {
           <Animated.View entering={FadeInDown.delay(160).duration(350)} style={s.serviceSectionHeader}>
             <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>What would you like?</Text>
           </Animated.View>
-          <View style={s.serviceRow}>
+
+          {/* ── Smart Grocery Premium Card ── */}
+          <Animated.View entering={FadeInDown.delay(180).duration(380)}>
+            <Pressable
+              style={({ pressed }) => [pressed && { opacity: 0.94, transform: [{ scale: 0.98 }] }]}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/smart-grocery' as any); }}
+            >
+              <View style={[s.smartGroceryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={s.sgHeader}>
+                  <View style={[s.sgIconWrap, { backgroundColor: 'rgba(245,183,49,0.10)' }]}>
+                    <Text style={{ fontSize: 28 }}>🛒</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Text style={[s.sgTitle, { color: colors.textPrimary }]}>Smart Grocery</Text>
+                      <View style={s.sgSaveBadge}>
+                        <MaterialIcons name="savings" size={10} color="#4ADE80" />
+                        <Text style={s.sgSaveText}>Save ₹1,300/mo</Text>
+                      </View>
+                    </View>
+                    <Text style={[s.sgSubtitle, { color: colors.textMuted }]}>Plan monthly groceries, save money & auto-order daily essentials</Text>
+                  </View>
+                </View>
+
+                {/* Mini Cards */}
+                <View style={s.sgMiniRow}>
+                  <View style={[s.sgMiniCard, { backgroundColor: isDark ? 'rgba(245,183,49,0.05)' : 'rgba(245,183,49,0.03)', borderColor: 'rgba(245,183,49,0.15)' }]}>
+                    <MaterialIcons name="inventory-2" size={14} color="#F5B731" />
+                    <Text style={[s.sgMiniTitle, { color: colors.textPrimary }]}>Monthly Bundles</Text>
+                    <Text style={[s.sgMiniSub, { color: colors.textMuted }]}>AI-curated packs</Text>
+                  </View>
+                  <View style={[s.sgMiniCard, { backgroundColor: isDark ? 'rgba(74,222,128,0.05)' : 'rgba(74,222,128,0.03)', borderColor: 'rgba(74,222,128,0.15)' }]}>
+                    <MaterialIcons name="insights" size={14} color="#4ADE80" />
+                    <Text style={[s.sgMiniTitle, { color: colors.textPrimary }]}>Smart Savings</Text>
+                    <Text style={[s.sgMiniSub, { color: colors.textMuted }]}>Split & compare</Text>
+                  </View>
+                  <View style={[s.sgMiniCard, { backgroundColor: isDark ? 'rgba(123,47,160,0.05)' : 'rgba(123,47,160,0.03)', borderColor: 'rgba(123,47,160,0.15)' }]}>
+                    <MaterialIcons name="schedule" size={14} color="#7B2FA0" />
+                    <Text style={[s.sgMiniTitle, { color: colors.textPrimary }]}>Auto Order</Text>
+                    <Text style={[s.sgMiniSub, { color: colors.textMuted }]}>Daily essentials</Text>
+                  </View>
+                </View>
+
+                <View style={s.sgCtaRow}>
+                  <Text style={s.sgCtaText}>Explore Smart Grocery</Text>
+                  <MaterialIcons name="arrow-forward" size={14} color="#F5B731" />
+                </View>
+              </View>
+            </Pressable>
+          </Animated.View>
+
+          {/* Other Service Cards */}
+          <View style={[s.serviceRow, { marginTop: 12 }]}>
             {SERVICE_CARDS.map((card, i) => (
-              <Animated.View key={card.id} entering={FadeInDown.delay(200 + i * 80).duration(350)}>
+              <Animated.View key={card.id} entering={FadeInDown.delay(260 + i * 80).duration(350)}>
                 <Pressable
                   style={({ pressed }) => [
                     s.serviceCard,
@@ -583,6 +627,24 @@ const s = StyleSheet.create({
   serviceTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   serviceTitle: { fontSize: 16, fontWeight: '800' },
   serviceSubtitle: { fontSize: 12, fontWeight: '500' },
+
+  /* ── Smart Grocery Card ── */
+  smartGroceryCard: {
+    borderRadius: 20, borderWidth: 1, padding: 16, gap: 12,
+    shadowColor: '#1E1456', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 14, elevation: 4,
+  },
+  sgHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  sgIconWrap: { width: 50, height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  sgTitle: { fontSize: 17, fontWeight: '900', letterSpacing: -0.3 },
+  sgSubtitle: { fontSize: 11, fontWeight: '500', lineHeight: 15, marginTop: 3 },
+  sgSaveBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(74,222,128,0.10)', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8 },
+  sgSaveText: { fontSize: 10, fontWeight: '700', color: '#4ADE80' },
+  sgMiniRow: { flexDirection: 'row', gap: 8 },
+  sgMiniCard: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 10, paddingHorizontal: 6, borderRadius: 12, borderWidth: 1 },
+  sgMiniTitle: { fontSize: 10, fontWeight: '800', textAlign: 'center' },
+  sgMiniSub: { fontSize: 8, fontWeight: '500', textAlign: 'center' },
+  sgCtaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderRadius: 12, backgroundColor: 'rgba(245,183,49,0.08)' },
+  sgCtaText: { fontSize: 13, fontWeight: '700', color: '#F5B731' },
 
   /* ── Quick Actions ── */
   quickSection: { paddingHorizontal: 20, paddingTop: 24, gap: 12 },
