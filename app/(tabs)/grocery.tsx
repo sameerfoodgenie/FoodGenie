@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   Pressable,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -14,19 +15,22 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { useTheme } from '../../hooks/useTheme';
+import { useAuth } from '@/template';
+import { fetchActiveSchedules } from '../../services/groceryPlannerService';
+import { fetchPriceComparisons, PriceComparison } from '../../services/priceComparisonService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
 // ── Scheduled Essentials ──
 const ESSENTIALS = [
-  { id: 'milk', name: 'Milk', emoji: '🥛', freq: 'Daily', time: 'Morning', provider: 'Milk Vendor' },
-  { id: 'curd', name: 'Curd', emoji: '🥣', freq: 'Daily', time: 'Morning', provider: 'Blinkit' },
-  { id: 'bread', name: 'Bread', emoji: '🍞', freq: 'Alternate', time: 'Morning', provider: 'Zepto' },
-  { id: 'eggs', name: 'Eggs', emoji: '🥚', freq: 'Weekly', time: 'Morning', provider: 'Local Kirana' },
-  { id: 'fruits', name: 'Fruits', emoji: '🍎', freq: 'Alternate', time: 'Morning', provider: 'Local Kirana' },
-  { id: 'vegetables', name: 'Vegetables', emoji: '🥬', freq: 'Wed & Sat', time: 'Morning', provider: 'Local Kirana' },
-  { id: 'paneer', name: 'Paneer', emoji: '🧀', freq: 'Weekly', time: 'Morning', provider: 'Blinkit' },
-  { id: 'coconut', name: 'Coconut Water', emoji: '🥥', freq: 'Daily', time: 'Afternoon', provider: 'Zepto' },
+  { id: 'milk', name: 'Milk', emoji: '🥛', defaultQty: '1L', unit: 'litre' },
+  { id: 'curd', name: 'Curd', emoji: '🥣', defaultQty: '400g', unit: 'gram' },
+  { id: 'bread', name: 'Bread', emoji: '🍞', defaultQty: '1 pack', unit: 'pack' },
+  { id: 'eggs', name: 'Eggs', emoji: '🥚', defaultQty: '6 pcs', unit: 'pcs' },
+  { id: 'fruits', name: 'Fruits', emoji: '🍎', defaultQty: '1kg', unit: 'kg' },
+  { id: 'vegetables', name: 'Vegetables', emoji: '🥬', defaultQty: '2kg', unit: 'kg' },
+  { id: 'paneer', name: 'Paneer', emoji: '🧀', defaultQty: '200g', unit: 'gram' },
+  { id: 'coconut', name: 'Coconut Water', emoji: '🥥', defaultQty: '1L', unit: 'litre' },
 ];
 
 // ── Provider Bundles ──
@@ -46,7 +50,7 @@ const PROVIDER_BUNDLES = [
   {
     id: 'zepto_fitness', provider: 'Zepto', emoji: '⚡', color: '#7B2D8E',
     name: 'Fitness Protein Pack', price: 2999, savings: 480, items: 20,
-    categories: ['Eggs', 'Chicken', 'Paneer', 'Whey', 'Seeds', 'Nuts'],
+    categories: ['Eggs', 'Paneer', 'Tofu', 'Whey', 'Seeds', 'Nuts'],
     badge: '10-min Delivery',
   },
   {
@@ -57,19 +61,127 @@ const PROVIDER_BUNDLES = [
   },
 ];
 
-// ── Add-on Offers ──
-const ADDON_OFFERS = [
-  { id: 'fruits', emoji: '🍎', title: 'Fruits Combo', desc: 'Apple + Banana + Orange 3kg', savings: 120, price: 280 },
-  { id: 'dairy', emoji: '🥛', title: 'Dairy Essentials', desc: 'Milk + Curd + Paneer + Butter', savings: 85, price: 320 },
-  { id: 'breakfast', emoji: '🥣', title: 'Breakfast Pack', desc: 'Oats + Bread + Cornflakes + Milk', savings: 95, price: 250 },
-  { id: 'snacks', emoji: '🍪', title: 'Healthy Snacks', desc: 'Dry fruits + Seeds + Makhana', savings: 150, price: 450 },
+// ── Add-on Combos with real items for price fetching ──
+const ADDON_COMBOS = [
+  {
+    id: 'fruits', emoji: '🍎', title: 'Fruits Combo',
+    items: [
+      { name: 'Apple', qty: '1kg' },
+      { name: 'Banana', qty: '1 dozen' },
+      { name: 'Orange', qty: '1kg' },
+    ],
+  },
+  {
+    id: 'dairy', emoji: '🥛', title: 'Dairy Essentials',
+    items: [
+      { name: 'Milk', qty: '1L' },
+      { name: 'Curd', qty: '500g' },
+      { name: 'Paneer', qty: '200g' },
+      { name: 'Butter', qty: '100g' },
+    ],
+  },
+  {
+    id: 'breakfast', emoji: '🥣', title: 'Breakfast Pack',
+    items: [
+      { name: 'Oats', qty: '1kg' },
+      { name: 'Bread', qty: '1 pack' },
+      { name: 'Cornflakes', qty: '500g' },
+      { name: 'Milk', qty: '1L' },
+    ],
+  },
+  {
+    id: 'snacks', emoji: '🍪', title: 'Healthy Snacks',
+    items: [
+      { name: 'Makhana', qty: '250g' },
+      { name: 'Dry Fruits Mix', qty: '250g' },
+      { name: 'Seeds Mix', qty: '200g' },
+    ],
+  },
 ];
+
+interface AddonPriceInfo {
+  loading: boolean;
+  totalPrice: number | null;
+  provider: string | null;
+  lastUpdated: string | null;
+  isEstimated: boolean;
+}
 
 export default function GroceryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const { user } = useAuth();
+
   const [selectedSchedule, setSelectedSchedule] = useState<Set<string>>(new Set(['milk', 'curd', 'vegetables']));
+  const [activeSchedules, setActiveSchedules] = useState<any[]>([]);
+  const [schedulesLoading, setSchedulesLoading] = useState(false);
+  const [addonPrices, setAddonPrices] = useState<Record<string, AddonPriceInfo>>({});
+  const [addonLoading, setAddonLoading] = useState(false);
+
+  // Load active schedules
+  useEffect(() => {
+    if (user?.id) {
+      setSchedulesLoading(true);
+      fetchActiveSchedules(user.id).then(({ data }) => {
+        if (data) setActiveSchedules(data);
+        setSchedulesLoading(false);
+      });
+    }
+  }, [user?.id]);
+
+  // Load real-time add-on prices
+  useEffect(() => {
+    loadAddonPrices();
+  }, []);
+
+  const loadAddonPrices = useCallback(async () => {
+    setAddonLoading(true);
+    const initialPrices: Record<string, AddonPriceInfo> = {};
+    ADDON_COMBOS.forEach(combo => {
+      initialPrices[combo.id] = { loading: true, totalPrice: null, provider: null, lastUpdated: null, isEstimated: false };
+    });
+    setAddonPrices(initialPrices);
+
+    // Fetch prices for all addon items
+    const allItems = ADDON_COMBOS.flatMap(combo => combo.items);
+    const { data } = await fetchPriceComparisons(allItems, '400001');
+
+    const updatedPrices: Record<string, AddonPriceInfo> = {};
+    ADDON_COMBOS.forEach(combo => {
+      let total = 0;
+      let hasLivePrice = false;
+      let providerName = '';
+
+      combo.items.forEach(item => {
+        if (data) {
+          const key = Object.keys(data).find(k => k.toLowerCase().includes(item.name.toLowerCase()));
+          if (key && data[key]?.bestPrice) {
+            const price = data[key].bestPrice.discount_price || data[key].bestPrice.price || 0;
+            total += price;
+            hasLivePrice = true;
+            if (!providerName) providerName = data[key].bestPrice.provider_name || '';
+          } else {
+            // Fallback estimate
+            total += getEstimatePrice(item.name);
+          }
+        } else {
+          total += getEstimatePrice(item.name);
+        }
+      });
+
+      updatedPrices[combo.id] = {
+        loading: false,
+        totalPrice: Math.round(total),
+        provider: hasLivePrice ? providerName : null,
+        lastUpdated: hasLivePrice ? new Date().toISOString() : null,
+        isEstimated: !hasLivePrice,
+      };
+    });
+
+    setAddonPrices(updatedPrices);
+    setAddonLoading(false);
+  }, []);
 
   const toggleSchedule = useCallback((id: string) => {
     Haptics.selectionAsync();
@@ -79,6 +191,15 @@ export default function GroceryScreen() {
       return next;
     });
   }, []);
+
+  const handleSetSchedule = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    const selectedItems = ESSENTIALS.filter(e => selectedSchedule.has(e.id));
+    router.push({
+      pathname: '/schedule-essentials' as any,
+      params: { items: JSON.stringify(selectedItems) },
+    });
+  }, [selectedSchedule, router]);
 
   return (
     <View style={[st.container, { backgroundColor: colors.background }]}>
@@ -113,7 +234,7 @@ export default function GroceryScreen() {
               { id: 'cart', label: 'AI Cart', icon: 'smart-toy', route: '/grocery-cart', color: '#F5B731' },
               { id: 'split', label: 'Smart Split', icon: 'auto-awesome', route: '/smart-split', color: '#4ADE80' },
               { id: 'pantry', label: 'Pantry', icon: 'kitchen', route: '/smart-grocery', color: '#F04E50' },
-            ].map((item, i) => (
+            ].map((item) => (
               <Pressable
                 key={item.id}
                 style={({ pressed }) => [st.quickAction, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.85, transform: [{ scale: 0.95 }] }]}
@@ -126,6 +247,37 @@ export default function GroceryScreen() {
               </Pressable>
             ))}
           </Animated.View>
+
+          {/* ═══ Active Schedules ═══ */}
+          {activeSchedules.length > 0 ? (
+            <Animated.View entering={FadeInDown.delay(80).duration(300)} style={{ paddingHorizontal: 16, paddingTop: 18 }}>
+              <View style={st.sectionHeader}>
+                <Text style={[st.sectionTitle, { color: colors.textPrimary }]}>Active Schedules</Text>
+                <View style={[st.activeBadge, { backgroundColor: 'rgba(74,222,128,0.12)' }]}>
+                  <Text style={st.activeBadgeText}>{activeSchedules.length} active</Text>
+                </View>
+              </View>
+              <View style={{ gap: 6 }}>
+                {activeSchedules.slice(0, 5).map((schedule) => (
+                  <View key={schedule.id} style={[st.scheduleRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    <View style={[st.scheduleIcon, { backgroundColor: 'rgba(123,47,160,0.08)' }]}>
+                      <MaterialIcons name="event-repeat" size={16} color="#7B2FA0" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[st.scheduleName, { color: colors.textPrimary }]}>{schedule.item_name}</Text>
+                      <Text style={[st.scheduleMeta, { color: colors.textMuted }]}>
+                        {schedule.frequency} • {schedule.time_slot} • {schedule.provider_preference === 'any' ? 'Best Available' : schedule.provider_preference}
+                      </Text>
+                    </View>
+                    <View style={st.scheduleStatus}>
+                      <View style={st.statusDot} />
+                      <Text style={st.statusText}>Active</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </Animated.View>
+          ) : null}
 
           {/* ═══ Provider Bundles ═══ */}
           <Animated.View entering={FadeInDown.delay(100).duration(300)} style={{ paddingTop: 20 }}>
@@ -161,9 +313,7 @@ export default function GroceryScreen() {
                       ) : null}
                     </View>
                     <View style={st.bundleBottom}>
-                      <View>
-                        <Text style={[st.bundlePrice, { color: colors.textPrimary }]}>₹{bundle.price.toLocaleString()}<Text style={[st.bundlePer, { color: colors.textMuted }]}>/mo</Text></Text>
-                      </View>
+                      <Text style={[st.bundlePrice, { color: colors.textPrimary }]}>₹{bundle.price.toLocaleString()}<Text style={[st.bundlePer, { color: colors.textMuted }]}>/mo</Text></Text>
                       <View style={st.bundleSaveBadge}>
                         <MaterialIcons name="savings" size={10} color="#4ADE80" />
                         <Text style={st.bundleSaveText}>Save ₹{bundle.savings}</Text>
@@ -175,27 +325,49 @@ export default function GroceryScreen() {
             </ScrollView>
           </Animated.View>
 
-          {/* ═══ Add-on Offers ═══ */}
+          {/* ═══ Add-on Offers with Real Prices ═══ */}
           <Animated.View entering={FadeInDown.delay(200).duration(300)} style={{ paddingHorizontal: 16, paddingTop: 24 }}>
-            <Text style={[st.sectionTitle, { color: colors.textPrimary, marginBottom: 10 }]}>Recommended Add-ons</Text>
-            <View style={st.addonGrid}>
-              {ADDON_OFFERS.map((offer, i) => (
-                <Pressable
-                  key={offer.id}
-                  style={({ pressed }) => [st.addonCard, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.85 }]}
-                  onPress={() => Haptics.selectionAsync()}
-                >
-                  <Text style={{ fontSize: 24 }}>{offer.emoji}</Text>
-                  <Text style={[st.addonTitle, { color: colors.textPrimary }]}>{offer.title}</Text>
-                  <Text style={[st.addonDesc, { color: colors.textMuted }]} numberOfLines={2}>{offer.desc}</Text>
-                  <View style={st.addonBottom}>
-                    <Text style={[st.addonPrice, { color: colors.textPrimary }]}>₹{offer.price}</Text>
-                    <View style={st.addonSaveBadge}>
-                      <Text style={st.addonSaveText}>-₹{offer.savings}</Text>
-                    </View>
-                  </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <Text style={[st.sectionTitle, { color: colors.textPrimary }]}>Recommended Add-ons</Text>
+              {addonLoading ? <ActivityIndicator size="small" color="#7B2FA0" /> : (
+                <Pressable onPress={loadAddonPrices} style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+                  <MaterialIcons name="refresh" size={16} color="#7B2FA0" />
                 </Pressable>
-              ))}
+              )}
+            </View>
+            <View style={st.addonGrid}>
+              {ADDON_COMBOS.map((combo) => {
+                const priceInfo = addonPrices[combo.id];
+                return (
+                  <Pressable
+                    key={combo.id}
+                    style={({ pressed }) => [st.addonCard, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.85 }]}
+                    onPress={() => Haptics.selectionAsync()}
+                  >
+                    <Text style={{ fontSize: 24 }}>{combo.emoji}</Text>
+                    <Text style={[st.addonTitle, { color: colors.textPrimary }]}>{combo.title}</Text>
+                    <Text style={[st.addonDesc, { color: colors.textMuted }]} numberOfLines={2}>
+                      {combo.items.map(i => `${i.name} ${i.qty}`).join(', ')}
+                    </Text>
+                    <View style={st.addonBottom}>
+                      {priceInfo?.loading ? (
+                        <ActivityIndicator size="small" color="#7B2FA0" />
+                      ) : priceInfo?.totalPrice ? (
+                        <View>
+                          <Text style={[st.addonPrice, { color: colors.textPrimary }]}>₹{priceInfo.totalPrice}</Text>
+                          {priceInfo.isEstimated ? (
+                            <Text style={[st.addonEstimated, { color: '#D9A020' }]}>Estimated</Text>
+                          ) : priceInfo.provider ? (
+                            <Text style={[st.addonProvider, { color: colors.textMuted }]}>{priceInfo.provider}</Text>
+                          ) : null}
+                        </View>
+                      ) : (
+                        <Text style={[st.addonPrice, { color: colors.textMuted }]}>—</Text>
+                      )}
+                    </View>
+                  </Pressable>
+                );
+              })}
             </View>
           </Animated.View>
 
@@ -205,9 +377,9 @@ export default function GroceryScreen() {
               <View style={st.scheduleHeader}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <MaterialIcons name="event-repeat" size={18} color="#7B2FA0" />
-                  <Text style={[st.scheduleTitle, { color: colors.textPrimary }]}>Scheduled Essentials</Text>
+                  <Text style={[st.scheduleTitle, { color: colors.textPrimary }]}>Schedule Daily Groceries</Text>
                 </View>
-                <Text style={[st.scheduleSub, { color: colors.textMuted }]}>Pre-schedule recurring daily groceries</Text>
+                <Text style={[st.scheduleSub, { color: colors.textMuted }]}>Select items and set up recurring delivery schedule</Text>
               </View>
 
               <View style={st.scheduleGrid}>
@@ -229,7 +401,7 @@ export default function GroceryScreen() {
                       <Text style={{ fontSize: 18 }}>{item.emoji}</Text>
                       <View style={{ flex: 1 }}>
                         <Text style={[st.scheduleChipName, { color: isActive ? '#7B2FA0' : colors.textPrimary }]}>{item.name}</Text>
-                        <Text style={[st.scheduleChipMeta, { color: colors.textMuted }]}>{item.freq} • {item.time}</Text>
+                        <Text style={[st.scheduleChipMeta, { color: colors.textMuted }]}>{item.defaultQty}</Text>
                       </View>
                       {isActive ? (
                         <View style={st.scheduleActive}>
@@ -243,7 +415,7 @@ export default function GroceryScreen() {
 
               <Pressable
                 style={({ pressed }) => [st.scheduleCta, pressed && { opacity: 0.85 }]}
-                onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
+                onPress={handleSetSchedule}
               >
                 <LinearGradient colors={['#7B2FA0', '#1E1456']} style={st.scheduleCtaGrad}>
                   <MaterialIcons name="event-repeat" size={16} color="#FFF" />
@@ -275,6 +447,19 @@ export default function GroceryScreen() {
   );
 }
 
+// Helper to estimate prices when live data is unavailable
+function getEstimatePrice(name: string): number {
+  const map: Record<string, number> = {
+    apple: 150, banana: 40, orange: 80, milk: 56, curd: 35, paneer: 60, butter: 52,
+    oats: 120, bread: 45, cornflakes: 180, makhana: 120, 'dry fruits': 250, 'seeds mix': 150,
+  };
+  const lower = name.toLowerCase();
+  for (const [key, price] of Object.entries(map)) {
+    if (lower.includes(key)) return price;
+  }
+  return 80;
+}
+
 const st = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 14, gap: 8 },
@@ -296,6 +481,17 @@ const st = StyleSheet.create({
   sectionHeader: { paddingHorizontal: 16, marginBottom: 12, gap: 2 },
   sectionTitle: { fontSize: 16, fontWeight: '800' },
   sectionSub: { fontSize: 11, fontWeight: '500' },
+
+  // Active Schedules
+  activeBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  activeBadgeText: { fontSize: 10, fontWeight: '700', color: '#4ADE80' },
+  scheduleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 12, borderWidth: 1 },
+  scheduleIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  scheduleName: { fontSize: 13, fontWeight: '700' },
+  scheduleMeta: { fontSize: 10, fontWeight: '500', marginTop: 1 },
+  scheduleStatus: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#4ADE80' },
+  statusText: { fontSize: 9, fontWeight: '700', color: '#4ADE80' },
 
   // Bundles
   bundleCard: { width: SCREEN_W * 0.68, padding: 14, borderRadius: 18, borderWidth: 1, gap: 8 },
@@ -320,10 +516,10 @@ const st = StyleSheet.create({
   addonCard: { width: (SCREEN_W - 42) / 2, padding: 12, borderRadius: 14, borderWidth: 1, gap: 6 },
   addonTitle: { fontSize: 13, fontWeight: '800' },
   addonDesc: { fontSize: 10, fontWeight: '500', lineHeight: 14 },
-  addonBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 },
-  addonPrice: { fontSize: 14, fontWeight: '900' },
-  addonSaveBadge: { backgroundColor: 'rgba(74,222,128,0.12)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5 },
-  addonSaveText: { fontSize: 9, fontWeight: '700', color: '#4ADE80' },
+  addonBottom: { marginTop: 4 },
+  addonPrice: { fontSize: 16, fontWeight: '900' },
+  addonEstimated: { fontSize: 9, fontWeight: '600' },
+  addonProvider: { fontSize: 9, fontWeight: '600' },
 
   // Schedule
   scheduleCard: { padding: 16, borderRadius: 18, borderWidth: 1, gap: 12 },

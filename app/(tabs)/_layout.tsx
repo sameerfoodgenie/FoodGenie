@@ -4,6 +4,7 @@ import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Platform, View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -18,16 +19,22 @@ import OnboardingWalkthrough, { useOnboardingStatus } from '../../components/Onb
 
 function GenieRewardsButton({ focused }: { focused: boolean }) {
   const glowScale = useSharedValue(1);
-  const glowOpacity = useSharedValue(0.20);
+  const glowOpacity = useSharedValue(0.15);
+  const innerGlowScale = useSharedValue(1);
 
   useEffect(() => {
     glowScale.value = withRepeat(
-      withTiming(1.4, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1.6, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
       -1,
       true,
     );
     glowOpacity.value = withRepeat(
-      withTiming(0.50, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
+      withTiming(0.55, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true,
+    );
+    innerGlowScale.value = withRepeat(
+      withTiming(1.25, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
       -1,
       true,
     );
@@ -38,16 +45,22 @@ function GenieRewardsButton({ focused }: { focused: boolean }) {
     opacity: glowOpacity.value,
   }));
 
+  const innerGlowStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: innerGlowScale.value }],
+    opacity: 0.35,
+  }));
+
   return (
     <View style={styles.postTabWrap}>
       <Animated.View style={[styles.glowRing, glowStyle]} />
+      <Animated.View style={[styles.innerGlowRing, innerGlowStyle]} />
       <LinearGradient
         colors={focused ? ['#C41E7A', '#F5B731'] : ['#1E1456', '#7B2FA0']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.postTabBtn}
       >
-        <Text style={{ fontSize: 22 }}>🪔</Text>
+        <Image source={require('../../assets/images/foodgenie-logo.png')} style={{ width: 30, height: 30, borderRadius: 8 }} contentFit="contain" />
       </LinearGradient>
     </View>
   );
@@ -180,10 +193,17 @@ const styles = StyleSheet.create({
   },
   glowRing: {
     position: 'absolute',
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 72,
+    height: 72,
+    borderRadius: 22,
     backgroundColor: 'rgba(245,183,49,0.18)',
+  },
+  innerGlowRing: {
+    position: 'absolute',
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    backgroundColor: 'rgba(196,30,122,0.20)',
   },
   postTabBtn: {
     width: 52,

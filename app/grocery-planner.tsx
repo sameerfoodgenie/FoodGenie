@@ -12,9 +12,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTheme } from '../hooks/useTheme';
-import { generateSmartGroceryPlan, PlanConfig } from '../services/groceryPlannerService';
+import { useAuth } from '@/template';
+import { generateSmartGroceryPlan, PlanConfig, fetchUserDietPreference } from '../services/groceryPlannerService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -32,62 +33,61 @@ const FAMILY_OPTIONS = [
   { id: '5+', label: '5+ Members', emoji: '👨‍👩‍👧‍👦', desc: 'Large family' },
 ];
 
-const MEAL_PLAN_OPTIONS = [
-  { id: 'budget', label: 'Budget Friendly', emoji: '💰', color: '#4ADE80' },
-  { id: 'healthy', label: 'Healthy Lifestyle', emoji: '🥗', color: '#22C55E' },
-  { id: 'high_protein', label: 'High Protein', emoji: '💪', color: '#EF4444' },
-  { id: 'vegetarian', label: 'Vegetarian', emoji: '🥬', color: '#84C225' },
-  { id: 'jain', label: 'Jain', emoji: '🙏', color: '#F5B731' },
-  { id: 'family', label: 'Family Meals', emoji: '👨‍👩‍👧‍👦', color: '#7B2FA0' },
-  { id: 'kids', label: 'Kids Friendly', emoji: '🧒', color: '#FF6B6B' },
-  { id: 'south_indian', label: 'South Indian', emoji: '🍛', color: '#D4AF37' },
-  { id: 'north_indian', label: 'North Indian', emoji: '🫓', color: '#F97316' },
-  { id: 'gujarati', label: 'Gujarati', emoji: '🥣', color: '#A78BFA' },
-  { id: 'custom', label: 'Custom AI Plan', emoji: '🤖', color: '#C41E7A' },
-];
-
-const BRAND_OPTIONS = [
-  { id: 'aashirvaad', label: 'Aashirvaad', emoji: '🌾' },
-  { id: 'fortune', label: 'Fortune', emoji: '🫗' },
-  { id: 'amul', label: 'Amul', emoji: '🥛' },
-  { id: 'mother_dairy', label: 'Mother Dairy', emoji: '🧈' },
-  { id: 'tata', label: 'Tata', emoji: '🏷️' },
-  { id: 'patanjali', label: 'Patanjali', emoji: '🌿' },
-  { id: 'organic', label: 'Organic Brands', emoji: '🌱' },
-  { id: 'no_pref', label: 'No Preference', emoji: '🔄' },
-  { id: 'lowest', label: 'Lowest Price', emoji: '💸' },
+const BUDGET_OPTIONS = [
+  { id: '3000', label: '₹3,000', emoji: '💰', desc: 'Budget conscious', value: 3000 },
+  { id: '5000', label: '₹5,000', emoji: '💵', desc: 'Standard household', value: 5000 },
+  { id: '8000', label: '₹8,000', emoji: '💳', desc: 'Comfortable family', value: 8000 },
+  { id: '10000', label: '₹10,000', emoji: '🏷️', desc: 'Premium quality', value: 10000 },
+  { id: '15000', label: '₹15,000+', emoji: '👑', desc: 'No budget limit', value: 15000 },
 ];
 
 export default function GroceryPlannerScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const { user } = useAuth();
 
   const [step, setStep] = useState(1);
   const [duration, setDuration] = useState<string>('');
   const [familySize, setFamilySize] = useState<string>('');
-  const [mealPlan, setMealPlan] = useState<string>('');
-  const [selectedBrands, setSelectedBrands] = useState<Set<string>>(new Set());
+  const [budget, setBudget] = useState<string>('');
+  const [generating, setGenerating] = useState(false);
 
-  const totalSteps = 4;
+  const totalSteps = 3;
   const progress = step / totalSteps;
 
   const canProceed = () => {
     if (step === 1) return duration !== '';
     if (step === 2) return familySize !== '';
-    if (step === 3) return mealPlan !== '';
-    if (step === 4) return selectedBrands.size > 0;
+    if (step === 3) return budget !== '';
     return false;
   };
 
-  const handleNext = useCallback(() => {
+  const handleNext = useCallback(async () => {
     if (!canProceed()) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     if (step < totalSteps) {
       setStep(step + 1);
     } else {
-      // Generate aggregated grocery plan using the service
-      const planConfig: PlanConfig = { duration, familySize, mealPlan, brands: Array.from(selectedBrands) };
+      // Generate plan
+      setGenerating(true);
+
+      // Fetch user dietary preference from DB
+      let dietType = 'vegetarian';
+      if (user?.id) {
+        dietType = await fetchUserDietPreference(user.id);
+      }
+
+      const budgetValue = BUDGET_OPTIONS.find(b => b.id === budget)?.value || 5000;
+      const planConfig: PlanConfig = {
+        duration,
+        familySize,
+        budget: budgetValue,
+        brands: [],
+        dietType,
+      };
+
       const plan = generateSmartGroceryPlan(planConfig);
 
       // Format into grocery-cart compatible data
@@ -95,17 +95,22 @@ export default function GroceryPlannerScreen() {
         ingredients: plan.items.map(item => `${item.name} ${item.recommendedPack}`),
       }];
 
-      const planType = duration === 'monthly' ? 'monthly' : duration === 'weekly' ? 'weekly' : 'today';
+      const planType = `${plan.planSummary.planType} (${plan.planSummary.people}, ${plan.planSummary.durationDays} days, ${dietType})`;
+
+      setGenerating(false);
 
       router.push({
         pathname: '/grocery-cart',
         params: {
-          planData: JSON.stringify({ meals }),
-          planType: `${planType} (${familySize} people, ${mealPlan})`,
+          planData: JSON.stringify({
+            meals,
+            planResult: plan,
+          }),
+          planType,
         },
       });
     }
-  }, [step, duration, familySize, mealPlan, selectedBrands, router]);
+  }, [step, duration, familySize, budget, user?.id, router]);
 
   const handleBack = useCallback(() => {
     Haptics.selectionAsync();
@@ -113,32 +118,16 @@ export default function GroceryPlannerScreen() {
     else router.back();
   }, [step, router]);
 
-  const toggleBrand = useCallback((id: string) => {
-    Haptics.selectionAsync();
-    setSelectedBrands(prev => {
-      const next = new Set(prev);
-      if (id === 'no_pref' || id === 'lowest') {
-        return new Set([id]);
-      }
-      next.delete('no_pref');
-      next.delete('lowest');
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }, []);
-
   const getStepTitle = () => {
     if (step === 1) return 'What are you planning groceries for?';
     if (step === 2) return 'How many people?';
-    if (step === 3) return 'What type of meal plan?';
-    return 'Preferred grocery brands?';
+    return 'What is your grocery budget?';
   };
 
   const getStepSubtitle = () => {
-    if (step === 1) return 'We will optimize quantities and savings based on duration';
-    if (step === 2) return 'Helps calculate right quantities for your household';
-    if (step === 3) return 'AI will curate grocery list based on your diet preference';
-    return 'Select brands you prefer or choose lowest price';
+    if (step === 1) return 'AI will optimize quantities and savings based on duration';
+    if (step === 2) return 'Quantities calculated with buffer for realistic household usage';
+    return 'We will optimize grocery within your budget with best value packs';
   };
 
   return (
@@ -188,12 +177,12 @@ export default function GroceryPlannerScreen() {
                     onPress={() => { Haptics.selectionAsync(); setDuration(opt.id); }}
                   >
                     <Text style={{ fontSize: 32 }}>{opt.emoji}</Text>
-                    <Text style={[st.optionLabel, { color: colors.textPrimary }]}>{opt.label}</Text>
-                    <Text style={[st.optionDesc, { color: colors.textMuted }]}>{opt.desc}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[st.optionLabel, { color: colors.textPrimary }]}>{opt.label}</Text>
+                      <Text style={[st.optionDesc, { color: colors.textMuted }]}>{opt.desc}</Text>
+                    </View>
                     {duration === opt.id ? (
-                      <View style={st.optionCheck}>
-                        <MaterialIcons name="check-circle" size={20} color="#7B2FA0" />
-                      </View>
+                      <MaterialIcons name="check-circle" size={20} color="#7B2FA0" />
                     ) : null}
                   </Pressable>
                 </Animated.View>
@@ -219,12 +208,12 @@ export default function GroceryPlannerScreen() {
                     onPress={() => { Haptics.selectionAsync(); setFamilySize(opt.id); }}
                   >
                     <Text style={{ fontSize: 32 }}>{opt.emoji}</Text>
-                    <Text style={[st.optionLabel, { color: colors.textPrimary }]}>{opt.label}</Text>
-                    <Text style={[st.optionDesc, { color: colors.textMuted }]}>{opt.desc}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[st.optionLabel, { color: colors.textPrimary }]}>{opt.label}</Text>
+                      <Text style={[st.optionDesc, { color: colors.textMuted }]}>{opt.desc}</Text>
+                    </View>
                     {familySize === opt.id ? (
-                      <View style={st.optionCheck}>
-                        <MaterialIcons name="check-circle" size={20} color="#7B2FA0" />
-                      </View>
+                      <MaterialIcons name="check-circle" size={20} color="#7B2FA0" />
                     ) : null}
                   </Pressable>
                 </Animated.View>
@@ -232,62 +221,51 @@ export default function GroceryPlannerScreen() {
             </View>
           ) : null}
 
-          {/* Step 3: Meal Plan */}
+          {/* Step 3: Budget */}
           {step === 3 ? (
-            <View style={st.mealGrid}>
-              {MEAL_PLAN_OPTIONS.map((opt, i) => (
-                <Animated.View key={opt.id} entering={FadeInDown.delay(i * 40).duration(250)}>
+            <View style={st.optionsGrid}>
+              {BUDGET_OPTIONS.map((opt, i) => (
+                <Animated.View key={opt.id} entering={FadeInDown.delay(i * 50).duration(280)}>
                   <Pressable
                     style={({ pressed }) => [
-                      st.mealChip,
+                      st.optionCard,
                       {
-                        backgroundColor: mealPlan === opt.id ? `${opt.color}15` : colors.surface,
-                        borderColor: mealPlan === opt.id ? opt.color : colors.border,
-                        borderWidth: mealPlan === opt.id ? 2 : 1,
+                        backgroundColor: budget === opt.id ? (isDark ? 'rgba(245,183,49,0.10)' : 'rgba(245,183,49,0.04)') : colors.surface,
+                        borderColor: budget === opt.id ? '#F5B731' : colors.border,
+                        borderWidth: budget === opt.id ? 2 : 1,
                       },
-                      pressed && { opacity: 0.9 },
+                      pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] },
                     ]}
-                    onPress={() => { Haptics.selectionAsync(); setMealPlan(opt.id); }}
+                    onPress={() => { Haptics.selectionAsync(); setBudget(opt.id); }}
                   >
-                    <Text style={{ fontSize: 20 }}>{opt.emoji}</Text>
-                    <Text style={[st.mealChipLabel, { color: mealPlan === opt.id ? opt.color : colors.textPrimary }]}>{opt.label}</Text>
-                    {mealPlan === opt.id ? <MaterialIcons name="check" size={14} color={opt.color} /> : null}
+                    <Text style={{ fontSize: 28 }}>{opt.emoji}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[st.optionLabel, { color: colors.textPrimary }]}>{opt.label}</Text>
+                      <Text style={[st.optionDesc, { color: colors.textMuted }]}>{opt.desc}</Text>
+                    </View>
+                    {budget === opt.id ? (
+                      <MaterialIcons name="check-circle" size={20} color="#F5B731" />
+                    ) : null}
                   </Pressable>
                 </Animated.View>
               ))}
-            </View>
-          ) : null}
 
-          {/* Step 4: Brands */}
-          {step === 4 ? (
-            <View style={st.brandGrid}>
-              {BRAND_OPTIONS.map((opt, i) => {
-                const isSelected = selectedBrands.has(opt.id);
-                return (
-                  <Animated.View key={opt.id} entering={FadeInDown.delay(i * 40).duration(250)}>
-                    <Pressable
-                      style={({ pressed }) => [
-                        st.brandChip,
-                        {
-                          backgroundColor: isSelected ? (isDark ? 'rgba(245,183,49,0.12)' : 'rgba(245,183,49,0.06)') : colors.surface,
-                          borderColor: isSelected ? '#F5B731' : colors.border,
-                          borderWidth: isSelected ? 2 : 1,
-                        },
-                        pressed && { opacity: 0.9 },
-                      ]}
-                      onPress={() => toggleBrand(opt.id)}
-                    >
-                      <Text style={{ fontSize: 20 }}>{opt.emoji}</Text>
-                      <Text style={[st.brandChipLabel, { color: isSelected ? '#D9A020' : colors.textPrimary }]}>{opt.label}</Text>
-                      {isSelected ? (
-                        <View style={st.brandCheck}>
-                          <MaterialIcons name="check" size={10} color="#FFF" />
-                        </View>
-                      ) : null}
-                    </Pressable>
-                  </Animated.View>
-                );
-              })}
+              {/* Selected summary */}
+              {duration && familySize ? (
+                <Animated.View entering={FadeInDown.delay(300).duration(300)}>
+                  <View style={[st.summaryCard, { backgroundColor: isDark ? 'rgba(123,47,160,0.06)' : 'rgba(123,47,160,0.02)', borderColor: 'rgba(123,47,160,0.15)' }]}>
+                    <MaterialIcons name="summarize" size={16} color="#7B2FA0" />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[st.summaryTitle, { color: colors.textPrimary }]}>Plan Summary</Text>
+                      <Text style={[st.summaryText, { color: colors.textMuted }]}>
+                        {duration === 'monthly' ? '30 days' : duration === 'weekly' ? '7 days' : 'Today'} • {
+                          familySize === '3-4' ? '3-4 members' : familySize === '5+' ? '5+ members' : `${familySize} person`
+                        } • 3 meals/day • Dietary preferences auto-applied
+                      </Text>
+                    </View>
+                  </View>
+                </Animated.View>
+              ) : null}
             </View>
           ) : null}
         </ScrollView>
@@ -297,7 +275,7 @@ export default function GroceryPlannerScreen() {
           <Pressable
             style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
             onPress={handleNext}
-            disabled={!canProceed()}
+            disabled={!canProceed() || generating}
           >
             <LinearGradient
               colors={canProceed() ? ['#7B2FA0', '#1E1456'] : ['#9A9AB0', '#9A9AB0']}
@@ -305,8 +283,14 @@ export default function GroceryPlannerScreen() {
               end={{ x: 1, y: 0 }}
               style={st.nextBtn}
             >
-              <Text style={st.nextBtnText}>{step === totalSteps ? 'Generate Grocery Plan' : 'Continue'}</Text>
-              <MaterialIcons name={step === totalSteps ? 'auto-awesome' : 'arrow-forward'} size={18} color="#FFF" />
+              {generating ? (
+                <Text style={st.nextBtnText}>Generating Plan...</Text>
+              ) : (
+                <>
+                  <Text style={st.nextBtnText}>{step === totalSteps ? 'Generate Grocery Plan' : 'Continue'}</Text>
+                  <MaterialIcons name={step === totalSteps ? 'auto-awesome' : 'arrow-forward'} size={18} color="#FFF" />
+                </>
+              )}
             </LinearGradient>
           </Pressable>
         </View>
@@ -330,32 +314,22 @@ const st = StyleSheet.create({
   question: { fontSize: 22, fontWeight: '900', letterSpacing: -0.3, lineHeight: 28 },
   questionSub: { fontSize: 13, fontWeight: '500', lineHeight: 18, marginTop: 6, marginBottom: 24 },
 
-  // Options Grid (Duration / Family)
+  // Options Grid
   optionsGrid: { gap: 12 },
   optionCard: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    padding: 18, borderRadius: 18, position: 'relative',
+    padding: 18, borderRadius: 18,
   },
   optionLabel: { fontSize: 16, fontWeight: '800' },
-  optionDesc: { fontSize: 12, fontWeight: '500', position: 'absolute', right: 50, top: 24 },
-  optionCheck: { position: 'absolute', right: 16, top: '50%', marginTop: -10 },
+  optionDesc: { fontSize: 12, fontWeight: '500', marginTop: 2 },
 
-  // Meal Grid
-  mealGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  mealChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 14, paddingVertical: 12, borderRadius: 14,
+  // Summary
+  summaryCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    padding: 14, borderRadius: 14, borderWidth: 1, marginTop: 4,
   },
-  mealChipLabel: { fontSize: 13, fontWeight: '700' },
-
-  // Brand Grid
-  brandGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  brandChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 14, paddingVertical: 12, borderRadius: 14,
-  },
-  brandChipLabel: { fontSize: 13, fontWeight: '700' },
-  brandCheck: { width: 18, height: 18, borderRadius: 9, backgroundColor: '#F5B731', alignItems: 'center', justifyContent: 'center' },
+  summaryTitle: { fontSize: 12, fontWeight: '800' },
+  summaryText: { fontSize: 11, fontWeight: '500', marginTop: 2, lineHeight: 15 },
 
   // Bottom
   bottomBar: { paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },

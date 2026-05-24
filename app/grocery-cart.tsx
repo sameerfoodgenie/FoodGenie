@@ -509,6 +509,14 @@ export default function GroceryCartScreen() {
     return 'vegetarian'; // Default to vegetarian for Indian users
   }, [params.planType]);
 
+  // Extract plan result for display
+  const planResult = useMemo(() => {
+    try {
+      const parsed = JSON.parse(params.planData || '{}');
+      return parsed.planResult || null;
+    } catch { return null; }
+  }, [params.planData]);
+
   const [categories, setCategories] = useState<GroceryCategory[]>(() =>
     generateGroceryFromMeals(params.planData || '{}', dietType)
   );
@@ -672,6 +680,40 @@ export default function GroceryCartScreen() {
               </Pressable>
             </View>
           </Animated.View>
+
+          {/* Plan Summary */}
+          {planResult?.planSummary ? (
+            <Animated.View entering={FadeInDown.delay(80).duration(300)} style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+              <View style={[{ padding: 12, borderRadius: 14, borderWidth: 1, gap: 6 }, { backgroundColor: isDark ? 'rgba(123,47,160,0.05)' : 'rgba(123,47,160,0.02)', borderColor: 'rgba(123,47,160,0.12)' }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <MaterialIcons name="summarize" size={14} color="#7B2FA0" />
+                  <Text style={{ fontSize: 12, fontWeight: '800', color: colors.textPrimary }}>Plan Breakdown</Text>
+                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  <View style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                    <Text style={{ fontSize: 9, fontWeight: '600', color: colors.textMuted }}>Type</Text>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>{planResult.planSummary.planType}</Text>
+                  </View>
+                  <View style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                    <Text style={{ fontSize: 9, fontWeight: '600', color: colors.textMuted }}>People</Text>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>{planResult.planSummary.people}</Text>
+                  </View>
+                  <View style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                    <Text style={{ fontSize: 9, fontWeight: '600', color: colors.textMuted }}>Duration</Text>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>{planResult.planSummary.durationDays} days</Text>
+                  </View>
+                  <View style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                    <Text style={{ fontSize: 9, fontWeight: '600', color: colors.textMuted }}>Meals</Text>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>{planResult.planSummary.mealsCovered}</Text>
+                  </View>
+                  <View style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                    <Text style={{ fontSize: 9, fontWeight: '600', color: colors.textMuted }}>Buffer</Text>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#4ADE80' }}>+{planResult.planSummary.bufferPercent}%</Text>
+                  </View>
+                </View>
+              </View>
+            </Animated.View>
+          ) : null}
 
           {/* Cost Intelligence */}
           <Animated.View entering={FadeInDown.delay(100).duration(350)} style={{ paddingHorizontal: 16, paddingTop: 16 }}>
