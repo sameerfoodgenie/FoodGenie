@@ -21,14 +21,14 @@ import { useAuth } from '@/template';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
-// ── Spin Wheel Rewards ──
-const SPIN_REWARDS = [
+// ── Lamp Rewards ──
+const LAMP_REWARDS = [
   { label: '+10 Tokens', emoji: '✨', color: '#F5B731', value: 10 },
   { label: 'Free Recipe', emoji: '📖', color: '#7B2FA0', value: 0 },
   { label: '₹30 Cashback', emoji: '💰', color: '#4ADE80', value: 30 },
   { label: 'Free Delivery', emoji: '🚚', color: '#60A5FA', value: 0 },
   { label: '+25 Tokens', emoji: '🌟', color: '#F5B731', value: 25 },
-  { label: 'Extra Spin', emoji: '🎰', color: '#C41E7A', value: 0 },
+  { label: 'Extra Rub', emoji: '🪔', color: '#C41E7A', value: 0 },
   { label: '₹50 Coupon', emoji: '🎟️', color: '#4ADE80', value: 50 },
   { label: '+5 Tokens', emoji: '⚡', color: '#F97316', value: 5 },
 ];
@@ -72,9 +72,10 @@ export default function GenieRewardsScreen() {
   const { balance, currentStreak } = useCoin();
   const { user } = useAuth();
 
-  const [spinAvailable, setSpinAvailable] = useState(true);
-  const [spinResult, setSpinResult] = useState<string | null>(null);
-  const [showSpinModal, setShowSpinModal] = useState(false);
+  const [lampAvailable, setLampAvailable] = useState(true);
+  const [lampResult, setLampResult] = useState<string | null>(null);
+  const [showLampModal, setShowLampModal] = useState(false);
+  const [isRubbing, setIsRubbing] = useState(false);
 
   // Lamp glow animation
   const glowScale = useSharedValue(1);
@@ -90,19 +91,23 @@ export default function GenieRewardsScreen() {
     opacity: glowOpacity.value,
   }));
 
-  const handleSpin = useCallback(() => {
-    if (!spinAvailable) return;
+  const handleRubLamp = useCallback(() => {
+    if (!lampAvailable) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    setSpinAvailable(false);
-    setShowSpinModal(true);
+    setIsRubbing(true);
+    setLampAvailable(false);
 
-    // Random reward
-    const reward = SPIN_REWARDS[Math.floor(Math.random() * SPIN_REWARDS.length)];
+    // Simulate rubbing animation then show reward
     setTimeout(() => {
-      setSpinResult(reward.label);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }, 1500);
-  }, [spinAvailable]);
+      setIsRubbing(false);
+      setShowLampModal(true);
+      const reward = LAMP_REWARDS[Math.floor(Math.random() * LAMP_REWARDS.length)];
+      setTimeout(() => {
+        setLampResult(reward.label);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }, 1200);
+    }, 800);
+  }, [lampAvailable]);
 
   return (
     <View style={[st.container, { backgroundColor: colors.background }]}>
@@ -133,37 +138,40 @@ export default function GenieRewardsScreen() {
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
 
-          {/* ═══ Daily Spin ═══ */}
+          {/* ═══ Rub the Lamp ═══ */}
           <Animated.View entering={FadeInDown.delay(50).duration(350)} style={{ paddingHorizontal: 16, paddingTop: 18 }}>
-            <Pressable
-              style={({ pressed }) => [st.spinCard, { backgroundColor: isDark ? 'rgba(245,183,49,0.05)' : 'rgba(245,183,49,0.02)', borderColor: 'rgba(245,183,49,0.25)' }, pressed && { opacity: 0.92, transform: [{ scale: 0.98 }] }]}
-              onPress={handleSpin}
-              disabled={!spinAvailable}
-            >
-              <View style={st.spinHeader}>
-                <Text style={{ fontSize: 32 }}>🎰</Text>
+            <View style={[st.lampCard, { backgroundColor: isDark ? 'rgba(245,183,49,0.05)' : 'rgba(245,183,49,0.02)', borderColor: 'rgba(245,183,49,0.25)' }]}>
+              <View style={st.lampCardHeader}>
+                <Text style={{ fontSize: 28 }}>🪔</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={[st.spinTitle, { color: colors.textPrimary }]}>Daily Spin Wheel</Text>
-                  <Text style={[st.spinSub, { color: colors.textMuted }]}>Win tokens, cashback, free delivery & more</Text>
+                  <Text style={[st.lampCardTitle, { color: colors.textPrimary }]}>Rub the Lamp</Text>
+                  <Text style={[st.lampCardSub, { color: colors.textMuted }]}>Rub once daily to unlock a magical reward</Text>
                 </View>
               </View>
-              <LinearGradient
-                colors={spinAvailable ? ['#F5B731', '#D9A020'] : ['#6B7280', '#4B5563']}
-                style={st.spinBtn}
+              <Pressable
+                onPress={handleRubLamp}
+                disabled={!lampAvailable}
+                style={({ pressed }) => [st.rubArea, { backgroundColor: isDark ? 'rgba(245,183,49,0.08)' : 'rgba(245,183,49,0.04)', borderColor: lampAvailable ? 'rgba(245,183,49,0.35)' : 'rgba(107,114,128,0.20)' }, pressed && lampAvailable && { transform: [{ scale: 0.95 }], opacity: 0.9 }]}
               >
-                <MaterialIcons name="stars" size={18} color="#FFF" />
-                <Text style={st.spinBtnText}>{spinAvailable ? 'Spin Now' : 'Spun Today'}</Text>
-              </LinearGradient>
-              {/* Mini reward previews */}
-              <View style={st.spinRewards}>
-                {SPIN_REWARDS.slice(0, 4).map((r, i) => (
-                  <View key={i} style={[st.spinRewardChip, { backgroundColor: `${r.color}12` }]}>
+                <Image source={require('../assets/images/foodgenie-logo.png')} style={{ width: 64, height: 64, borderRadius: 16 }} contentFit="contain" />
+                {isRubbing ? (
+                  <Text style={[st.rubStatusText, { color: '#F5B731' }]}>Rubbing... ✨</Text>
+                ) : lampAvailable ? (
+                  <Text style={[st.rubStatusText, { color: '#F5B731' }]}>Tap to Rub 👆</Text>
+                ) : (
+                  <Text style={[st.rubStatusText, { color: '#6B7280' }]}>Come back tomorrow</Text>
+                )}
+              </Pressable>
+              {/* Possible rewards preview */}
+              <View style={st.lampRewards}>
+                {LAMP_REWARDS.slice(0, 4).map((r, i) => (
+                  <View key={i} style={[st.lampRewardChip, { backgroundColor: `${r.color}12` }]}>
                     <Text style={{ fontSize: 12 }}>{r.emoji}</Text>
-                    <Text style={[st.spinRewardText, { color: r.color }]}>{r.label}</Text>
+                    <Text style={[st.lampRewardText, { color: r.color }]}>{r.label}</Text>
                   </View>
                 ))}
               </View>
-            </Pressable>
+            </View>
           </Animated.View>
 
           {/* ═══ Daily Challenges ═══ */}
@@ -310,19 +318,19 @@ export default function GenieRewardsScreen() {
         </ScrollView>
       </SafeAreaView>
 
-      {/* ═══ Spin Result Modal ═══ */}
-      <Modal visible={showSpinModal} transparent animationType="fade" onRequestClose={() => setShowSpinModal(false)}>
-        <Pressable style={st.modalOverlay} onPress={() => setShowSpinModal(false)}>
+      {/* ═══ Lamp Reward Modal ═══ */}
+      <Modal visible={showLampModal} transparent animationType="fade" onRequestClose={() => setShowLampModal(false)}>
+        <Pressable style={st.modalOverlay} onPress={() => setShowLampModal(false)}>
           <Pressable style={[st.modalContent, { backgroundColor: colors.surface }]} onPress={(e) => e.stopPropagation()}>
-            {spinResult ? (
+            {lampResult ? (
               <Animated.View entering={FadeInUp.duration(400)} style={{ alignItems: 'center', gap: 16 }}>
-                <Text style={{ fontSize: 48 }}>🎉</Text>
-                <Text style={[st.modalTitle, { color: colors.textPrimary }]}>Congratulations!</Text>
-                <Text style={[st.modalReward, { color: '#F5B731' }]}>{spinResult}</Text>
-                <Text style={[st.modalDesc, { color: colors.textMuted }]}>Reward added to your account</Text>
+                <Text style={{ fontSize: 48 }}>🪔✨</Text>
+                <Text style={[st.modalTitle, { color: colors.textPrimary }]}>The Genie Grants!</Text>
+                <Text style={[st.modalReward, { color: '#F5B731' }]}>{lampResult}</Text>
+                <Text style={[st.modalDesc, { color: colors.textMuted }]}>Magical reward unlocked for you</Text>
                 <Pressable
                   style={({ pressed }) => [st.modalBtn, pressed && { opacity: 0.85 }]}
-                  onPress={() => setShowSpinModal(false)}
+                  onPress={() => { setShowLampModal(false); setLampResult(null); }}
                 >
                   <LinearGradient colors={['#7B2FA0', '#1E1456']} style={st.modalBtnGrad}>
                     <Text style={st.modalBtnText}>Claim Reward</Text>
@@ -331,9 +339,9 @@ export default function GenieRewardsScreen() {
               </Animated.View>
             ) : (
               <View style={{ alignItems: 'center', gap: 16 }}>
-                <Text style={{ fontSize: 48 }}>🎰</Text>
-                <Text style={[st.modalTitle, { color: colors.textPrimary }]}>Spinning...</Text>
-                <Text style={[st.modalDesc, { color: colors.textMuted }]}>Your reward is coming!</Text>
+                <Text style={{ fontSize: 48 }}>🪔</Text>
+                <Text style={[st.modalTitle, { color: colors.textPrimary }]}>Summoning Genie...</Text>
+                <Text style={[st.modalDesc, { color: colors.textMuted }]}>Your magical reward is appearing!</Text>
               </View>
             )}
           </Pressable>
@@ -358,16 +366,16 @@ const st = StyleSheet.create({
   lampEmoji: { fontSize: 48 },
   lampText: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.9)', marginTop: 8 },
 
-  // Spin
-  spinCard: { padding: 16, borderRadius: 20, borderWidth: 1, gap: 12 },
-  spinHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  spinTitle: { fontSize: 16, fontWeight: '900' },
-  spinSub: { fontSize: 11, fontWeight: '500', marginTop: 2 },
-  spinBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14 },
-  spinBtnText: { fontSize: 15, fontWeight: '800', color: '#FFF' },
-  spinRewards: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  spinRewardChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  spinRewardText: { fontSize: 10, fontWeight: '700' },
+  // Lamp
+  lampCard: { padding: 16, borderRadius: 20, borderWidth: 1, gap: 12 },
+  lampCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  lampCardTitle: { fontSize: 16, fontWeight: '900' },
+  lampCardSub: { fontSize: 11, fontWeight: '500', marginTop: 2 },
+  rubArea: { alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 24, borderRadius: 18, borderWidth: 1.5, borderStyle: 'dashed' },
+  rubStatusText: { fontSize: 14, fontWeight: '800' },
+  lampRewards: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  lampRewardChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  lampRewardText: { fontSize: 10, fontWeight: '700' },
 
   // Section
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },

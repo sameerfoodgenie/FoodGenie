@@ -7,7 +7,7 @@ export default function ChatScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/genie-rewards' as any);
+    router.push('/genie-rewards' as any);
   }, []);
 
   return <View style={{ flex: 1, backgroundColor: '#0D0B1A' }} />;
