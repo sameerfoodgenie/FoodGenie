@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,13 +13,15 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn, FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, withSequence } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, withSequence, withSpring, runOnJS, interpolate, Extrapolation } from 'react-native-reanimated';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Image } from 'expo-image';
 import { useTheme } from '../hooks/useTheme';
 import { useCoin } from '../hooks/useCoin';
 import { useAuth } from '@/template';
 
 const { width: SCREEN_W } = Dimensions.get('window');
+const RUBS_REQUIRED = 5;
 
 // ── Lamp Rewards ──
 const LAMP_REWARDS = [
@@ -75,11 +77,17 @@ export default function GenieRewardsScreen() {
   const [lampAvailable, setLampAvailable] = useState(true);
   const [lampResult, setLampResult] = useState<string | null>(null);
   const [showLampModal, setShowLampModal] = useState(false);
+  const [rubCount, setRubCount] = useState(0);
   const [isRubbing, setIsRubbing] = useState(false);
+  const lastDirection = useRef<'left' | 'right' | null>(null);
+  const accumulatedX = useRef(0);
 
   // Lamp glow animation
   const glowScale = useSharedValue(1);
   const glowOpacity = useSharedValue(0.3);
+  const lampShake = useSharedValue(0);
+  const rubProgress = useSharedValue(0);
+  const sparkleOpacity = useSharedValue(0);
 
   useEffect(() => {
     glowScale.value = withRepeat(withTiming(1.3, { duration: 2000, easing: Easing.inOut(Easing.ease) }), -1, true);
@@ -91,25 +99,86 @@ export default function GenieRewardsScreen() {
     opacity: glowOpacity.value,
   }));
 
-  const handleRubLamp = useCallback(() => {
-    if (!lampAvailable) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    setIsRubbing(true);
-    setLampAvailable(false);
+  const lampAnimStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: lampShake.value },
+      { scale: interpolate(rubProgress.value, [0, RUBS_REQUIRED], [1, 1.15], Extrapolation.CLAMP) },
+    ],
+  }));
 
-    // Simulate rubbing animation then show reward
+  const progressBarStyle = useAnimatedStyle(() => ({
+    width: `${interpolate(rubProgress.value, [0, RUBS_REQUIRED], [0, 100], Extrapolation.CLAMP)}%`,
+  }));
+
+  const sparkleStyle = useAnimatedStyle(() => ({
+    opacity: sparkleOpacity.value,
+    transform: [{ scale: interpolate(sparkleOpacity.value, [0, 1], [0.5, 1.2]) }],
+  }));
+
+  const triggerReward = useCallback(() => {
+    setLampAvailable(false);
+    setIsRubbing(false);
+    setShowLampModal(true);
+    const reward = LAMP_REWARDS[Math.floor(Math.random() * LAMP_REWARDS.length)];
     setTimeout(() => {
-      setIsRubbing(false);
-      setShowLampModal(true);
-      const reward = LAMP_REWARDS[Math.floor(Math.random() * LAMP_REWARDS.length)];
-      setTimeout(() => {
-        setLampResult(reward.label);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }, 1200);
-    }, 800);
-  }, [lampAvailable]);
+      setLampResult(reward.label);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }, 1200);
+  }, []);
+
+  const onRubDetected = useCallback(() => {
+    setRubCount(prev => {
+      const newCount = prev + 1;
+      rubProgress.value = withSpring(newCount, { damping: 12, stiffness: 120 });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      lampShake.value = withSequence(
+        withTiming(4, { duration: 40 }),
+        withTiming(-4, { duration: 40 }),
+        withTiming(3, { duration: 30 }),
+        withTiming(-3, { duration: 30 }),
+        withTiming(0, { duration: 30 }),
+      );
+      sparkleOpacity.value = withSequence(
+        withTiming(1, { duration: 100 }),
+        withTiming(0, { duration: 400 }),
+      );
+      if (newCount >= RUBS_REQUIRED) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        setTimeout(() => triggerReward(), 300);
+      }
+      return newCount;
+    });
+  }, [triggerReward]);
+
+  const rubGesture = Gesture.Pan()
+    .enabled(lampAvailable && rubCount < RUBS_REQUIRED)
+    .onStart(() => {
+      runOnJS(setIsRubbing)(true);
+      accumulatedX.current = 0;
+      lastDirection.current = null;
+    })
+    .onUpdate((event) => {
+      const currentDir = event.translationX > accumulatedX.current ? 'right' : 'left';
+      const delta = Math.abs(event.translationX - accumulatedX.current);
+
+      // Detect direction change (back-and-forth rubbing)
+      if (lastDirection.current && currentDir !== lastDirection.current && delta > 20) {
+        runOnJS(onRubDetected)();
+        accumulatedX.current = event.translationX;
+      } else if (delta > 50 && !lastDirection.current) {
+        // First big swipe also counts
+        runOnJS(onRubDetected)();
+        accumulatedX.current = event.translationX;
+      }
+
+      lastDirection.current = currentDir;
+    })
+    .onEnd(() => {
+      runOnJS(setIsRubbing)(false);
+    });
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <View style={[st.container, { backgroundColor: colors.background }]}>
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         {/* Header */}
@@ -145,23 +214,47 @@ export default function GenieRewardsScreen() {
                 <Text style={{ fontSize: 28 }}>🪔</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={[st.lampCardTitle, { color: colors.textPrimary }]}>Rub the Lamp</Text>
-                  <Text style={[st.lampCardSub, { color: colors.textMuted }]}>Rub once daily to unlock a magical reward</Text>
+                  <Text style={[st.lampCardSub, { color: colors.textMuted }]}>Swipe back & forth {RUBS_REQUIRED} times to unlock</Text>
                 </View>
+                {lampAvailable ? (
+                  <View style={st.rubCountBadge}>
+                    <Text style={st.rubCountText}>{rubCount}/{RUBS_REQUIRED}</Text>
+                  </View>
+                ) : null}
               </View>
-              <Pressable
-                onPress={handleRubLamp}
-                disabled={!lampAvailable}
-                style={({ pressed }) => [st.rubArea, { backgroundColor: isDark ? 'rgba(245,183,49,0.08)' : 'rgba(245,183,49,0.04)', borderColor: lampAvailable ? 'rgba(245,183,49,0.35)' : 'rgba(107,114,128,0.20)' }, pressed && lampAvailable && { transform: [{ scale: 0.95 }], opacity: 0.9 }]}
-              >
-                <Image source={require('../assets/images/foodgenie-logo.png')} style={{ width: 64, height: 64, borderRadius: 16 }} contentFit="contain" />
-                {isRubbing ? (
-                  <Text style={[st.rubStatusText, { color: '#F5B731' }]}>Rubbing... ✨</Text>
-                ) : lampAvailable ? (
-                  <Text style={[st.rubStatusText, { color: '#F5B731' }]}>Tap to Rub 👆</Text>
-                ) : (
-                  <Text style={[st.rubStatusText, { color: '#6B7280' }]}>Come back tomorrow</Text>
-                )}
-              </Pressable>
+
+              {/* Progress Bar */}
+              <View style={[st.rubProgressTrack, { backgroundColor: isDark ? 'rgba(245,183,49,0.10)' : 'rgba(245,183,49,0.06)' }]}>
+                <Animated.View style={[st.rubProgressFill, progressBarStyle]} />
+              </View>
+
+              {/* Gesture Rub Area */}
+              <GestureDetector gesture={rubGesture}>
+                <Animated.View
+                  style={[st.rubArea, { backgroundColor: isDark ? 'rgba(245,183,49,0.08)' : 'rgba(245,183,49,0.04)', borderColor: lampAvailable ? 'rgba(245,183,49,0.35)' : 'rgba(107,114,128,0.20)' }]}
+                >
+                  {/* Sparkle overlay */}
+                  <Animated.View style={[st.sparkleOverlay, sparkleStyle]}>
+                    <Text style={{ fontSize: 32 }}>✨</Text>
+                  </Animated.View>
+
+                  <Animated.View style={lampAnimStyle}>
+                    <Image source={require('../assets/images/foodgenie-logo.png')} style={{ width: 72, height: 72, borderRadius: 18 }} contentFit="contain" />
+                  </Animated.View>
+
+                  {isRubbing ? (
+                    <Text style={[st.rubStatusText, { color: '#F5B731' }]}>Keep rubbing... ✨ ({rubCount}/{RUBS_REQUIRED})</Text>
+                  ) : lampAvailable ? (
+                    <View style={{ alignItems: 'center', gap: 4 }}>
+                      <Text style={[st.rubStatusText, { color: '#F5B731' }]}>Swipe to Rub 👆</Text>
+                      <Text style={[st.rubHintText, { color: colors.textMuted }]}>Swipe left & right across the lamp</Text>
+                    </View>
+                  ) : (
+                    <Text style={[st.rubStatusText, { color: '#6B7280' }]}>Come back tomorrow 🌙</Text>
+                  )}
+                </Animated.View>
+              </GestureDetector>
+
               {/* Possible rewards preview */}
               <View style={st.lampRewards}>
                 {LAMP_REWARDS.slice(0, 4).map((r, i) => (
@@ -348,6 +441,7 @@ export default function GenieRewardsScreen() {
         </Pressable>
       </Modal>
     </View>
+    </GestureHandlerRootView>
   );
 }
 
@@ -371,8 +465,14 @@ const st = StyleSheet.create({
   lampCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   lampCardTitle: { fontSize: 16, fontWeight: '900' },
   lampCardSub: { fontSize: 11, fontWeight: '500', marginTop: 2 },
-  rubArea: { alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 24, borderRadius: 18, borderWidth: 1.5, borderStyle: 'dashed' },
+  rubCountBadge: { backgroundColor: 'rgba(245,183,49,0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  rubCountText: { fontSize: 11, fontWeight: '800', color: '#F5B731' },
+  rubProgressTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  rubProgressFill: { height: '100%', borderRadius: 3, backgroundColor: '#F5B731' },
+  rubArea: { alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 28, borderRadius: 18, borderWidth: 1.5, borderStyle: 'dashed', position: 'relative', overflow: 'hidden' },
+  sparkleOverlay: { position: 'absolute', top: 8, right: 8 },
   rubStatusText: { fontSize: 14, fontWeight: '800' },
+  rubHintText: { fontSize: 11, fontWeight: '500' },
   lampRewards: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   lampRewardChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   lampRewardText: { fontSize: 10, fontWeight: '700' },
