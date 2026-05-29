@@ -233,7 +233,7 @@ export default function GroceryScreen() {
               { id: 'plan', label: 'Plan Grocery', icon: 'event-note', route: '/grocery-planner', color: '#7B2FA0' },
               { id: 'cart', label: 'AI Cart', icon: 'smart-toy', route: '/grocery-cart', color: '#F5B731' },
               { id: 'split', label: 'Smart Split', icon: 'auto-awesome', route: '/smart-split', color: '#4ADE80' },
-              { id: 'pantry', label: 'Pantry', icon: 'kitchen', route: '/smart-grocery', color: '#F04E50' },
+              { id: 'pantry', label: 'Pantry', icon: 'kitchen', route: '/pantry', color: '#F04E50' },
             ].map((item) => (
               <Pressable
                 key={item.id}

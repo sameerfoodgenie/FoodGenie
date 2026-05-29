@@ -418,8 +418,8 @@ function formatQty(qty: number, unit: string): string {
   return `${Math.ceil(qty)}g`;
 }
 
-// ── Main Planner Function ──
-export function generateSmartGroceryPlan(config: PlanConfig): GroceryPlanResult {
+// ── Main Planner Function (with optional pantry deduction) ──
+export function generateSmartGroceryPlan(config: PlanConfig, pantryDeductions?: Record<string, number>): GroceryPlanResult {
   const peopleCount = getPeopleCount(config.familySize);
   const bufferFactor = getBufferFactor(config.familySize);
   const durationDays = getDurationDays(config.duration);
@@ -435,7 +435,19 @@ export function generateSmartGroceryPlan(config: PlanConfig): GroceryPlanResult 
   allowedItems.forEach(item => {
     // Calculate total required quantity
     // Formula: dailyQty × people × days × buffer
-    const totalRequired = item.dailyQtyPerPerson * peopleCount * durationDays * bufferFactor;
+    let totalRequired = item.dailyQtyPerPerson * peopleCount * durationDays * bufferFactor;
+
+    // Apply pantry deductions if available
+    if (pantryDeductions) {
+      const key = item.name.toLowerCase();
+      const pantryQty = pantryDeductions[key] || 0;
+      if (pantryQty > 0) {
+        totalRequired = Math.max(0, totalRequired - pantryQty);
+      }
+    }
+
+    // Skip item if fully covered by pantry
+    if (totalRequired <= 0) return;
 
     // Select optimal packs
     const packResult = selectOptimalPacks(item.name, totalRequired, item.unit);

@@ -84,6 +84,7 @@ function RootInner() {
           <Stack.Screen name="meal-preferences" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
           <Stack.Screen name="recipe-videos" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="subscription" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="pantry" options={{ headerShown: false, animation: 'slide_from_right' }} />
         </Stack>
       </View>
     </>

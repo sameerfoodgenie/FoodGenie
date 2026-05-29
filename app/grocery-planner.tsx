@@ -16,6 +16,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '@/template';
 import { generateSmartGroceryPlan, PlanConfig, fetchUserDietPreference } from '../services/groceryPlannerService';
+import { getPantryDeductions } from '../services/pantryService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -88,7 +89,13 @@ export default function GroceryPlannerScreen() {
         dietType,
       };
 
-      const plan = generateSmartGroceryPlan(planConfig);
+      // Fetch pantry deductions to auto-subtract existing stock
+      let pantryDeductions: Record<string, number> = {};
+      if (user?.id) {
+        pantryDeductions = await getPantryDeductions(user.id);
+      }
+
+      const plan = generateSmartGroceryPlan(planConfig, pantryDeductions);
 
       // Format into grocery-cart compatible data
       const meals = [{
