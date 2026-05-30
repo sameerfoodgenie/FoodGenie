@@ -78,10 +78,16 @@ export default function PantryScannerScreen() {
     try {
       let base64: string | null = null;
 
+      // Try camera capture (wrapped in its own try-catch to handle unmount gracefully)
       if (cameraRef.current && !IS_WEB) {
-        const photo = await cameraRef.current.takePictureAsync({ quality: 0.7, base64: true });
-        if (photo?.base64) {
-          base64 = photo.base64;
+        try {
+          const photo = await cameraRef.current.takePictureAsync({ quality: 0.7, base64: true });
+          if (photo?.base64) {
+            base64 = photo.base64;
+          }
+        } catch (cameraErr: any) {
+          // Camera might be unmounted or busy - fall through to gallery picker
+          console.log('Camera capture failed, falling back to gallery:', cameraErr?.message);
         }
       }
 
@@ -105,7 +111,7 @@ export default function PantryScannerScreen() {
       }
 
       if (!base64) {
-        showAlert('Error', 'Could not capture image. Please try again.');
+        showAlert('Capture Failed', 'Could not capture image. Please use gallery to upload a product photo.');
         setRecognizing(false);
         setBarcodeScanned(false);
         return;
