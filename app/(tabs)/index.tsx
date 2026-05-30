@@ -82,6 +82,7 @@ const SERVICE_CARDS = [
 
 // ── Quick action items ──
 const QUICK_ACTIONS = [
+  { id: 'pantry', emoji: '🏠', label: 'My Pantry', route: '/pantry' },
   { id: 'redeem', emoji: '🎁', label: 'Redeem Coins', route: '/coin-redeem' },
   { id: 'tokens', emoji: '✨', label: 'AI Tokens', route: '/subscription' },
   { id: 'trending', emoji: '🔥', label: 'Trending', route: '/explore' },

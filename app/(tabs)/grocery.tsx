@@ -11,6 +11,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
@@ -40,24 +41,28 @@ const PROVIDER_BUNDLES = [
     name: 'Family Essential Bundle', price: 4999, savings: 850, items: 35,
     categories: ['Atta', 'Rice', 'Oil', 'Dals', 'Spices', 'Dairy'],
     badge: 'Most Popular',
+    imageUrl: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400&h=260&fit=crop',
   },
   {
     id: 'blinkit_healthy', provider: 'Blinkit', emoji: '🟡', color: '#F8CB2E',
     name: 'Healthy Living Bundle', price: 3499, savings: 620, items: 28,
     categories: ['Oats', 'Quinoa', 'Dry Fruits', 'Fresh Veggies', 'Fruits'],
     badge: 'Fast Delivery',
+    imageUrl: 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=400&h=260&fit=crop',
   },
   {
     id: 'zepto_fitness', provider: 'Zepto', emoji: '⚡', color: '#7B2D8E',
     name: 'Fitness Protein Pack', price: 2999, savings: 480, items: 20,
     categories: ['Eggs', 'Paneer', 'Tofu', 'Whey', 'Seeds', 'Nuts'],
     badge: '10-min Delivery',
+    imageUrl: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400&h=260&fit=crop',
   },
   {
     id: 'kirana_budget', provider: 'Local Kirana', emoji: '🏪', color: '#FF8C42',
     name: 'Budget Saver Bundle', price: 2499, savings: 350, items: 25,
     categories: ['Vegetables', 'Fruits', 'Staples', 'Daily Essentials'],
     badge: 'No Delivery Fee',
+    imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=260&fit=crop',
   },
 ];
 
@@ -65,6 +70,7 @@ const PROVIDER_BUNDLES = [
 const ADDON_COMBOS = [
   {
     id: 'fruits', emoji: '🍎', title: 'Fruits Combo',
+    imageUrl: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=200&h=200&fit=crop',
     items: [
       { name: 'Apple', qty: '1kg' },
       { name: 'Banana', qty: '1 dozen' },
@@ -73,6 +79,7 @@ const ADDON_COMBOS = [
   },
   {
     id: 'dairy', emoji: '🥛', title: 'Dairy Essentials',
+    imageUrl: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?w=200&h=200&fit=crop',
     items: [
       { name: 'Milk', qty: '1L' },
       { name: 'Curd', qty: '500g' },
@@ -82,6 +89,7 @@ const ADDON_COMBOS = [
   },
   {
     id: 'breakfast', emoji: '🥣', title: 'Breakfast Pack',
+    imageUrl: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=200&h=200&fit=crop',
     items: [
       { name: 'Oats', qty: '1kg' },
       { name: 'Bread', qty: '1 pack' },
@@ -91,6 +99,7 @@ const ADDON_COMBOS = [
   },
   {
     id: 'snacks', emoji: '🍪', title: 'Healthy Snacks',
+    imageUrl: 'https://images.unsplash.com/photo-1599490659213-e2b9527b711e?w=200&h=200&fit=crop',
     items: [
       { name: 'Makhana', qty: '250g' },
       { name: 'Dry Fruits Mix', qty: '250g' },
@@ -292,13 +301,18 @@ export default function GroceryScreen() {
                     style={({ pressed }) => [st.bundleCard, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.92, transform: [{ scale: 0.97 }] }]}
                     onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/grocery-cart' as any); }}
                   >
+                    {/* Bundle Image */}
+                    <View style={st.bundleImageWrap}>
+                      <Image source={{ uri: bundle.imageUrl }} style={st.bundleImage} contentFit="cover" transition={200} />
+                      <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={st.bundleImageOverlay} />
+                      <View style={[st.bundleBadgeAbsolute, { backgroundColor: `${bundle.color}E8` }]}>
+                        <Text style={st.bundleBadgeAbsoluteText}>{bundle.badge}</Text>
+                      </View>
+                    </View>
                     <View style={st.bundleTop}>
                       <View style={[st.bundleProviderBadge, { backgroundColor: `${bundle.color}12` }]}>
                         <Text style={{ fontSize: 14 }}>{bundle.emoji}</Text>
                         <Text style={[st.bundleProviderText, { color: bundle.color }]}>{bundle.provider}</Text>
-                      </View>
-                      <View style={[st.bundleBadge, { backgroundColor: `${bundle.color}15` }]}>
-                        <Text style={[st.bundleBadgeText, { color: bundle.color }]}>{bundle.badge}</Text>
                       </View>
                     </View>
                     <Text style={[st.bundleName, { color: colors.textPrimary }]}>{bundle.name}</Text>
@@ -344,7 +358,9 @@ export default function GroceryScreen() {
                     style={({ pressed }) => [st.addonCard, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.85 }]}
                     onPress={() => Haptics.selectionAsync()}
                   >
-                    <Text style={{ fontSize: 24 }}>{combo.emoji}</Text>
+                    <View style={st.addonImageWrap}>
+                      <Image source={{ uri: combo.imageUrl }} style={st.addonImage} contentFit="cover" transition={200} />
+                    </View>
                     <Text style={[st.addonTitle, { color: colors.textPrimary }]}>{combo.title}</Text>
                     <Text style={[st.addonDesc, { color: colors.textMuted }]} numberOfLines={2}>
                       {combo.items.map(i => `${i.name} ${i.qty}`).join(', ')}
@@ -494,18 +510,23 @@ const st = StyleSheet.create({
   statusText: { fontSize: 9, fontWeight: '700', color: '#4ADE80' },
 
   // Bundles
-  bundleCard: { width: SCREEN_W * 0.68, padding: 14, borderRadius: 18, borderWidth: 1, gap: 8 },
-  bundleTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  bundleCard: { width: SCREEN_W * 0.68, borderRadius: 18, borderWidth: 1, gap: 8, overflow: 'hidden' },
+  bundleImageWrap: { width: '100%', height: 100, position: 'relative' },
+  bundleImage: { width: '100%', height: '100%' },
+  bundleImageOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 50 },
+  bundleBadgeAbsolute: { position: 'absolute', top: 8, right: 8, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  bundleBadgeAbsoluteText: { fontSize: 9, fontWeight: '800', color: '#FFF' },
+  bundleTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingTop: 10 },
   bundleProviderBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   bundleProviderText: { fontSize: 11, fontWeight: '700' },
   bundleBadge: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 },
   bundleBadgeText: { fontSize: 9, fontWeight: '700' },
-  bundleName: { fontSize: 14, fontWeight: '800' },
-  bundleCategories: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  bundleName: { fontSize: 14, fontWeight: '800', paddingHorizontal: 14 },
+  bundleCategories: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, paddingHorizontal: 14 },
   bundleCatChip: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 },
   bundleCatText: { fontSize: 9, fontWeight: '600' },
   bundleMore: { fontSize: 9, fontWeight: '600', alignSelf: 'center' },
-  bundleBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  bundleBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, paddingHorizontal: 14, paddingBottom: 14 },
   bundlePrice: { fontSize: 18, fontWeight: '900' },
   bundlePer: { fontSize: 11, fontWeight: '500' },
   bundleSaveBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(74,222,128,0.10)', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 },
@@ -513,7 +534,9 @@ const st = StyleSheet.create({
 
   // Add-ons
   addonGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  addonCard: { width: (SCREEN_W - 42) / 2, padding: 12, borderRadius: 14, borderWidth: 1, gap: 6 },
+  addonCard: { width: (SCREEN_W - 42) / 2, padding: 12, borderRadius: 14, borderWidth: 1, gap: 6, overflow: 'hidden' },
+  addonImageWrap: { width: 48, height: 48, borderRadius: 12, overflow: 'hidden' },
+  addonImage: { width: '100%', height: '100%' },
   addonTitle: { fontSize: 13, fontWeight: '800' },
   addonDesc: { fontSize: 10, fontWeight: '500', lineHeight: 14 },
   addonBottom: { marginTop: 4 },
