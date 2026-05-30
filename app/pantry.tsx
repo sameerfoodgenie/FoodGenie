@@ -31,6 +31,61 @@ import {
   getPantryEmoji,
 } from '../services/pantryService';
 
+// ── Monthly Summary Helpers ──
+interface PantrySummary {
+  totalValueSaved: number;
+  totalItemsUsed: number;
+  totalItemsExpired: number;
+  wastagePercent: number;
+  usageRatio: string;
+  suggestions: string[];
+}
+
+function calculateMonthlySummary(items: PantryItem[]): PantrySummary {
+  const totalValue = items.reduce((s, i) => s + (i.remaining_value || 0), 0);
+  const expiredItems = items.filter(i => getExpiryStatus(i.expires_at) === 'expired');
+  const freshItems = items.filter(i => getExpiryStatus(i.expires_at) !== 'expired');
+  const totalItemsExpired = expiredItems.length;
+  const totalItemsUsed = Math.max(0, items.length - totalItemsExpired);
+  const wastageValue = expiredItems.reduce((s, i) => s + (i.remaining_value || 0), 0);
+  const wastagePercent = totalValue > 0 ? Math.round((wastageValue / totalValue) * 100) : 0;
+  const usageRatio = `${totalItemsUsed}:${totalItemsExpired}`;
+
+  // Smart suggestions
+  const suggestions: string[] = [];
+  const dairyExpiring = items.filter(i => {
+    const name = i.ingredient_name.toLowerCase();
+    return ['milk', 'curd', 'paneer', 'yogurt'].some(d => name.includes(d)) && getExpiryStatus(i.expires_at) === 'expiring_soon';
+  });
+  if (dairyExpiring.length > 0) {
+    suggestions.push(`Use ${dairyExpiring.map(i => i.ingredient_name).join(', ')} soon - consider making paneer paratha or smoothie`);
+  }
+  if (wastagePercent > 20) {
+    suggestions.push('High wastage detected. Try buying smaller packs for perishable items');
+  }
+  if (wastagePercent > 10 && wastagePercent <= 20) {
+    suggestions.push('Consider reducing purchase frequency for items expiring often');
+  }
+  const vegExpiring = items.filter(i => {
+    const name = i.ingredient_name.toLowerCase();
+    return ['spinach', 'coriander', 'tomato', 'capsicum'].some(v => name.includes(v)) && getExpiryStatus(i.expires_at) === 'expiring_soon';
+  });
+  if (vegExpiring.length > 0) {
+    suggestions.push(`Vegetables expiring soon: make soup or sabzi with ${vegExpiring.map(i => i.ingredient_name).join(', ')}`);
+  }
+  if (totalItemsExpired === 0 && items.length > 5) {
+    suggestions.push('Great job! Zero waste this period. Keep tracking expiry dates.');
+  }
+  if (suggestions.length === 0) {
+    suggestions.push('Track more items to get personalized waste-reduction tips');
+  }
+
+  // Estimated value saved via auto-deduction (simulated based on pantry stock)
+  const totalValueSaved = Math.round(freshItems.reduce((s, i) => s + (i.remaining_value || 0), 0) * 0.3);
+
+  return { totalValueSaved, totalItemsUsed, totalItemsExpired, wastagePercent, usageRatio, suggestions };
+}
+
 const { width: SCREEN_W } = Dimensions.get('window');
 
 // ── Category Grouping ──
@@ -203,6 +258,7 @@ export default function PantryScreen() {
   const expiredCount = items.filter(i => getExpiryStatus(i.expires_at) === 'expired').length;
 
   const categories = [...new Set(items.map(i => getCategoryFromName(i.ingredient_name)))];
+  const summary = calculateMonthlySummary(items);
 
   return (
     <View style={[st.container, { backgroundColor: colors.background }]}>
@@ -217,6 +273,13 @@ export default function PantryScreen() {
               <Text style={st.headerTitle}>Pantry Tracker 🏠</Text>
               <Text style={st.headerSub}>{items.length} items in stock</Text>
             </View>
+            <Pressable
+              style={({ pressed }) => [st.scanBtnHeader, pressed && { opacity: 0.85 }]}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/pantry-scanner' as any); }}
+            >
+              <MaterialIcons name="qr-code-scanner" size={14} color="#1E1456" />
+              <Text style={st.addBtnText}>Scan</Text>
+            </Pressable>
             <Pressable
               style={({ pressed }) => [st.addBtnHeader, pressed && { opacity: 0.85 }]}
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowAddModal(true); }}
@@ -244,6 +307,64 @@ export default function PantryScreen() {
         </LinearGradient>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
+          {/* ═══ Monthly Summary Card ═══ */}
+          {items.length > 0 ? (
+            <Animated.View entering={FadeInDown.delay(30).duration(300)} style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+              <View style={[st.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={st.summaryHeader}>
+                  <MaterialIcons name="insights" size={18} color="#7B2FA0" />
+                  <Text style={[st.summaryTitle, { color: colors.textPrimary }]}>Monthly Pantry Summary</Text>
+                </View>
+
+                {/* Stats Grid */}
+                <View style={st.summaryStats}>
+                  <View style={[st.summaryStat, { backgroundColor: isDark ? 'rgba(74,222,128,0.06)' : 'rgba(74,222,128,0.03)' }]}>
+                    <Text style={[st.summaryStatValue, { color: '#4ADE80' }]}>₹{summary.totalValueSaved}</Text>
+                    <Text style={[st.summaryStatLabel, { color: colors.textMuted }]}>Saved via{"\n"}Auto-Deduction</Text>
+                  </View>
+                  <View style={[st.summaryStat, { backgroundColor: isDark ? 'rgba(96,165,250,0.06)' : 'rgba(96,165,250,0.03)' }]}>
+                    <Text style={[st.summaryStatValue, { color: '#60A5FA' }]}>{summary.usageRatio}</Text>
+                    <Text style={[st.summaryStatLabel, { color: colors.textMuted }]}>Used vs{"\n"}Expired</Text>
+                  </View>
+                  <View style={[st.summaryStat, { backgroundColor: isDark ? 'rgba(240,78,80,0.06)' : 'rgba(240,78,80,0.03)' }]}>
+                    <Text style={[st.summaryStatValue, { color: summary.wastagePercent > 15 ? '#EF4444' : '#F5B731' }]}>{summary.wastagePercent}%</Text>
+                    <Text style={[st.summaryStatLabel, { color: colors.textMuted }]}>Wastage{"\n"}Rate</Text>
+                  </View>
+                </View>
+
+                {/* Suggestions */}
+                <View style={st.suggestionsWrap}>
+                  <Text style={[st.suggestionsLabel, { color: colors.textSecondary }]}>💡 Smart Suggestions</Text>
+                  {summary.suggestions.map((s, i) => (
+                    <View key={i} style={st.suggestionRow}>
+                      <View style={st.suggestionDot} />
+                      <Text style={[st.suggestionText, { color: colors.textMuted }]}>{s}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </Animated.View>
+          ) : null}
+
+          {/* ═══ Scanner Quick Action ═══ */}
+          <Animated.View entering={FadeInDown.delay(60).duration(300)} style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+            <Pressable
+              style={({ pressed }) => [st.scanCard, { backgroundColor: isDark ? 'rgba(123,47,160,0.06)' : 'rgba(123,47,160,0.02)', borderColor: 'rgba(123,47,160,0.18)' }, pressed && { opacity: 0.85 }]}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/pantry-scanner' as any); }}
+            >
+              <View style={st.scanCardLeft}>
+                <View style={[st.scanIconWrap, { backgroundColor: 'rgba(123,47,160,0.10)' }]}>
+                  <MaterialIcons name="qr-code-scanner" size={22} color="#7B2FA0" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[st.scanCardTitle, { color: colors.textPrimary }]}>Scan Product</Text>
+                  <Text style={[st.scanCardSub, { color: colors.textMuted }]}>Barcode or photo to auto-add items</Text>
+                </View>
+              </View>
+              <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
+            </Pressable>
+          </Animated.View>
+
           {/* Filter Row */}
           <View style={st.filterSection}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 6 }}>
@@ -520,6 +641,7 @@ const st = StyleSheet.create({
   backBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 20, fontWeight: '900', color: '#FFF', letterSpacing: -0.3 },
   headerSub: { fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.8)', marginTop: 1 },
+  scanBtnHeader: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
   addBtnHeader: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: '#F5B731' },
   addBtnText: { fontSize: 12, fontWeight: '800', color: '#1E1456' },
 
@@ -569,6 +691,27 @@ const st = StyleSheet.create({
   // Refresh
   refreshBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, borderWidth: 1 },
   refreshBtnText: { fontSize: 12, fontWeight: '700' },
+
+  // Summary Card
+  summaryCard: { padding: 16, borderRadius: 18, borderWidth: 1, gap: 12 },
+  summaryHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  summaryTitle: { fontSize: 15, fontWeight: '800' },
+  summaryStats: { flexDirection: 'row', gap: 8 },
+  summaryStat: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 12, gap: 4 },
+  summaryStatValue: { fontSize: 18, fontWeight: '900' },
+  summaryStatLabel: { fontSize: 9, fontWeight: '600', textAlign: 'center', lineHeight: 12 },
+  suggestionsWrap: { gap: 6, paddingTop: 4 },
+  suggestionsLabel: { fontSize: 11, fontWeight: '700' },
+  suggestionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  suggestionDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#F5B731', marginTop: 5 },
+  suggestionText: { fontSize: 11, fontWeight: '500', flex: 1, lineHeight: 15 },
+
+  // Scan Card
+  scanCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 14, borderWidth: 1 },
+  scanCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  scanIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  scanCardTitle: { fontSize: 14, fontWeight: '800' },
+  scanCardSub: { fontSize: 11, fontWeight: '500', marginTop: 1 },
 
   // FAB
   fab: { position: 'absolute', bottom: 90, right: 20 },
