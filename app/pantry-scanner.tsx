@@ -54,6 +54,8 @@ export default function PantryScannerScreen() {
   const [editMrp, setEditMrp] = useState('');
   const [editExpiryDays, setEditExpiryDays] = useState('');
   const [editCategory, setEditCategory] = useState('');
+  const [editUnits, setEditUnits] = useState('1');
+  const [showManualAdd, setShowManualAdd] = useState(false);
 
   useEffect(() => {
     if (!IS_WEB && !permission?.granted) {
@@ -219,10 +221,17 @@ export default function PantryScannerScreen() {
       ? new Date(Date.now() + parseInt(editExpiryDays) * 86400000).toISOString()
       : undefined;
 
+    const units = Math.max(1, parseInt(editUnits) || 1);
+    const perUnitValue = parseFloat(editMrp) || 0;
+
+    // Add multiple units as separate or combined entry
+    const totalQty = units > 1 ? `${editQty.trim()} x${units}` : editQty.trim();
+    const totalValue = perUnitValue * units;
+
     const { success, error } = await addPantryItem(user.id, {
       ingredient_name: editName.trim(),
-      remaining_quantity: editQty.trim(),
-      remaining_value: parseFloat(editMrp) || 0,
+      remaining_quantity: totalQty,
+      remaining_value: totalValue,
       expires_at: expiresAt,
     });
 
@@ -231,17 +240,19 @@ export default function PantryScannerScreen() {
     if (success) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setShowResultModal(false);
+      setShowManualAdd(false);
       setScannedProduct(null);
       setBarcodeScanned(false);
-      showAlert('Added to Pantry', `${editName} has been added to your pantry tracker`);
+      showAlert('Added to Pantry', `${editName}${units > 1 ? ` (x${units})` : ''} has been added to your pantry tracker`);
     } else {
       showAlert('Error', error || 'Failed to save item');
     }
-  }, [user?.id, editName, editQty, editMrp, editExpiryDays, showAlert]);
+  }, [user?.id, editName, editQty, editMrp, editExpiryDays, editUnits, showAlert]);
 
   // Reset scan
   const handleRescan = useCallback(() => {
     setShowResultModal(false);
+    setShowManualAdd(false);
     setScannedProduct(null);
     setBarcodeScanned(false);
     setEditName('');
@@ -249,6 +260,21 @@ export default function PantryScannerScreen() {
     setEditMrp('');
     setEditExpiryDays('');
     setEditCategory('');
+    setEditUnits('1');
+  }, []);
+
+  // Open manual add form
+  const handleManualAdd = useCallback(() => {
+    Haptics.selectionAsync();
+    setEditName('');
+    setEditQty('');
+    setEditMrp('');
+    setEditExpiryDays('');
+    setEditCategory('Others');
+    setEditUnits('1');
+    setScannedProduct(null);
+    setShowManualAdd(true);
+    setShowResultModal(true);
   }, []);
 
   // Camera capture button
@@ -384,6 +410,13 @@ export default function PantryScannerScreen() {
               <MaterialIcons name="camera-alt" size={18} color={scanMode === 'photo' ? '#FFF' : 'rgba(255,255,255,0.6)'} />
               <Text style={[st.modeBtnText, scanMode === 'photo' && st.modeBtnTextActive]}>Photo</Text>
             </Pressable>
+            <Pressable
+              style={[st.modeBtn]}
+              onPress={handleManualAdd}
+            >
+              <MaterialIcons name="edit" size={18} color={'rgba(255,255,255,0.6)'} />
+              <Text style={[st.modeBtnText]}>Manual</Text>
+            </Pressable>
           </View>
 
           {/* Capture Button (Photo mode) */}
@@ -412,10 +445,10 @@ export default function PantryScannerScreen() {
               {/* Header */}
               <View style={st.modalHeader}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[st.modalTitle, { color: colors.textPrimary }]}>Product Detected ✅</Text>
-                  <Text style={[st.modalSub, { color: colors.textMuted }]}>Review and edit details before saving</Text>
+                  <Text style={[st.modalTitle, { color: colors.textPrimary }]}>{showManualAdd ? 'Add Item Manually ✏️' : 'Product Detected ✅'}</Text>
+                  <Text style={[st.modalSub, { color: colors.textMuted }]}>{showManualAdd ? 'Enter product details to add to pantry' : 'Review and edit details before saving'}</Text>
                 </View>
-                <Pressable onPress={() => setShowResultModal(false)}>
+                <Pressable onPress={() => { setShowResultModal(false); setShowManualAdd(false); }}>
                   <MaterialIcons name="close" size={22} color={colors.textMuted} />
                 </Pressable>
               </View>
@@ -444,7 +477,7 @@ export default function PantryScannerScreen() {
 
               <View style={st.formRow}>
                 <View style={[st.formGroup, { flex: 1 }]}>
-                  <Text style={[st.formLabel, { color: colors.textSecondary }]}>Quantity *</Text>
+                  <Text style={[st.formLabel, { color: colors.textSecondary }]}>Pack Size *</Text>
                   <TextInput
                     style={[st.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }]}
                     value={editQty}
@@ -453,8 +486,35 @@ export default function PantryScannerScreen() {
                     placeholderTextColor={colors.textMuted}
                   />
                 </View>
+                <View style={[st.formGroup, { flex: 0.7 }]}>
+                  <Text style={[st.formLabel, { color: colors.textSecondary }]}>No. of Units</Text>
+                  <View style={st.unitsStepper}>
+                    <Pressable
+                      style={[st.stepperBtn, { backgroundColor: isDark ? 'rgba(123,47,160,0.12)' : 'rgba(123,47,160,0.06)', borderColor: 'rgba(123,47,160,0.20)' }]}
+                      onPress={() => { const n = Math.max(1, (parseInt(editUnits) || 1) - 1); setEditUnits(String(n)); Haptics.selectionAsync(); }}
+                    >
+                      <MaterialIcons name="remove" size={16} color="#7B2FA0" />
+                    </Pressable>
+                    <TextInput
+                      style={[st.unitsInput, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }]}
+                      value={editUnits}
+                      onChangeText={(t) => { const n = t.replace(/[^0-9]/g, ''); setEditUnits(n || '1'); }}
+                      keyboardType="numeric"
+                      textAlign="center"
+                    />
+                    <Pressable
+                      style={[st.stepperBtn, { backgroundColor: isDark ? 'rgba(123,47,160,0.12)' : 'rgba(123,47,160,0.06)', borderColor: 'rgba(123,47,160,0.20)' }]}
+                      onPress={() => { const n = (parseInt(editUnits) || 1) + 1; setEditUnits(String(n)); Haptics.selectionAsync(); }}
+                    >
+                      <MaterialIcons name="add" size={16} color="#7B2FA0" />
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
+
+              <View style={st.formRow}>
                 <View style={[st.formGroup, { flex: 1 }]}>
-                  <Text style={[st.formLabel, { color: colors.textSecondary }]}>MRP (₹)</Text>
+                  <Text style={[st.formLabel, { color: colors.textSecondary }]}>MRP per unit (₹)</Text>
                   <TextInput
                     style={[st.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }]}
                     value={editMrp}
@@ -463,6 +523,12 @@ export default function PantryScannerScreen() {
                     placeholderTextColor={colors.textMuted}
                     keyboardType="numeric"
                   />
+                </View>
+                <View style={[st.formGroup, { flex: 1 }]}>
+                  <Text style={[st.formLabel, { color: colors.textSecondary }]}>Total Value</Text>
+                  <View style={[st.totalValueBox, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(74,222,128,0.04)' : 'rgba(74,222,128,0.02)' }]}>
+                    <Text style={[st.totalValueText, { color: '#4ADE80' }]}>₹{((parseFloat(editMrp) || 0) * (parseInt(editUnits) || 1)).toFixed(0)}</Text>
+                  </View>
                 </View>
               </View>
 
@@ -629,4 +695,11 @@ const st = StyleSheet.create({
   saveBtn: { flex: 1, borderRadius: 12, overflow: 'hidden' },
   saveBtnGrad: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 13, borderRadius: 12 },
   saveBtnText: { fontSize: 14, fontWeight: '800', color: '#FFF' },
+
+  // Units Stepper
+  unitsStepper: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 42 },
+  stepperBtn: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  unitsInput: { flex: 1, height: 42, borderRadius: 10, borderWidth: 1, fontSize: 16, fontWeight: '800' },
+  totalValueBox: { height: 42, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  totalValueText: { fontSize: 16, fontWeight: '900' },
 });
